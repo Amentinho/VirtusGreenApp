@@ -5,6 +5,7 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
+  email: text("email").notNull().unique(),
   password: text("password").notNull(),
   tokens: integer("tokens").notNull().default(0),
   referralCode: text("referral_code").notNull().unique(),
@@ -37,15 +38,35 @@ export const coupons = pgTable("coupons", {
   available: boolean("available").notNull().default(true),
 });
 
-export const insertUserSchema = createInsertSchema(users)
-  .omit({ 
-    id: true,
-    tokens: true,
-    referralCode: true 
-  })
+// Base schema for user credentials
+const userCredentialsSchema = z.object({
+  username: z.string().min(1, "Username is required"),
+  password: z.string().min(1, "Password is required"),
+});
+
+// Login schema (just username and password)
+export const loginSchema = userCredentialsSchema;
+
+// Registration schema (full user details with confirmation)
+export const insertUserSchema = userCredentialsSchema
   .extend({
-    usedReferralCode: z.string().optional()
+    email: z.string().email("Invalid email address"),
+    confirmPassword: z.string(),
+    usedReferralCode: z.string().optional(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
   });
+
+export const updatePasswordSchema = z.object({
+  currentPassword: z.string(),
+  newPassword: z.string(),
+  confirmNewPassword: z.string(),
+}).refine((data) => data.newPassword === data.confirmNewPassword, {
+  message: "New passwords don't match",
+  path: ["confirmNewPassword"],
+});
 
 export const insertProductSchema = createInsertSchema(products).omit({ 
   id: true 
@@ -56,6 +77,7 @@ export const insertCouponSchema = createInsertSchema(coupons).omit({
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type LoginCredentials = z.infer<typeof loginSchema>;
 export type User = typeof users.$inferSelect;
 export type Product = typeof products.$inferSelect;
 export type Coupon = typeof coupons.$inferSelect;

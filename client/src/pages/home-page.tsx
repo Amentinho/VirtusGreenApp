@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Scan } from "lucide-react";
+import { Search, Scan, User } from "lucide-react";
 import ProductCard from "@/components/product-card";
 import TokenDisplay from "@/components/token-display";
 import { Product } from "@shared/schema";
@@ -18,7 +18,6 @@ export default function HomePage() {
 
   const handleBarcodeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, this would trigger barcode scanning
     setSearch(barcode);
     setBarcode("");
   };
@@ -29,12 +28,17 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <h1 className="text-xl font-bold text-green-600">EcoTrack</h1>
+              <h1 className="text-xl font-bold text-green-600">VirtusGreen</h1>
             </div>
             <div className="flex items-center gap-4">
               <TokenDisplay />
               <Link href="/marketplace">
                 <Button variant="outline">Marketplace</Button>
+              </Link>
+              <Link href="/profile">
+                <Button variant="ghost" size="icon">
+                  <User className="h-4 w-4" />
+                </Button>
               </Link>
             </div>
           </div>

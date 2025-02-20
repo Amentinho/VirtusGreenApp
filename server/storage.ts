@@ -151,6 +151,14 @@ export class MemStorage implements IStorage {
     this.users.set(userId, user);
     this.coupons.set(couponId, coupon);
   }
+
+  async updateUserPassword(userId: number, newPassword: string): Promise<void> {
+    const user = this.users.get(userId);
+    if (!user) return;
+
+    user.password = newPassword;
+    this.users.set(userId, user);
+  }
 }
 
 export const storage = new MemStorage();

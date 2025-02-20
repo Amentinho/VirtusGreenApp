@@ -6,15 +6,15 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertUserSchema, InsertUser } from "@shared/schema";
+import { insertUserSchema, loginSchema, InsertUser, LoginCredentials } from "@shared/schema";
 import { Redirect } from "wouter";
 import { Leaf } from "lucide-react";
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
 
-  const loginForm = useForm<InsertUser>({
-    resolver: zodResolver(insertUserSchema),
+  const loginForm = useForm<LoginCredentials>({
+    resolver: zodResolver(loginSchema),
   });
 
   const registerForm = useForm<InsertUser>({
@@ -32,7 +32,7 @@ export default function AuthPage() {
           <CardHeader className="text-center">
             <CardTitle className="flex items-center justify-center gap-2 text-3xl font-bold">
               <Leaf className="h-8 w-8 text-green-500" />
-              EcoTrack
+              VirtusGreen
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -92,11 +92,29 @@ export default function AuthPage() {
                     />
                   </div>
                   <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      {...registerForm.register("email")}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
                     <Label htmlFor="reg-password">Password</Label>
                     <Input
                       id="reg-password"
                       type="password"
                       {...registerForm.register("password")}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="confirm-password">Confirm Password</Label>
+                    <Input
+                      id="confirm-password"
+                      type="password"
+                      {...registerForm.register("confirmPassword")}
                       required
                     />
                   </div>
@@ -128,7 +146,7 @@ export default function AuthPage() {
             Track Your Environmental Impact
           </h1>
           <p className="text-gray-600 mb-6">
-            Join EcoTrack to discover the environmental impact of your everyday
+            Join VirtusGreen to discover the environmental impact of your everyday
             products. Earn rewards for making sustainable choices and help build a
             greener future.
           </p>
