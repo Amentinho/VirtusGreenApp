@@ -6,16 +6,21 @@ import { Search, User } from "lucide-react";
 import ProductCard from "@/components/product-card";
 import TokenDisplay from "@/components/token-display";
 import BarcodeScanner from "@/components/barcode-scanner";
+import ProductDialog from "@/components/product-dialog";
 import { Product } from "@shared/schema";
 import { Link } from "wouter";
 
 export default function HomePage() {
   const [search, setSearch] = useState("");
-  const [scannedProduct, setScannedProduct] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const { data: products, isLoading } = useQuery<Product[]>({
     queryKey: ["/api/products", search],
   });
+
+  const handleProductFound = (product: Product) => {
+    setSelectedProduct(product);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -43,13 +48,13 @@ export default function HomePage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <div className="col-span-full space-y-6">
-            <BarcodeScanner onProductFound={setScannedProduct} />
+            <BarcodeScanner onProductFound={handleProductFound} />
 
             <div className="flex gap-2">
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search products..."
+                placeholder="Search products by name, brand, or barcode..."
                 className="flex-1"
               />
               <Button variant="outline">
@@ -58,13 +63,6 @@ export default function HomePage() {
             </div>
           </div>
 
-          {scannedProduct && (
-            <div className="col-span-full">
-              <h2 className="text-lg font-semibold mb-4">Scanned Product</h2>
-              <ProductCard product={scannedProduct} />
-            </div>
-          )}
-
           <div className="col-span-full">
             <h2 className="text-lg font-semibold mb-4">All Products</h2>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -72,12 +70,24 @@ export default function HomePage() {
                 <div className="col-span-full text-center">Loading products...</div>
               ) : (
                 products?.map((product) => (
-                  <ProductCard key={product.id} product={product} />
+                  <div
+                    key={product.id}
+                    onClick={() => setSelectedProduct(product)}
+                    className="cursor-pointer transition-transform hover:scale-105"
+                  >
+                    <ProductCard product={product} />
+                  </div>
                 ))
               )}
             </div>
           </div>
         </div>
+
+        <ProductDialog
+          product={selectedProduct}
+          isOpen={!!selectedProduct}
+          onClose={() => setSelectedProduct(null)}
+        />
       </main>
     </div>
   );
