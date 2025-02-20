@@ -2,25 +2,20 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Scan, User } from "lucide-react";
+import { Search, User } from "lucide-react";
 import ProductCard from "@/components/product-card";
 import TokenDisplay from "@/components/token-display";
+import BarcodeScanner from "@/components/barcode-scanner";
 import { Product } from "@shared/schema";
 import { Link } from "wouter";
 
 export default function HomePage() {
   const [search, setSearch] = useState("");
-  const [barcode, setBarcode] = useState("");
+  const [scannedProduct, setScannedProduct] = useState<Product | null>(null);
 
   const { data: products, isLoading } = useQuery<Product[]>({
     queryKey: ["/api/products", search],
   });
-
-  const handleBarcodeSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSearch(barcode);
-    setBarcode("");
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -47,22 +42,9 @@ export default function HomePage() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <div className="col-span-full">
-            <form onSubmit={handleBarcodeSubmit} className="flex gap-2">
-              <Input
-                value={barcode}
-                onChange={(e) => setBarcode(e.target.value)}
-                placeholder="Enter product barcode..."
-                className="flex-1"
-              />
-              <Button type="submit">
-                <Scan className="h-4 w-4 mr-2" />
-                Scan
-              </Button>
-            </form>
-          </div>
+          <div className="col-span-full space-y-6">
+            <BarcodeScanner onProductFound={setScannedProduct} />
 
-          <div className="col-span-full">
             <div className="flex gap-2">
               <Input
                 value={search}
@@ -76,13 +58,25 @@ export default function HomePage() {
             </div>
           </div>
 
-          {isLoading ? (
-            <div className="col-span-full text-center">Loading products...</div>
-          ) : (
-            products?.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))
+          {scannedProduct && (
+            <div className="col-span-full">
+              <h2 className="text-lg font-semibold mb-4">Scanned Product</h2>
+              <ProductCard product={scannedProduct} />
+            </div>
           )}
+
+          <div className="col-span-full">
+            <h2 className="text-lg font-semibold mb-4">All Products</h2>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {isLoading ? (
+                <div className="col-span-full text-center">Loading products...</div>
+              ) : (
+                products?.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))
+              )}
+            </div>
+          </div>
         </div>
       </main>
     </div>
