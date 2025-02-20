@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Copy, ArrowLeft } from "lucide-react";
+import { Copy, ArrowLeft, LogOut } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -20,7 +20,7 @@ type UpdatePasswordForm = {
 };
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, logoutMutation } = useAuth();
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
 
@@ -57,6 +57,10 @@ export default function ProfilePage() {
     }
   };
 
+  const handleLogout = () => {
+    logoutMutation.mutate();
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b">
@@ -69,6 +73,16 @@ export default function ProfilePage() {
                 </Button>
               </Link>
               <h1 className="text-xl font-bold text-green-600">Profile</h1>
+            </div>
+            <div className="flex items-center">
+              <Button 
+                variant="ghost" 
+                onClick={handleLogout}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </Button>
             </div>
           </div>
         </div>
@@ -120,6 +134,11 @@ export default function ProfilePage() {
                     type="password"
                     {...form.register("currentPassword")}
                   />
+                  {form.formState.errors.currentPassword && (
+                    <p className="text-sm text-red-600">
+                      {form.formState.errors.currentPassword.message}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="newPassword">New Password</Label>
@@ -128,6 +147,11 @@ export default function ProfilePage() {
                     type="password"
                     {...form.register("newPassword")}
                   />
+                  {form.formState.errors.newPassword && (
+                    <p className="text-sm text-red-600">
+                      {form.formState.errors.newPassword.message}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="confirmNewPassword">Confirm New Password</Label>
@@ -136,6 +160,11 @@ export default function ProfilePage() {
                     type="password"
                     {...form.register("confirmNewPassword")}
                   />
+                  {form.formState.errors.confirmNewPassword && (
+                    <p className="text-sm text-red-600">
+                      {form.formState.errors.confirmNewPassword.message}
+                    </p>
+                  )}
                 </div>
                 <Button type="submit" className="w-full">
                   Update Password

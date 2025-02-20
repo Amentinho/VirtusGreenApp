@@ -56,6 +56,11 @@ export default function AuthPage() {
                       {...loginForm.register("username")}
                       required
                     />
+                    {loginForm.formState.errors.username && (
+                      <p className="text-sm text-red-600">
+                        {loginForm.formState.errors.username.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="password">Password</Label>
@@ -65,6 +70,11 @@ export default function AuthPage() {
                       {...loginForm.register("password")}
                       required
                     />
+                    {loginForm.formState.errors.password && (
+                      <p className="text-sm text-red-600">
+                        {loginForm.formState.errors.password.message}
+                      </p>
+                    )}
                   </div>
                   <Button
                     type="submit"
@@ -90,6 +100,11 @@ export default function AuthPage() {
                       {...registerForm.register("username")}
                       required
                     />
+                    {registerForm.formState.errors.username && (
+                      <p className="text-sm text-red-600">
+                        {registerForm.formState.errors.username.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
@@ -99,6 +114,11 @@ export default function AuthPage() {
                       {...registerForm.register("email")}
                       required
                     />
+                    {registerForm.formState.errors.email && (
+                      <p className="text-sm text-red-600">
+                        {registerForm.formState.errors.email.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="reg-password">Password</Label>
@@ -108,6 +128,11 @@ export default function AuthPage() {
                       {...registerForm.register("password")}
                       required
                     />
+                    {registerForm.formState.errors.password && (
+                      <p className="text-sm text-red-600">
+                        {registerForm.formState.errors.password.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="confirm-password">Confirm Password</Label>
@@ -117,6 +142,11 @@ export default function AuthPage() {
                       {...registerForm.register("confirmPassword")}
                       required
                     />
+                    {registerForm.formState.errors.confirmPassword && (
+                      <p className="text-sm text-red-600">
+                        {registerForm.formState.errors.confirmPassword.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="referral-code">Referral Code (Optional)</Label>
