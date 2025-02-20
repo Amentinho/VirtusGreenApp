@@ -10,6 +10,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/products", async (req, res) => {
     const search = req.query.search as string;
+    const barcode = req.query.barcode as string;
+
+    if (barcode) {
+      const product = await storage.getProductByBarcode(barcode);
+      if (!product) return res.status(404).send("Product not found");
+      return res.json(product);
+    }
+
     const products = await storage.searchProducts(search || "");
     res.json(products);
   });

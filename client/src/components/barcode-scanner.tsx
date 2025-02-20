@@ -15,10 +15,11 @@ export default function BarcodeScanner({ onProductFound }: BarcodeScannerProps) 
   const [barcode, setBarcode] = useState("");
   const [isScanning, setIsScanning] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
   const { toast } = useToast();
 
   const { refetch } = useQuery<Product>({
-    queryKey: ["/api/products", barcode],
+    queryKey: [`/api/products?barcode=${barcode}`],
     enabled: false,
     onSuccess: (product) => {
       if (product) {
@@ -54,28 +55,33 @@ export default function BarcodeScanner({ onProductFound }: BarcodeScannerProps) 
   const startScanning = async () => {
     try {
       setIsScanning(true);
-      const codeReader = new BrowserMultiFormatReader();
-      const videoInputDevices = await codeReader.listVideoInputDevices();
 
-      if (videoInputDevices.length === 0) {
-        throw new Error('No camera found');
-      }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' }
+      });
 
-      if (videoRef.current) {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: 'environment' }
-        });
-        videoRef.current.srcObject = stream;
+      if (!videoRef.current) return;
+      videoRef.current.srcObject = stream;
 
-        codeReader.decodeFromVideoElement(videoRef.current, (result, error) => {
+      // Initialize code reader
+      codeReaderRef.current = new BrowserMultiFormatReader();
+
+      // Start continuous scanning
+      const controls = await codeReaderRef.current.decodeFromVideoDevice(
+        undefined, // Let browser pick the camera
+        videoRef.current,
+        (result, err) => {
           if (result) {
-            setBarcode(result.getText());
+            const scannedBarcode = result.getText();
+            setBarcode(scannedBarcode);
             stopScanning();
             refetch();
           }
-        });
-      }
+        }
+      );
+
     } catch (error) {
+      console.error('Camera error:', error);
       toast({
         title: "Camera Error",
         description: error instanceof Error ? error.message : "Failed to access camera",
@@ -87,6 +93,10 @@ export default function BarcodeScanner({ onProductFound }: BarcodeScannerProps) 
 
   const stopScanning = () => {
     setIsScanning(false);
+    if (codeReaderRef.current) {
+      codeReaderRef.current.reset();
+      codeReaderRef.current = null;
+    }
     if (videoRef.current?.srcObject) {
       const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
       tracks.forEach(track => track.stop());
