@@ -5,6 +5,7 @@ import { Product, User, Coupon, InsertUser } from "@shared/schema";
 import { customAlphabet } from "nanoid";
 
 const MemoryStore = createMemoryStore(session);
+const REFERRAL_BONUS = 50; // Tokens awarded for successful referral
 
 const generateReferralCode = customAlphabet(
   "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",
@@ -46,7 +47,6 @@ export class MemStorage implements IStorage {
           landUsage: 95,
         },
       },
-      // Add more sample products as needed
     ];
 
     products.forEach((product) => {
@@ -62,7 +62,6 @@ export class MemStorage implements IStorage {
         tokenCost: 100,
         available: true,
       },
-      // Add more sample coupons as needed
     ];
 
     coupons.forEach((coupon) => {
@@ -81,14 +80,34 @@ export class MemStorage implements IStorage {
     );
   }
 
+  async getUserByReferralCode(code: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.referralCode === code
+    );
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentId.users++;
+    let tokens = 0;
+
+    // Handle referral code if provided
+    if (insertUser.usedReferralCode) {
+      const referrer = await this.getUserByReferralCode(insertUser.usedReferralCode);
+      if (referrer) {
+        // Award tokens to both the referrer and the new user
+        tokens = REFERRAL_BONUS;
+        referrer.tokens += REFERRAL_BONUS;
+        this.users.set(referrer.id, referrer);
+      }
+    }
+
     const user: User = {
       ...insertUser,
       id,
-      tokens: 0,
+      tokens,
       referralCode: generateReferralCode(),
     };
+
     this.users.set(id, user);
     return user;
   }
@@ -96,7 +115,7 @@ export class MemStorage implements IStorage {
   async searchProducts(search: string): Promise<Product[]> {
     const products = Array.from(this.products.values());
     if (!search) return products;
-    
+
     const searchLower = search.toLowerCase();
     return products.filter(
       (p) =>
@@ -123,12 +142,12 @@ export class MemStorage implements IStorage {
   async redeemCoupon(userId: number, couponId: number): Promise<void> {
     const user = this.users.get(userId);
     const coupon = this.coupons.get(couponId);
-    
+
     if (!user || !coupon) return;
-    
+
     user.tokens -= coupon.tokenCost;
     coupon.available = false;
-    
+
     this.users.set(userId, user);
     this.coupons.set(couponId, coupon);
   }

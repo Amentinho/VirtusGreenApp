@@ -100,6 +100,14 @@ export default function AuthPage() {
                       required
                     />
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="referral-code">Referral Code (Optional)</Label>
+                    <Input
+                      id="referral-code"
+                      {...registerForm.register("usedReferralCode")}
+                      placeholder="Enter referral code"
+                    />
+                  </div>
                   <Button
                     type="submit"
                     className="w-full"

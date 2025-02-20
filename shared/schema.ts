@@ -8,6 +8,7 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   tokens: integer("tokens").notNull().default(0),
   referralCode: text("referral_code").notNull().unique(),
+  usedReferralCode: text("used_referral_code"),
 });
 
 export const products = pgTable("products", {
@@ -36,11 +37,15 @@ export const coupons = pgTable("coupons", {
   available: boolean("available").notNull().default(true),
 });
 
-export const insertUserSchema = createInsertSchema(users).omit({ 
-  id: true,
-  tokens: true,
-  referralCode: true 
-});
+export const insertUserSchema = createInsertSchema(users)
+  .omit({ 
+    id: true,
+    tokens: true,
+    referralCode: true 
+  })
+  .extend({
+    usedReferralCode: z.string().optional()
+  });
 
 export const insertProductSchema = createInsertSchema(products).omit({ 
   id: true 
