@@ -47,6 +47,20 @@ export class MemStorage implements IStorage {
           landUsage: 95,
         },
       },
+      {
+        name: "Solar Cream",
+        brand: "SunCare",
+        barcode: "8411135482951",
+        environmentalImpact: {
+          ecoScore: 1,
+          co2Emissions: 10,
+          renewableEnergy: 5,
+          recyclableMaterials: 15,
+          recycledContent: 0,
+          waterUsage: 20,
+          landUsage: 15,
+        },
+      },
     ];
 
     products.forEach((product) => {
