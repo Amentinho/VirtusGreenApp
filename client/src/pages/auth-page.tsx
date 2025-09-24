@@ -26,6 +26,7 @@ export default function AuthPage() {
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [emailVerificationDialogOpen, setEmailVerificationDialogOpen] = useState(false);
   const [userEmailForVerification, setUserEmailForVerification] = useState("");
+  const [showVerificationLink, setShowVerificationLink] = useState(false);
 
   const loginForm = useForm<LoginCredentials>({
     resolver: zodResolver(loginSchema),
@@ -61,12 +62,14 @@ export default function AuthPage() {
   const handleLogin = async (data: LoginCredentials) => {
     try {
       await loginMutation.mutateAsync(data);
+      setShowVerificationLink(false); // Hide link on successful login
     } catch (error: any) {
       try {
         const errorData = JSON.parse(error.message);
         if (errorData.emailNotVerified) {
           setUserEmailForVerification(data.usernameOrEmail);
           setEmailVerificationDialogOpen(true);
+          setShowVerificationLink(true); // Show link after verification error
           return;
         }
       } catch {
@@ -148,18 +151,20 @@ export default function AuthPage() {
                         {loginForm.formState.errors.password.message}
                       </p>
                     )}
-                    <div className="flex justify-between text-sm">
-                      <button
-                        type="button"
-                        className="text-blue-600 hover:text-blue-800 hover:underline"
-                        data-testid="link-verify-email"
-                        onClick={() => {
-                          setUserEmailForVerification("");
-                          setEmailVerificationDialogOpen(true);
-                        }}
-                      >
-                        Verify your email again
-                      </button>
+                    <div className={`${showVerificationLink ? 'flex justify-between' : 'text-right'} text-sm`}>
+                      {showVerificationLink && (
+                        <button
+                          type="button"
+                          className="text-blue-600 hover:text-blue-800 hover:underline"
+                          data-testid="link-verify-email"
+                          onClick={() => {
+                            setUserEmailForVerification("");
+                            setEmailVerificationDialogOpen(true);
+                          }}
+                        >
+                          Verify your email again
+                        </button>
+                      )}
                       <button
                         type="button"
                         className="text-blue-600 hover:text-blue-800 hover:underline"
@@ -407,7 +412,6 @@ export default function AuthPage() {
                   id="verification-email"
                   type="email"
                   placeholder="Enter your email address"
-                  value={userEmailForVerification}
                   onChange={(e) => setUserEmailForVerification(e.target.value)}
                   data-testid="input-verification-email"
                 />
