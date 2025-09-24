@@ -62,35 +62,45 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/register", async (req, res, next) => {
-    // Check if username already exists
-    const existingUserByUsername = await storage.getUserByUsername(req.body.username);
-    if (existingUserByUsername) {
-      return res.status(400).json({ 
-        message: "The account already exists",
-        field: "username",
-        suggestion: "recover_password"
+    try {
+      console.log("Registration attempt:", { username: req.body.username, email: req.body.email });
+      
+      // Check if username already exists
+      const existingUserByUsername = await storage.getUserByUsername(req.body.username);
+      if (existingUserByUsername) {
+        return res.status(400).json({ 
+          message: "The account already exists",
+          field: "username",
+          suggestion: "recover_password"
+        });
+      }
+
+      // Check if email already exists
+      const existingUserByEmail = await storage.getUserByEmail(req.body.email);
+      if (existingUserByEmail) {
+        return res.status(400).json({ 
+          message: "The account already exists", 
+          field: "email",
+          suggestion: "recover_password"
+        });
+      }
+
+      const user = await storage.createUser({
+        ...req.body,
+        password: await hashPassword(req.body.password),
       });
-    }
 
-    // Check if email already exists
-    const existingUserByEmail = await storage.getUserByEmail(req.body.email);
-    if (existingUserByEmail) {
-      return res.status(400).json({ 
-        message: "The account already exists", 
-        field: "email",
-        suggestion: "recover_password"
+      req.login(user, (err) => {
+        if (err) {
+          console.error("Login error after registration:", err);
+          return next(err);
+        }
+        res.status(201).json(user);
       });
+    } catch (error) {
+      console.error("Registration error:", error);
+      res.status(500).json({ message: "Internal server error during registration" });
     }
-
-    const user = await storage.createUser({
-      ...req.body,
-      password: await hashPassword(req.body.password),
-    });
-
-    req.login(user, (err) => {
-      if (err) return next(err);
-      res.status(201).json(user);
-    });
   });
 
   app.post("/api/login", passport.authenticate("local"), (req, res) => {
