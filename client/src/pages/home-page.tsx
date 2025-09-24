@@ -13,14 +13,25 @@ import { Link } from "wouter";
 
 export default function HomePage() {
   const [search, setSearch] = useState("");
+  const [activeSearch, setActiveSearch] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const { data: products, isLoading } = useQuery<Product[]>({
-    queryKey: ["/api/products", search],
+    queryKey: ["/api/products", activeSearch],
   });
 
   const handleProductFound = (product: Product) => {
     setSelectedProduct(product);
+  };
+
+  const handleSearch = () => {
+    setActiveSearch(search);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
   };
 
   return (
@@ -51,17 +62,21 @@ export default function HomePage() {
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+                onKeyPress={handleKeyPress}
                 placeholder="Search products by name, brand, or barcode..."
                 className="flex-1"
+                data-testid="input-product-search"
               />
-              <Button variant="outline">
+              <Button variant="outline" onClick={handleSearch} data-testid="button-search">
                 <Search className="h-4 w-4" />
               </Button>
             </div>
           </div>
 
           <div className="col-span-full">
-            <h2 className="text-lg font-semibold mb-4">All Products</h2>
+            <h2 className="text-lg font-semibold mb-4">
+              {activeSearch ? `Search Results for "${activeSearch}"` : "All Products"}
+            </h2>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {isLoading ? (
                 <div className="col-span-full text-center">Loading products...</div>

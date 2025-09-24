@@ -50,15 +50,53 @@ function calculateWaterUsage(product: any): number {
   return Math.round(Math.max(1, Math.min(1000, waterUsage)));
 }
 
-function calculatePackaging(product: any): number {
-  // Simple estimation based on product name/category
+function calculateRenewableEnergy(product: any): number {
+  // Simple estimation based on organic/environmental labels
+  const productName = (product.product_name || "").toLowerCase();
+  const brands = (product.brands || "").toLowerCase();
+  
+  if (productName.includes("organic") || brands.includes("organic")) return 8;
+  if (productName.includes("bio") || brands.includes("bio")) return 7;
+  if (productName.includes("eco") || brands.includes("eco")) return 6;
+  
+  return 3; // Default renewable energy score
+}
+
+function calculateRecyclableMaterials(product: any): number {
+  // Estimate based on packaging type and product category
   const productName = (product.product_name || "").toLowerCase();
   
-  if (productName.includes("fresh") || productName.includes("organic")) return 7;
-  if (productName.includes("bottle") || productName.includes("can")) return 4;
-  if (productName.includes("package") || productName.includes("box")) return 3;
+  if (productName.includes("glass") || productName.includes("jar")) return 9;
+  if (productName.includes("bottle") || productName.includes("can")) return 7;
+  if (productName.includes("carton") || productName.includes("box")) return 6;
+  if (productName.includes("plastic")) return 4;
   
-  return 5; // Default packaging score
+  return 5; // Default recyclable materials score
+}
+
+function calculateRecycledContent(product: any): number {
+  // Simple estimation based on environmental consciousness
+  const productName = (product.product_name || "").toLowerCase();
+  const brands = (product.brands || "").toLowerCase();
+  
+  if (productName.includes("organic") || brands.includes("organic")) return 6;
+  if (productName.includes("eco") || brands.includes("sustainable")) return 7;
+  
+  return 3; // Default recycled content score
+}
+
+function calculateLandUsage(product: any): number {
+  // Estimate land usage based on product type and protein content
+  const protein = product.nutriments?.proteins_100g || 0;
+  const productName = (product.product_name || "").toLowerCase();
+  
+  // Animal products typically use more land
+  if (productName.includes("meat") || productName.includes("beef")) return 9;
+  if (productName.includes("dairy") || productName.includes("milk")) return 7;
+  if (protein > 20) return 8; // High protein products
+  if (productName.includes("organic")) return 4; // Organic typically more efficient
+  
+  return 5; // Default land usage score
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -116,9 +154,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 barcode: barcode,
                 environmentalImpact: {
                   ecoScore: calculateEcoScore(offData.product),
-                  carbonFootprint: calculateCarbonFootprint(offData.product),
+                  co2Emissions: calculateCarbonFootprint(offData.product),
+                  renewableEnergy: calculateRenewableEnergy(offData.product),
+                  recyclableMaterials: calculateRecyclableMaterials(offData.product),
+                  recycledContent: calculateRecycledContent(offData.product),
                   waterUsage: calculateWaterUsage(offData.product),
-                  packaging: calculatePackaging(offData.product)
+                  landUsage: calculateLandUsage(offData.product)
                 }
               };
               
@@ -173,9 +214,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             barcode: offProduct.code || "",
             environmentalImpact: {
               ecoScore: calculateEcoScore(offProduct),
-              carbonFootprint: calculateCarbonFootprint(offProduct),
+              co2Emissions: calculateCarbonFootprint(offProduct),
+              renewableEnergy: calculateRenewableEnergy(offProduct),
+              recyclableMaterials: calculateRecyclableMaterials(offProduct),
+              recycledContent: calculateRecycledContent(offProduct),
               waterUsage: calculateWaterUsage(offProduct),
-              packaging: calculatePackaging(offProduct)
+              landUsage: calculateLandUsage(offProduct)
             }
           }));
           
