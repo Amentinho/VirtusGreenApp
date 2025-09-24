@@ -44,7 +44,7 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       const user = await storage.getUserByUsername(username);
-      if (!user || !(await comparePasswords(password, user.password))) {
+      if (!user || !user.password || !(await comparePasswords(password, user.password))) {
         return done(null, false);
       } else {
         return done(null, user);
@@ -53,7 +53,7 @@ export function setupAuth(app: Express) {
   );
 
   passport.serializeUser((user, done) => done(null, user.id));
-  passport.deserializeUser(async (id: number, done) => {
+  passport.deserializeUser(async (id: string, done) => {
     const user = await storage.getUser(id);
     done(null, user);
   });
