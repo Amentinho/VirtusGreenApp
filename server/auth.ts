@@ -157,6 +157,52 @@ export function setupAuth(app: Express) {
     res.json(req.user);
   });
 
+  // Email verification resend endpoint
+  app.post("/api/resend-verification-email", async (req, res) => {
+    try {
+      const validatedData = passwordRecoveryRequestSchema.parse(req.body); // Reuse email validation
+      const { email } = validatedData;
+
+      // Check if user exists
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        // Don't reveal if email exists for security
+        return res.json({ message: "If the email exists, a verification email has been sent." });
+      }
+
+      // Check if user is already verified
+      if (user.emailVerified) {
+        return res.json({ message: "Email is already verified." });
+      }
+
+      // Generate new verification token
+      const token = randomBytes(32).toString('hex');
+      const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+      
+      // Save verification token to database
+      await storage.setEmailVerificationToken(user.id, token, expires);
+
+      // Send verification email
+      try {
+        const emailData = generateVerificationEmail(user.email!, user.username || 'User', token);
+        const emailSent = await sendEmail(emailData);
+        
+        if (emailSent) {
+          console.log(`Verification email resent to ${user.email}`);
+        } else {
+          console.warn(`Failed to resend verification email to ${user.email}`);
+        }
+      } catch (error) {
+        console.error("Error resending verification email:", error);
+      }
+
+      res.json({ message: "If the email exists, a verification email has been sent." });
+    } catch (error) {
+      console.error("Resend verification email error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Password recovery endpoints
   app.post("/api/forgot-password", async (req, res) => {
     try {

@@ -39,20 +39,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onError: (error: Error) => {
       let errorMessage = error.message;
+      let isEmailNotVerified = false;
+      
       try {
         const errorData = JSON.parse(error.message);
         if (errorData.emailNotVerified) {
-          errorMessage = errorData.message || "Please verify your email address before logging in.";
+          errorMessage = "User not verified, please verify your email";
+          isEmailNotVerified = true;
         }
       } catch {
         // If parsing fails, use the original error message
       }
       
-      toast({
-        title: "Login failed",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      if (isEmailNotVerified) {
+        // Custom handling for email verification error will be handled in the component
+        throw new Error(JSON.stringify({ emailNotVerified: true, message: errorMessage }));
+      } else {
+        toast({
+          title: "Login failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
     },
   });
 
