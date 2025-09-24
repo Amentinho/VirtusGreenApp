@@ -64,16 +64,29 @@ export default function AuthPage() {
       await loginMutation.mutateAsync(data);
       setShowVerificationLink(false); // Hide link on successful login
     } catch (error: any) {
+      console.log("Login error caught:", error);
+      
+      // Check if it's a 403 email verification error
       try {
         const errorData = JSON.parse(error.message);
+        console.log("Parsed error data:", errorData);
+        
         if (errorData.emailNotVerified) {
           setUserEmailForVerification(data.usernameOrEmail);
           setEmailVerificationDialogOpen(true);
           setShowVerificationLink(true); // Show link after verification error
           return;
         }
-      } catch {
-        // If parsing fails, it's a regular error, let the mutation handle it
+      } catch (parseError) {
+        console.log("Error parsing:", parseError);
+        
+        // Check if error message contains verification text directly
+        if (error.message && error.message.includes("User not verified")) {
+          setUserEmailForVerification(data.usernameOrEmail);
+          setEmailVerificationDialogOpen(true);
+          setShowVerificationLink(true); // Show link after verification error
+          return;
+        }
       }
       
       // For other errors, show regular toast

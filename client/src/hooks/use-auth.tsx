@@ -38,29 +38,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.setQueryData(["/api/auth/user"], user);
     },
     onError: (error: Error) => {
-      let errorMessage = error.message;
-      let isEmailNotVerified = false;
-      
-      try {
-        const errorData = JSON.parse(error.message);
-        if (errorData.emailNotVerified) {
-          errorMessage = "User not verified, please verify your email";
-          isEmailNotVerified = true;
-        }
-      } catch {
-        // If parsing fails, use the original error message
-      }
-      
-      if (isEmailNotVerified) {
-        // Custom handling for email verification error will be handled in the component
-        throw new Error(JSON.stringify({ emailNotVerified: true, message: errorMessage }));
-      } else {
-        toast({
-          title: "Login failed",
-          description: errorMessage,
-          variant: "destructive",
-        });
-      }
+      // Don't handle errors here - let the component handle them
+      throw error;
     },
   });
 
