@@ -32,6 +32,11 @@ export const users = pgTable("users", {
   resetToken: text("reset_token"),
   resetTokenExpiry: timestamp("reset_token_expiry"),
   
+  // Email verification fields
+  emailVerified: boolean("email_verified").notNull().default(false),
+  emailVerificationToken: varchar("email_verification_token"),
+  emailVerificationExpires: timestamp("email_verification_expires"),
+  
   // Replit Auth fields - referenced from blueprint integration
   firstName: text("first_name"),
   lastName: text("last_name"),

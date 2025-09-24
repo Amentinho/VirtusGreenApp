@@ -6,7 +6,7 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser, passwordRecoveryRequestSchema, passwordResetSchema, insertUserSchema } from "@shared/schema";
-import { sendEmail, generatePasswordResetEmail } from "./emailService";
+import { sendEmail, generatePasswordResetEmail, generateEmailVerificationToken, generateVerificationEmail } from "./emailService";
 
 declare global {
   namespace Express {
@@ -50,6 +50,8 @@ export function setupAuth(app: Express) {
       const user = await storage.getUserByUsernameOrEmail(usernameOrEmail);
       if (!user || !user.password || !(await comparePasswords(password, user.password))) {
         return done(null, false);
+      } else if (!user.emailVerified) {
+        return done(null, false, { message: "Please verify your email before logging in" });
       } else {
         return done(null, user);
       }
@@ -103,12 +105,28 @@ export function setupAuth(app: Express) {
         password: await hashPassword(userData.password),
       });
 
-      req.login(user, (err) => {
-        if (err) {
-          console.error("Login error after registration:", err);
-          return next(err);
+      // Generate email verification token
+      const { token, expires } = generateEmailVerificationToken();
+      await storage.setEmailVerificationToken(user.id, token, expires);
+
+      // Send verification email
+      try {
+        const emailData = generateVerificationEmail(user.email!, user.username || 'User', token);
+        const emailSent = await sendEmail(emailData);
+        
+        if (emailSent) {
+          console.log(`Verification email sent to ${user.email}`);
+        } else {
+          console.warn(`Failed to send verification email to ${user.email}`);
         }
-        res.status(201).json(user);
+      } catch (error) {
+        console.error("Error sending verification email:", error);
+        // Don't fail registration if email fails
+      }
+
+      res.status(201).json({ 
+        message: "Registration successful! Please check your email to verify your account.",
+        emailSent: true 
       });
     } catch (error) {
       console.error("Registration error:", error);

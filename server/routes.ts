@@ -6,6 +6,7 @@ import { setupGoogleAuth } from "./googleAuth";
 import { storage } from "./storage";
 import { insertProductSchema, insertRewardSchema, updatePasswordSchema } from "@shared/schema";
 import { comparePasswords, hashPassword } from "./auth";
+import { sendEmail, generatePasswordResetEmail, generateEmailVerificationToken, generateVerificationEmail } from "./emailService";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication systems - referenced from blueprint integration
@@ -128,6 +129,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching referral stats:", error);
       res.status(500).json({ message: "Failed to fetch referral stats" });
+    }
+  });
+
+  // Email verification endpoint
+  app.get("/verify-email", async (req, res) => {
+    try {
+      const { token } = req.query;
+      
+      if (!token || typeof token !== 'string') {
+        return res.status(400).send(`
+          <html>
+            <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+              <h1 style="color: #dc2626;">❌ Invalid Verification Link</h1>
+              <p>The verification token is missing or invalid.</p>
+              <a href="/" style="color: #16a34a;">Go to Homepage</a>
+            </body>
+          </html>
+        `);
+      }
+
+      const user = await storage.getUserByEmailVerificationToken(token);
+      
+      if (!user) {
+        return res.status(400).send(`
+          <html>
+            <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+              <h1 style="color: #dc2626;">❌ Invalid or Expired Link</h1>
+              <p>This verification link is either invalid or has expired.</p>
+              <p>Please register again or contact support.</p>
+              <a href="/auth" style="color: #16a34a;">Go to Registration</a>
+            </body>
+          </html>
+        `);
+      }
+
+      // Mark email as verified
+      await storage.markEmailAsVerified(user.id);
+      
+      res.send(`
+        <html>
+          <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+            <h1 style="color: #16a34a;">✅ Email Verified Successfully!</h1>
+            <p>Your email has been verified. You can now log in to your VirtusGreen account.</p>
+            <a href="/auth" style="background-color: #16a34a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 20px;">
+              Login Now
+            </a>
+          </body>
+        </html>
+      `);
+    } catch (error) {
+      console.error("Error verifying email:", error);
+      res.status(500).send(`
+        <html>
+          <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+            <h1 style="color: #dc2626;">❌ Verification Error</h1>
+            <p>An error occurred while verifying your email. Please try again later.</p>
+            <a href="/" style="color: #16a34a;">Go to Homepage</a>
+          </body>
+        </html>
+      `);
     }
   });
 

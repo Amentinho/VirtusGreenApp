@@ -31,6 +31,11 @@ export interface IStorage {
   getUserByResetToken(token: string): Promise<User | undefined>;
   clearPasswordResetToken(userId: string): Promise<void>;
   
+  // Email verification operations
+  setEmailVerificationToken(userId: string, token: string, expiry: Date): Promise<void>;
+  getUserByEmailVerificationToken(token: string): Promise<User | undefined>;
+  markEmailAsVerified(userId: string): Promise<void>;
+  
   // User operations for Replit Auth - referenced from blueprint integration
   upsertUser(user: UpsertUser): Promise<User>;
   
@@ -184,6 +189,42 @@ export class DatabaseStorage implements IStorage {
       .set({ 
         resetToken: null, 
         resetTokenExpiry: null,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId));
+  }
+
+  async setEmailVerificationToken(userId: string, token: string, expiry: Date): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        emailVerificationToken: token,
+        emailVerificationExpires: expiry,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId));
+  }
+
+  async getUserByEmailVerificationToken(token: string): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(
+        and(
+          eq(users.emailVerificationToken, token),
+          sql`${users.emailVerificationExpires} > NOW()`
+        )
+      );
+    return user;
+  }
+
+  async markEmailAsVerified(userId: string): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
         updatedAt: new Date()
       })
       .where(eq(users.id, userId));
@@ -437,6 +478,9 @@ export class MemStorage implements IStorage {
       firstName: null,
       lastName: null,
       profileImageUrl: null,
+      emailVerified: false,
+      emailVerificationToken: null,
+      emailVerificationExpires: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -473,6 +517,9 @@ export class MemStorage implements IStorage {
         usedReferralCode: null,
         resetToken: null,
         resetTokenExpiry: null,
+        emailVerified: true, // SSO users are considered verified
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -547,6 +594,35 @@ export class MemStorage implements IStorage {
     
     user.resetToken = null;
     user.resetTokenExpiry = null;
+    user.updatedAt = new Date();
+    this.users.set(userId, user);
+  }
+
+  async setEmailVerificationToken(userId: string, token: string, expiry: Date): Promise<void> {
+    const user = await this.getUser(userId);
+    if (!user) return;
+    
+    user.emailVerificationToken = token;
+    user.emailVerificationExpires = expiry;
+    user.updatedAt = new Date();
+    this.users.set(userId, user);
+  }
+
+  async getUserByEmailVerificationToken(token: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      u => u.emailVerificationToken === token && 
+           u.emailVerificationExpires && 
+           u.emailVerificationExpires > new Date()
+    );
+  }
+
+  async markEmailAsVerified(userId: string): Promise<void> {
+    const user = await this.getUser(userId);
+    if (!user) return;
+    
+    user.emailVerified = true;
+    user.emailVerificationToken = null;
+    user.emailVerificationExpires = null;
     user.updatedAt = new Date();
     this.users.set(userId, user);
   }
