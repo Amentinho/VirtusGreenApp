@@ -50,7 +50,7 @@ export function generatePasswordResetEmail(resetToken: string, userEmail: string
   
   return {
     to: userEmail,
-    from: 'VirtusGreen Support <noreply@virtusgreen.com>', // Use verified SendGrid sender with display name
+    from: 'noreply@replit.app', // Use Replit's verified sender for testing
     subject: 'Reset your VirtusGreen password',
     text: `
 Password Reset Request
@@ -135,7 +135,7 @@ export function generateVerificationEmail(email: string, username: string, verif
   
   return {
     to: email,
-    from: 'VirtusGreen Support <noreply@virtusgreen.com>', // Use verified SendGrid sender with display name
+    from: 'noreply@replit.app', // Use Replit's verified sender for testing
     subject: 'Please verify your VirtusGreen email address',
     text: `
 Welcome to VirtusGreen!
