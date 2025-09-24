@@ -5,7 +5,7 @@ import { customAlphabet } from "nanoid";
 import connectPg from "connect-pg-simple";
 import { db } from "./db";
 import { users, products, coupons } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 const MemoryStore = createMemoryStore(session);
 const REFERRAL_BONUS = 50; // Tokens awarded for successful referral
@@ -25,6 +25,11 @@ export interface IStorage {
   getUserByReferralCode(code: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserPassword(userId: string, newPassword: string): Promise<void>;
+  
+  // Password recovery operations
+  setPasswordResetToken(email: string, token: string, expiry: Date): Promise<boolean>;
+  getUserByResetToken(token: string): Promise<User | undefined>;
+  clearPasswordResetToken(userId: string): Promise<void>;
   
   // User operations for Replit Auth - referenced from blueprint integration
   upsertUser(user: UpsertUser): Promise<User>;
@@ -141,6 +146,42 @@ export class DatabaseStorage implements IStorage {
     await db
       .update(users)
       .set({ password: newPassword, updatedAt: new Date() })
+      .where(eq(users.id, userId));
+  }
+
+  async setPasswordResetToken(email: string, token: string, expiry: Date): Promise<boolean> {
+    try {
+      const result = await db
+        .update(users)
+        .set({ 
+          resetToken: token, 
+          resetTokenExpiry: expiry,
+          updatedAt: new Date()
+        })
+        .where(eq(users.email, email));
+      return true;
+    } catch (error) {
+      console.error('Error setting password reset token:', error);
+      return false;
+    }
+  }
+
+  async getUserByResetToken(token: string): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(sql`${users.resetToken} = ${token} AND ${users.resetTokenExpiry} > ${new Date()}`);
+    return user;
+  }
+
+  async clearPasswordResetToken(userId: string): Promise<void> {
+    await db
+      .update(users)
+      .set({ 
+        resetToken: null, 
+        resetTokenExpiry: null,
+        updatedAt: new Date()
+      })
       .where(eq(users.id, userId));
   }
 
@@ -316,6 +357,8 @@ export class MemStorage implements IStorage {
       tokens,
       referralCode: generateReferralCode(),
       usedReferralCode: insertUser.usedReferralCode || null,
+      resetToken: null,
+      resetTokenExpiry: null,
       firstName: null,
       lastName: null,
       profileImageUrl: null,
@@ -353,6 +396,8 @@ export class MemStorage implements IStorage {
         tokens: 0,
         referralCode: generateReferralCode(),
         usedReferralCode: null,
+        resetToken: null,
+        resetTokenExpiry: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -406,6 +451,33 @@ export class MemStorage implements IStorage {
     if (!user) return;
 
     user.password = newPassword;
+    this.users.set(userId, user);
+  }
+
+  async setPasswordResetToken(email: string, token: string, expiry: Date): Promise<boolean> {
+    const user = Array.from(this.users.values()).find(u => u.email === email);
+    if (!user) return false;
+    
+    user.resetToken = token;
+    user.resetTokenExpiry = expiry;
+    user.updatedAt = new Date();
+    this.users.set(user.id, user);
+    return true;
+  }
+
+  async getUserByResetToken(token: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      u => u.resetToken === token && u.resetTokenExpiry && u.resetTokenExpiry > new Date()
+    );
+  }
+
+  async clearPasswordResetToken(userId: string): Promise<void> {
+    const user = await this.getUser(userId);
+    if (!user) return;
+    
+    user.resetToken = null;
+    user.resetTokenExpiry = null;
+    user.updatedAt = new Date();
     this.users.set(userId, user);
   }
 }

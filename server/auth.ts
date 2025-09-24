@@ -5,7 +5,8 @@ import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
-import { User as SelectUser } from "@shared/schema";
+import { User as SelectUser, passwordRecoveryRequestSchema, passwordResetSchema } from "@shared/schema";
+import { sendEmail, generatePasswordResetEmail } from "./emailService";
 
 declare global {
   namespace Express {
@@ -117,5 +118,71 @@ export function setupAuth(app: Express) {
   app.get("/api/user", (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     res.json(req.user);
+  });
+
+  // Password recovery endpoints
+  app.post("/api/forgot-password", async (req, res) => {
+    try {
+      const validatedData = passwordRecoveryRequestSchema.parse(req.body);
+      const { email } = validatedData;
+
+      // Check if user exists
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        // Don't reveal if email exists for security
+        return res.json({ message: "If the email exists, a recovery link has been sent." });
+      }
+
+      // Generate reset token
+      const resetToken = randomBytes(32).toString("hex");
+      const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour from now
+
+      // Save reset token to database
+      const tokenSet = await storage.setPasswordResetToken(email, resetToken, resetTokenExpiry);
+      if (!tokenSet) {
+        return res.status(500).json({ message: "Failed to generate reset token." });
+      }
+
+      // Send recovery email
+      const emailData = generatePasswordResetEmail(resetToken, email);
+      const emailSent = await sendEmail(emailData);
+
+      if (emailSent) {
+        console.log(`Password recovery email sent to ${email}`);
+      } else {
+        console.warn(`Failed to send password recovery email to ${email}`);
+      }
+
+      res.json({ message: "If the email exists, a recovery link has been sent." });
+    } catch (error) {
+      console.error("Password recovery request error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/reset-password", async (req, res) => {
+    try {
+      const validatedData = passwordResetSchema.parse(req.body);
+      const { token, newPassword } = validatedData;
+
+      // Find user by reset token
+      const user = await storage.getUserByResetToken(token);
+      if (!user) {
+        return res.status(400).json({ message: "Invalid or expired reset token." });
+      }
+
+      // Hash new password and update user
+      const hashedPassword = await hashPassword(newPassword);
+      await storage.updateUserPassword(user.id, hashedPassword);
+      
+      // Clear reset token
+      await storage.clearPasswordResetToken(user.id);
+
+      console.log(`Password reset successful for user ${user.email}`);
+      res.json({ message: "Password has been reset successfully." });
+    } catch (error) {
+      console.error("Password reset error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
   });
 }
