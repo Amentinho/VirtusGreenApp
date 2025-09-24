@@ -2,11 +2,12 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, User } from "lucide-react";
+import { Search } from "lucide-react";
 import ProductCard from "@/components/product-card";
 import TokenDisplay from "@/components/token-display";
 import BarcodeScanner from "@/components/barcode-scanner";
 import ProductDialog from "@/components/product-dialog";
+import ProfileDropdown from "@/components/profile-dropdown";
 import { Product } from "@shared/schema";
 import { Link } from "wouter";
 
@@ -35,11 +36,7 @@ export default function HomePage() {
               <Link href="/marketplace">
                 <Button variant="outline">Marketplace</Button>
               </Link>
-              <Link href="/profile">
-                <Button variant="ghost" size="icon">
-                  <User className="h-4 w-4" />
-                </Button>
-              </Link>
+              <ProfileDropdown />
             </div>
           </div>
         </div>
