@@ -59,14 +59,21 @@ export default function RewardsPage() {
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Available Tokens Display */}
+        {/* Available Tokens and My Rewards Display */}
         <div className="mb-8 text-center">
-          <div className="inline-flex items-center gap-2 bg-white rounded-lg px-6 py-4 shadow-sm border">
-            <Coins className="h-5 w-5 text-yellow-500" />
-            <span className="text-lg font-semibold text-gray-700">Your available tokens:</span>
-            <span className="text-2xl font-bold text-green-600" data-testid="text-available-tokens">
-              {user?.tokens || 0}
-            </span>
+          <div className="flex justify-center gap-4">
+            <div className="inline-flex items-center gap-2 bg-white rounded-lg px-6 py-4 shadow-sm border">
+              <Coins className="h-5 w-5 text-yellow-500" />
+              <span className="text-lg font-semibold text-gray-700">Your available tokens:</span>
+              <span className="text-2xl font-bold text-green-600" data-testid="text-available-tokens">
+                {user?.tokens || 0}
+              </span>
+            </div>
+            <Link href="/my-rewards">
+              <div className="inline-flex items-center gap-2 bg-white rounded-lg px-6 py-4 shadow-sm border hover:bg-gray-50 transition-colors cursor-pointer">
+                <span className="text-lg font-semibold text-gray-700">My Rewards</span>
+              </div>
+            </Link>
           </div>
         </div>
 
