@@ -17,7 +17,13 @@ export default function HomePage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const { data: products, isLoading } = useQuery<Product[]>({
-    queryKey: ["/api/products", activeSearch],
+    queryKey: activeSearch ? ["/api/products", "search", activeSearch] : ["/api/products"],
+    queryFn: () => {
+      const url = activeSearch 
+        ? `/api/products?search=${encodeURIComponent(activeSearch)}`
+        : "/api/products";
+      return fetch(url, { credentials: "include" }).then(res => res.json());
+    }
   });
 
   const handleProductFound = (product: Product) => {
