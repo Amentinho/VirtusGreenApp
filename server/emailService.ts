@@ -45,25 +45,26 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
 }
 
 export function generatePasswordResetEmail(resetToken: string, userEmail: string) {
-  const resetUrl = `${process.env.NODE_ENV === 'production' ? 'https://your-domain.com' : 'http://localhost:5000'}/reset-password?token=${resetToken}`;
+  const baseUrl = getBaseUrl();
+  const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
   
   return {
     to: userEmail,
-    from: 'noreply@virtusgreen.com', // Replace with your verified SendGrid sender
-    subject: 'VirtusGreen - Password Recovery',
+    from: 'VirtusGreen <noreply@replit.app>', // Using replit.app domain to avoid spam
+    subject: 'Reset your VirtusGreen password',
     text: `
-Reset Your Password
+Password Reset Request
 
-Someone requested to reset the password for your VirtusGreen account.
+We received a request to reset your VirtusGreen account password.
 
-If this was you, click the link below to reset your password:
+If you requested this, click the link below to create a new password:
 ${resetUrl}
 
-If you didn't request this, you can safely ignore this email.
+If you didn't request this reset, please ignore this email - your account remains secure.
 
-This reset link will expire in 1 hour.
+This link expires in 1 hour for security.
 
-Thanks,
+Best regards,
 The VirtusGreen Team
     `,
     html: `
@@ -134,23 +135,23 @@ export function generateVerificationEmail(email: string, username: string, verif
   
   return {
     to: email,
-    from: 'noreply@virtusgreen.com',
-    subject: 'Verify your VirtusGreen account',
+    from: 'VirtusGreen <noreply@replit.app>', // Using replit.app domain to avoid spam
+    subject: 'Please verify your VirtusGreen email address',
     text: `
 Welcome to VirtusGreen!
 
 Hi ${username},
 
-Thank you for registering with VirtusGreen. To complete your registration and start making eco-friendly choices, please verify your email address.
+Thank you for creating your VirtusGreen account. Please verify your email address to complete your registration and start discovering eco-friendly products.
 
-Click the link below to verify your email:
+Verify your email by clicking this link:
 ${verificationUrl}
 
-This link will expire in 24 hours.
+This verification link expires in 24 hours for security.
 
-If you didn't create an account with VirtusGreen, you can safely ignore this email.
+If you didn't sign up for VirtusGreen, please ignore this email.
 
-Thanks,
+Best regards,
 The VirtusGreen Team
     `,
     html: `

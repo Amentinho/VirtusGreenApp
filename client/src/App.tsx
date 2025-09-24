@@ -10,12 +10,14 @@ import RewardsPage from "@/pages/marketplace";
 import ProfilePage from "@/pages/profile-page";
 import ReferralPage from "@/pages/referral-page";
 import MyRewardsPage from "@/pages/my-rewards-page";
+import ResetPasswordPage from "@/pages/reset-password-page";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
   return (
     <Switch>
       <Route path="/auth" component={AuthPage} />
+      <Route path="/reset-password" component={ResetPasswordPage} />
       <ProtectedRoute path="/" component={HomePage} />
       <ProtectedRoute path="/rewards" component={RewardsPage} />
       <ProtectedRoute path="/profile" component={ProfilePage} />
