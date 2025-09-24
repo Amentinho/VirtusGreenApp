@@ -12,13 +12,18 @@ import { Redirect } from "wouter";
 import { Leaf, Eye, EyeOff } from "lucide-react";
 import { FaGoogle, FaApple } from "react-icons/fa";
 import { useState } from "react";
-
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegPassword, setShowRegPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
+  const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
+  const { toast } = useToast();
 
   const loginForm = useForm<LoginCredentials>({
     resolver: zodResolver(loginSchema),
@@ -168,7 +173,6 @@ export default function AuthPage() {
                     <Input
                       id="reg-username"
                       {...registerForm.register("username")}
-                      data-testid="input-register-username"
                       required
                     />
                     {registerForm.formState.errors.username && (
@@ -183,7 +187,6 @@ export default function AuthPage() {
                       id="email"
                       type="email"
                       {...registerForm.register("email")}
-                      data-testid="input-register-email"
                       required
                     />
                     {registerForm.formState.errors.email && (
@@ -250,14 +253,12 @@ export default function AuthPage() {
                       id="referral-code"
                       {...registerForm.register("usedReferralCode")}
                       placeholder="Enter referral code"
-                      data-testid="input-referral-code"
                     />
                   </div>
                   <Button
                     type="submit"
                     className="w-full"
                     disabled={registerMutation.isPending}
-                    data-testid="button-register"
                   >
                     {registerMutation.isPending ? "Registering..." : "Register"}
                   </Button>
@@ -298,12 +299,6 @@ export default function AuthPage() {
           </div>
         </div>
       </div>
-
-      {/* Password Recovery Modal */}
-      <PasswordRecoveryModal 
-        open={forgotPasswordOpen} 
-        onOpenChange={setForgotPasswordOpen}
-      />
     </div>
   );
 }
