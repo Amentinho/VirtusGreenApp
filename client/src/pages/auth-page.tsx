@@ -8,17 +8,24 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertUserSchema, loginSchema, InsertUser, LoginCredentials } from "@shared/schema";
 import { PasswordRecoveryModal } from "@/components/PasswordRecoveryModal";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Redirect } from "wouter";
 import { Leaf, Eye, EyeOff } from "lucide-react";
 import { FaGoogle } from "react-icons/fa";
 import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
+  const { toast } = useToast();
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegPassword, setShowRegPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
+  const [emailVerificationDialogOpen, setEmailVerificationDialogOpen] = useState(false);
+  const [userEmailForVerification, setUserEmailForVerification] = useState("");
 
   const loginForm = useForm<LoginCredentials>({
     resolver: zodResolver(loginSchema),
@@ -27,6 +34,53 @@ export default function AuthPage() {
   const registerForm = useForm<InsertUser>({
     resolver: zodResolver(insertUserSchema),
   });
+
+  // Mutation for resending verification email
+  const resendVerificationMutation = useMutation({
+    mutationFn: async (email: string) => {
+      const res = await apiRequest("POST", "/api/resend-verification-email", { email });
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Verification Email Sent",
+        description: data.message || "Please check your email for the verification link.",
+      });
+      setEmailVerificationDialogOpen(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send verification email.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handle login form submission with email verification error handling
+  const handleLogin = async (data: LoginCredentials) => {
+    try {
+      await loginMutation.mutateAsync(data);
+    } catch (error: any) {
+      try {
+        const errorData = JSON.parse(error.message);
+        if (errorData.emailNotVerified) {
+          setUserEmailForVerification(data.usernameOrEmail);
+          setEmailVerificationDialogOpen(true);
+          return;
+        }
+      } catch {
+        // If parsing fails, it's a regular error, let the mutation handle it
+      }
+      
+      // For other errors, show regular toast
+      toast({
+        title: "Login failed",
+        description: error.message || "An error occurred during login.",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (user) {
     return <Redirect to="/" />;
@@ -51,9 +105,7 @@ export default function AuthPage() {
 
               <TabsContent value="login">
                 <form
-                  onSubmit={loginForm.handleSubmit((data) =>
-                    loginMutation.mutate(data)
-                  )}
+                  onSubmit={loginForm.handleSubmit(handleLogin)}
                   className="space-y-4"
                 >
                   <div className="space-y-2">
@@ -320,6 +372,42 @@ export default function AuthPage() {
         open={forgotPasswordOpen} 
         onOpenChange={setForgotPasswordOpen}
       />
+
+      {/* Email Verification Dialog */}
+      <Dialog open={emailVerificationDialogOpen} onOpenChange={setEmailVerificationDialogOpen}>
+        <DialogContent data-testid="dialog-email-verification">
+          <DialogHeader>
+            <DialogTitle>Email Verification Required</DialogTitle>
+            <DialogDescription>
+              User not verified, please verify your email
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-gray-600">
+              We sent a verification email to your address. Please check your email and click the verification link to activate your account.
+            </p>
+            <p className="text-sm text-gray-600 mt-2">
+              If you haven't received the email, you can request a new one.
+            </p>
+          </div>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setEmailVerificationDialogOpen(false)}
+              data-testid="button-dialog-close"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => resendVerificationMutation.mutate(userEmailForVerification)}
+              disabled={resendVerificationMutation.isPending}
+              data-testid="button-resend-verification"
+            >
+              {resendVerificationMutation.isPending ? "Sending..." : "Resend verification email"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
