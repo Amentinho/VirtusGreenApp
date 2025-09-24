@@ -64,18 +64,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/rewards/:id/purchase", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
-    const reward = await storage.getReward(parseInt(req.params.id));
-    if (!reward) return res.status(404).send("Reward not found");
-    if (!reward.available) return res.status(400).send("Reward not available");
+    try {
+      const reward = await storage.getReward(parseInt(req.params.id));
+      if (!reward) return res.status(404).send("Reward not found");
+      if (!reward.available) return res.status(400).send("Reward not available");
 
-    const user = req.user!;
-    if (user.tokens < reward.tokenCost) {
-      return res.status(400).send("Insufficient tokens");
+      const user = req.user!;
+      if (user.tokens < reward.tokenCost) {
+        return res.status(400).send("Insufficient tokens");
+      }
+
+      await storage.purchaseReward(user.id, reward.id);
+      const updatedUser = await storage.getUser(user.id);
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error purchasing reward:", error);
+      
+      if (error instanceof Error) {
+        if (error.message === "You have already redeemed this reward") {
+          return res.status(400).json({ message: "You have already redeemed this reward" });
+        }
+        if (error.message === "Cannot purchase reward") {
+          return res.status(400).json({ message: "Cannot purchase this reward at this time" });
+        }
+      }
+      
+      res.status(500).json({ message: "Failed to purchase reward" });
     }
-
-    await storage.purchaseReward(user.id, reward.id);
-    const updatedUser = await storage.getUser(user.id);
-    res.json(updatedUser);
   });
 
   app.get("/api/user/purchases", async (req: any, res) => {
