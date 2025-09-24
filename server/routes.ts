@@ -1,12 +1,37 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
+import { setupReplitAuth } from "./replitAuth";
 import { storage } from "./storage";
 import { insertProductSchema, insertCouponSchema, updatePasswordSchema } from "@shared/schema";
 import { comparePasswords, hashPassword } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Set up both authentication systems - referenced from blueprint integration
   setupAuth(app);
+  await setupReplitAuth(app);
+  
+  // Add unified user endpoint that works with both auth systems
+  app.get("/api/auth/user", async (req: any, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      // For Replit Auth users, get user from claims
+      if (req.user.claims?.sub) {
+        const userId = req.user.claims.sub;
+        const user = await storage.getUser(userId);
+        return res.json(user);
+      }
+      
+      // For local auth users, use existing user object
+      return res.json(req.user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
 
   app.get("/api/products", async (req, res) => {
     const search = req.query.search as string;
@@ -61,7 +86,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const user = req.user!;
     const { currentPassword, newPassword } = result.data;
 
-    if (!(await comparePasswords(currentPassword, user.password))) {
+    // Check if user has a password (local auth) vs SSO auth
+    if (!user.password) {
+      return res.status(400).send("Password update not available for SSO users");
+    }
+
+    if (!(await comparePasswords(currentPassword, user.password!))) {
       return res.status(400).send("Current password is incorrect");
     }
 
