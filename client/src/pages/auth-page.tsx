@@ -8,11 +8,15 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertUserSchema, loginSchema, InsertUser, LoginCredentials } from "@shared/schema";
 import { Redirect } from "wouter";
-import { Leaf } from "lucide-react";
+import { Leaf, Eye, EyeOff } from "lucide-react";
 import { FaGoogle, FaApple } from "react-icons/fa";
+import { useState } from "react";
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showRegPassword, setShowRegPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const loginForm = useForm<LoginCredentials>({
     resolver: zodResolver(loginSchema),
@@ -67,13 +71,24 @@ export default function AuthPage() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="password">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      {...loginForm.register("password")}
-                      data-testid="input-password"
-                      required
-                    />
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showLoginPassword ? "text" : "password"}
+                        {...loginForm.register("password")}
+                        data-testid="input-password"
+                        required
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        onClick={() => setShowLoginPassword(!showLoginPassword)}
+                        data-testid="button-toggle-password-visibility"
+                      >
+                        {showLoginPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
                     {loginForm.formState.errors.password && (
                       <p className="text-sm text-red-600">
                         {loginForm.formState.errors.password.message}
@@ -175,12 +190,24 @@ export default function AuthPage() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="reg-password">Password</Label>
-                    <Input
-                      id="reg-password"
-                      type="password"
-                      {...registerForm.register("password")}
-                      required
-                    />
+                    <div className="relative">
+                      <Input
+                        id="reg-password"
+                        type={showRegPassword ? "text" : "password"}
+                        {...registerForm.register("password")}
+                        data-testid="input-register-password"
+                        required
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        onClick={() => setShowRegPassword(!showRegPassword)}
+                        data-testid="button-toggle-register-password-visibility"
+                      >
+                        {showRegPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
                     {registerForm.formState.errors.password && (
                       <p className="text-sm text-red-600">
                         {registerForm.formState.errors.password.message}
@@ -189,12 +216,24 @@ export default function AuthPage() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="confirm-password">Confirm Password</Label>
-                    <Input
-                      id="confirm-password"
-                      type="password"
-                      {...registerForm.register("confirmPassword")}
-                      required
-                    />
+                    <div className="relative">
+                      <Input
+                        id="confirm-password"
+                        type={showConfirmPassword ? "text" : "password"}
+                        {...registerForm.register("confirmPassword")}
+                        data-testid="input-confirm-password"
+                        required
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        data-testid="button-toggle-confirm-password-visibility"
+                      >
+                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
                     {registerForm.formState.errors.confirmPassword && (
                       <p className="text-sm text-red-600">
                         {registerForm.formState.errors.confirmPassword.message}
