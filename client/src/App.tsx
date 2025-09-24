@@ -8,6 +8,7 @@ import AuthPage from "@/pages/auth-page";
 import HomePage from "@/pages/home-page";
 import MarketplacePage from "@/pages/marketplace";
 import ProfilePage from "@/pages/profile-page";
+import ReferralPage from "@/pages/referral-page";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -17,6 +18,7 @@ function Router() {
       <ProtectedRoute path="/" component={HomePage} />
       <ProtectedRoute path="/marketplace" component={MarketplacePage} />
       <ProtectedRoute path="/profile" component={ProfilePage} />
+      <ProtectedRoute path="/referral" component={ReferralPage} />
       <Route component={NotFound} />
     </Switch>
   );

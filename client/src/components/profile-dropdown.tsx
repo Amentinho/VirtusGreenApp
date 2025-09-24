@@ -1,7 +1,5 @@
-import { useState } from "react";
 import { Link } from "wouter";
-import { useQuery } from "@tanstack/react-query";
-import { User, LogOut, Copy, Users } from "lucide-react";
+import { User, LogOut, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -11,35 +9,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-
-interface ReferralStats {
-  referralCount: number;
-  tokensEarned: number;
-}
 
 export default function ProfileDropdown() {
   const { user, logoutMutation } = useAuth();
-  const { toast } = useToast();
-  const [copied, setCopied] = useState(false);
-
-  const { data: referralStats } = useQuery<ReferralStats>({
-    queryKey: ["/api/user/referral-stats"],
-    enabled: !!user,
-  });
-
-  const copyReferralCode = () => {
-    if (user?.referralCode) {
-      navigator.clipboard.writeText(user.referralCode);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-      toast({
-        title: "Copied!",
-        description: "Referral code copied to clipboard",
-      });
-    }
-  };
 
   const handleLogout = () => {
     logoutMutation.mutate();
@@ -79,35 +52,11 @@ export default function ProfileDropdown() {
           </Link>
         </DropdownMenuItem>
 
-        <DropdownMenuItem 
-          onClick={copyReferralCode}
-          className="cursor-pointer"
-          data-testid="button-my-referral-code"
-        >
-          <div className="flex flex-col w-full">
-            <div className="flex items-center">
-              <Copy className="mr-2 h-4 w-4" />
-              <span>My Referral Code</span>
-            </div>
-            {user?.referralCode && (
-              <div className="mt-2 ml-6 space-y-1">
-                <div className="text-sm font-mono bg-muted px-2 py-1 rounded">
-                  {user.referralCode}
-                </div>
-                <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <Users className="h-3 w-3" />
-                    <span data-testid="text-referral-count">
-                      {referralStats?.referralCount || 0} referrals
-                    </span>
-                  </div>
-                  <div data-testid="text-tokens-earned">
-                    {referralStats?.tokensEarned || 0} tokens earned
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+        <DropdownMenuItem asChild>
+          <Link href="/referral" className="w-full">
+            <Copy className="mr-2 h-4 w-4" />
+            <span data-testid="text-my-referral-code">My Referral Code</span>
+          </Link>
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />
