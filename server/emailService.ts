@@ -53,7 +53,7 @@ export function generatePasswordResetEmail(resetToken: string, userEmail: string
   
   return {
     to: userEmail,
-    from: process.env.SENDGRID_FROM || 'test@example.com', // Use environment variable for verified sender
+    from: 'testing@sendgrid.net', // Use SendGrid's default testing sender
     subject: 'Reset your VirtusGreen password',
     text: `
 Password Reset Request
@@ -138,7 +138,7 @@ export function generateVerificationEmail(email: string, username: string, verif
   
   return {
     to: email,
-    from: process.env.SENDGRID_FROM || 'test@example.com', // Use environment variable for verified sender
+    from: 'testing@sendgrid.net', // Use SendGrid's default testing sender
     subject: 'Please verify your VirtusGreen email address',
     text: `
 Welcome to VirtusGreen!
