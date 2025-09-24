@@ -14,7 +14,7 @@ type AuthContextType = {
   error: Error | null;
   loginMutation: UseMutationResult<SelectUser, Error, LoginCredentials>;
   logoutMutation: UseMutationResult<void, Error, void>;
-  registerMutation: UseMutationResult<SelectUser, Error, InsertUser>;
+  registerMutation: UseMutationResult<{ message: string; emailSent: boolean }, Error, InsertUser>;
 };
 
 export const AuthContext = createContext<AuthContextType | null>(null);
@@ -38,9 +38,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.setQueryData(["/api/auth/user"], user);
     },
     onError: (error: Error) => {
+      let errorMessage = error.message;
+      try {
+        const errorData = JSON.parse(error.message);
+        if (errorData.emailNotVerified) {
+          errorMessage = errorData.message || "Please verify your email address before logging in.";
+        }
+      } catch {
+        // If parsing fails, use the original error message
+      }
+      
       toast({
         title: "Login failed",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -51,8 +61,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiRequest("POST", "/api/register", credentials);
       return await res.json();
     },
-    onSuccess: (user: SelectUser) => {
-      queryClient.setQueryData(["/api/auth/user"], user);
+    onSuccess: (data: { message: string; emailSent: boolean }) => {
+      // Registration no longer automatically logs in user
+      toast({
+        title: "Registration Successful!",
+        description: data.message || "Please check your email to verify your account.",
+      });
     },
     onError: (error: Error) => {
       let errorMessage = error.message;

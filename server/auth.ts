@@ -134,7 +134,14 @@ export function setupAuth(app: Express) {
     }
   });
 
-  app.post("/api/login", passport.authenticate("local"), (req, res) => {
+  app.post("/api/login", passport.authenticate("local"), (req: any, res) => {
+    // Check if email is verified for local users (SSO users are automatically verified)
+    if (req.user && !req.user.emailVerified && req.user.password) {
+      return res.status(403).json({ 
+        message: "Please verify your email address before logging in. Check your email for the verification link.",
+        emailNotVerified: true 
+      });
+    }
     res.status(200).json(req.user);
   });
 
