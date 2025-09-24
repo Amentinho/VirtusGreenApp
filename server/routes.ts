@@ -2,14 +2,16 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { setupReplitAuth } from "./replitAuth";
+import { setupGoogleAuth } from "./googleAuth";
 import { storage } from "./storage";
 import { insertProductSchema, insertCouponSchema, updatePasswordSchema } from "@shared/schema";
 import { comparePasswords, hashPassword } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Set up both authentication systems - referenced from blueprint integration
+  // Set up authentication systems - referenced from blueprint integration
   setupAuth(app);
   await setupReplitAuth(app);
+  await setupGoogleAuth(app);
   
   // Add unified user endpoint that works with both auth systems
   app.get("/api/auth/user", async (req: any, res) => {
