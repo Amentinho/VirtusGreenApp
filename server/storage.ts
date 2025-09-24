@@ -1,10 +1,10 @@
 import createMemoryStore from "memorystore";
 import session from "express-session";
-import { Product, User, Coupon, InsertUser, CreateUser, UpsertUser } from "@shared/schema";
+import { Product, User, Reward, UserPurchase, InsertUser, CreateUser, UpsertUser, InsertUserPurchase } from "@shared/schema";
 import { customAlphabet } from "nanoid";
 import connectPg from "connect-pg-simple";
 import { db } from "./db";
-import { users, products, coupons } from "@shared/schema";
+import { users, products, rewards, userPurchases } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
 
 const MemoryStore = createMemoryStore(session);
@@ -41,10 +41,11 @@ export interface IStorage {
   searchProducts(search: string): Promise<Product[]>;
   getProductByBarcode(barcode: string): Promise<Product | undefined>;
   
-  // Coupon operations
-  getCoupons(): Promise<Coupon[]>;
-  getCoupon(id: number): Promise<Coupon | undefined>;
-  redeemCoupon(userId: string, couponId: number): Promise<void>;
+  // Reward operations
+  getRewards(): Promise<Reward[]>;
+  getReward(id: number): Promise<Reward | undefined>;
+  purchaseReward(userId: string, rewardId: number): Promise<void>;
+  getUserPurchases(userId: string): Promise<Array<UserPurchase & { reward: Reward }>>;
   
   // Session store
   sessionStore: session.Store;
@@ -207,31 +208,46 @@ export class DatabaseStorage implements IStorage {
     return product;
   }
 
-  async getCoupons(): Promise<Coupon[]> {
-    return await db.select().from(coupons);
+  async getRewards(): Promise<Reward[]> {
+    return await db.select().from(rewards);
   }
 
-  async getCoupon(id: number): Promise<Coupon | undefined> {
-    const [coupon] = await db.select().from(coupons).where(eq(coupons.id, id));
-    return coupon;
+  async getReward(id: number): Promise<Reward | undefined> {
+    const [reward] = await db.select().from(rewards).where(eq(rewards.id, id));
+    return reward;
   }
 
-  async redeemCoupon(userId: string, couponId: number): Promise<void> {
+  async purchaseReward(userId: string, rewardId: number): Promise<void> {
     const user = await this.getUser(userId);
-    const coupon = await this.getCoupon(couponId);
+    const reward = await this.getReward(rewardId);
 
-    if (!user || !coupon || user.tokens < coupon.tokenCost) return;
+    if (!user || !reward || user.tokens < reward.tokenCost) return;
 
-    // Update user tokens and mark coupon as unavailable
+    // Update user tokens and create purchase record
     await db
       .update(users)
-      .set({ tokens: user.tokens - coupon.tokenCost, updatedAt: new Date() })
+      .set({ tokens: user.tokens - reward.tokenCost, updatedAt: new Date() })
       .where(eq(users.id, userId));
       
     await db
-      .update(coupons)
-      .set({ available: false })
-      .where(eq(coupons.id, couponId));
+      .insert(userPurchases)
+      .values({ userId, rewardId });
+  }
+
+  async getUserPurchases(userId: string): Promise<Array<UserPurchase & { reward: Reward }>> {
+    const purchases = await db
+      .select({
+        id: userPurchases.id,
+        userId: userPurchases.userId,
+        rewardId: userPurchases.rewardId,
+        purchasedAt: userPurchases.purchasedAt,
+        reward: rewards
+      })
+      .from(userPurchases)
+      .innerJoin(rewards, eq(userPurchases.rewardId, rewards.id))
+      .where(eq(userPurchases.userId, userId));
+
+    return purchases;
   }
 
   async getReferralStats(userId: string): Promise<{ referralCount: number; tokensEarned: number }> {
@@ -256,15 +272,17 @@ export class DatabaseStorage implements IStorage {
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private products: Map<number, Product>;
-  private coupons: Map<number, Coupon>;
+  private rewards: Map<number, Reward>;
+  private userPurchases: Map<number, UserPurchase>;
   sessionStore: session.Store;
-  currentId: { products: number; coupons: number };
+  currentId: { products: number; rewards: number; userPurchases: number };
 
   constructor() {
     this.users = new Map();
     this.products = new Map();
-    this.coupons = new Map();
-    this.currentId = { products: 1, coupons: 1 };
+    this.rewards = new Map();
+    this.userPurchases = new Map();
+    this.currentId = { products: 1, rewards: 1, userPurchases: 1 };
     this.sessionStore = new MemoryStore({ checkPeriod: 86400000 });
 
     // Seed some sample data
@@ -309,19 +327,31 @@ export class MemStorage implements IStorage {
       this.products.set(id, { ...product, id });
     });
 
-    // Sample coupons
-    const coupons: Omit<Coupon, "id">[] = [
+    // Sample rewards
+    const rewards: Omit<Reward, "id">[] = [
       {
-        name: "10% Off Eco Products",
-        description: "Get 10% off on any eco-friendly product",
+        name: "20% discount on DUMMY1",
+        description: "Get 20% off on DUMMY1 product",
+        tokenCost: 60,
+        available: true,
+      },
+      {
+        name: "50% discount on DUMMY2", 
+        description: "Get 50% off on DUMMY2 product",
         tokenCost: 100,
+        available: true,
+      },
+      {
+        name: "one Dummy3",
+        description: "Get one free Dummy3 product",
+        tokenCost: 150,
         available: true,
       },
     ];
 
-    coupons.forEach((coupon) => {
-      const id = this.currentId.coupons++;
-      this.coupons.set(id, { ...coupon, id });
+    rewards.forEach((reward) => {
+      const id = this.currentId.rewards++;
+      this.rewards.set(id, { ...reward, id });
     });
   }
 
@@ -516,6 +546,45 @@ export class MemStorage implements IStorage {
     const tokensEarned = referralCount * REFERRAL_BONUS;
 
     return { referralCount, tokensEarned };
+  }
+
+  async getRewards(): Promise<Reward[]> {
+    return Array.from(this.rewards.values());
+  }
+
+  async getReward(id: number): Promise<Reward | undefined> {
+    return this.rewards.get(id);
+  }
+
+  async purchaseReward(userId: string, rewardId: number): Promise<void> {
+    const user = await this.getUser(userId);
+    const reward = this.rewards.get(rewardId);
+
+    if (!user || !reward || user.tokens < reward.tokenCost) return;
+
+    // Update user tokens
+    user.tokens -= reward.tokenCost;
+    this.users.set(userId, user);
+
+    // Create purchase record
+    const purchaseId = this.currentId.userPurchases++;
+    const purchase: UserPurchase = {
+      id: purchaseId,
+      userId,
+      rewardId,
+      purchasedAt: new Date()
+    };
+    this.userPurchases.set(purchaseId, purchase);
+  }
+
+  async getUserPurchases(userId: string): Promise<Array<UserPurchase & { reward: Reward }>> {
+    const purchases = Array.from(this.userPurchases.values())
+      .filter(p => p.userId === userId);
+
+    return purchases.map(purchase => {
+      const reward = this.rewards.get(purchase.rewardId)!;
+      return { ...purchase, reward };
+    });
   }
 }
 

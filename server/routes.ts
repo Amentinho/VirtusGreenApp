@@ -4,7 +4,7 @@ import { setupAuth } from "./auth";
 import { setupReplitAuth } from "./replitAuth";
 import { setupGoogleAuth } from "./googleAuth";
 import { storage } from "./storage";
-import { insertProductSchema, insertCouponSchema, updatePasswordSchema } from "@shared/schema";
+import { insertProductSchema, insertRewardSchema, updatePasswordSchema } from "@shared/schema";
 import { comparePasswords, hashPassword } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -55,26 +55,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(product);
   });
 
-  app.get("/api/coupons", async (_req, res) => {
-    const coupons = await storage.getCoupons();
-    res.json(coupons);
+  app.get("/api/rewards", async (_req, res) => {
+    const rewards = await storage.getRewards();
+    res.json(rewards);
   });
 
-  app.post("/api/coupons/:id/redeem", async (req, res) => {
+  app.post("/api/rewards/:id/purchase", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
-    const coupon = await storage.getCoupon(parseInt(req.params.id));
-    if (!coupon) return res.status(404).send("Coupon not found");
-    if (!coupon.available) return res.status(400).send("Coupon not available");
+    const reward = await storage.getReward(parseInt(req.params.id));
+    if (!reward) return res.status(404).send("Reward not found");
+    if (!reward.available) return res.status(400).send("Reward not available");
 
     const user = req.user!;
-    if (user.tokens < coupon.tokenCost) {
+    if (user.tokens < reward.tokenCost) {
       return res.status(400).send("Insufficient tokens");
     }
 
-    await storage.redeemCoupon(user.id, coupon.id);
+    await storage.purchaseReward(user.id, reward.id);
     const updatedUser = await storage.getUser(user.id);
     res.json(updatedUser);
+  });
+
+  app.get("/api/user/purchases", async (req: any, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const purchases = await storage.getUserPurchases(userId);
+      res.json(purchases);
+    } catch (error) {
+      console.error("Error fetching user purchases:", error);
+      res.status(500).json({ message: "Failed to fetch purchases" });
+    }
   });
 
   app.post("/api/user/password", async (req, res) => {

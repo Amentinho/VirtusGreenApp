@@ -60,12 +60,19 @@ export const products = pgTable("products", {
     .notNull(),
 });
 
-export const coupons = pgTable("coupons", {
+export const rewards = pgTable("rewards", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description").notNull(),
   tokenCost: integer("token_cost").notNull(),
   available: boolean("available").notNull().default(true),
+});
+
+export const userPurchases = pgTable("user_purchases", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull(),
+  rewardId: integer("reward_id").notNull(),
+  purchasedAt: timestamp("purchased_at").defaultNow().notNull(),
 });
 
 // Base schema for user credentials
@@ -105,8 +112,13 @@ export const insertProductSchema = createInsertSchema(products).omit({
   id: true 
 });
 
-export const insertCouponSchema = createInsertSchema(coupons).omit({ 
+export const insertRewardSchema = createInsertSchema(rewards).omit({ 
   id: true 
+});
+
+export const insertUserPurchaseSchema = createInsertSchema(userPurchases).omit({
+  id: true,
+  purchasedAt: true
 });
 
 // Replit Auth upsert schema - referenced from blueprint integration  
@@ -137,4 +149,7 @@ export const passwordResetSchema = z.object({
 export type UpsertUser = z.infer<typeof upsertUserSchema>; // For Replit Auth
 export type User = typeof users.$inferSelect;
 export type Product = typeof products.$inferSelect;
-export type Coupon = typeof coupons.$inferSelect;
+export type Reward = typeof rewards.$inferSelect;
+export type UserPurchase = typeof userPurchases.$inferSelect;
+export type InsertReward = z.infer<typeof insertRewardSchema>;
+export type InsertUserPurchase = z.infer<typeof insertUserPurchaseSchema>;
