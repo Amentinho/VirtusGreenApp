@@ -132,7 +132,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!product) {
         return res.status(404).json({ 
-          message: "Product not found", 
+          message: "The product is not available in our database, can you please send us a message and we will add it?", 
           errorType: "product_not_found" 
         });
       }
@@ -140,8 +140,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.json(product);
     }
 
-    const products = await storage.searchProducts(search || "");
-    res.json(products);
+    // First search our internal database
+    const localProducts = await storage.searchProducts(search || "");
+    
+    // If we have local results or no search term, return local results
+    if (localProducts.length > 0 || !search) {
+      return res.json(localProducts);
+    }
+    
+    // If no local results and we have a search term, search Open Food Facts
+    try {
+      // Use v1 API for full text search since v2 doesn't support search_terms
+      const offSearchResponse = await fetch(
+        `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(search)}&search_simple=1&action=process&json=1`,
+        {
+          headers: {
+            'User-Agent': 'VirtusGreen - Web App - Version 1.0 - https://virtusgreen.com'
+          }
+        }
+      );
+      
+      if (offSearchResponse.ok) {
+        const offData = await offSearchResponse.json();
+        
+        // The v1 API returns results differently than v2
+        if (offData.products && offData.products.length > 0) {
+          // Transform Open Food Facts search results to our Product schema
+          const transformedProducts = offData.products.slice(0, 20).map((offProduct: any) => ({
+            id: Date.now() + Math.random(), // Temporary ID for display
+            name: offProduct.product_name || "Unknown Product",
+            brand: offProduct.brands || "Unknown Brand",
+            barcode: offProduct.code || "",
+            environmentalImpact: {
+              ecoScore: calculateEcoScore(offProduct),
+              carbonFootprint: calculateCarbonFootprint(offProduct),
+              waterUsage: calculateWaterUsage(offProduct),
+              packaging: calculatePackaging(offProduct)
+            }
+          }));
+          
+          return res.json(transformedProducts);
+        }
+      }
+    } catch (error) {
+      console.error("Error searching Open Food Facts:", error);
+    }
+    
+    // Return empty array if no results found anywhere
+    res.json([]);
   });
 
   app.get("/api/products/:barcode", async (req, res) => {

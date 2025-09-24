@@ -40,20 +40,20 @@ export default function BarcodeScanner({ onProductFound }: BarcodeScannerProps) 
       console.log("Product search error:", error);
       
       // Check if it's our custom "not found" error
-      let errorMessage = "The item is not in the database";
+      let errorMessage = "The product is not available in our database, can you please send us a message and we will add it?";
       
       try {
         // Parse error response if it's JSON
         const errorData = JSON.parse((error as any).message);
         if (errorData.errorType === "product_not_found") {
-          errorMessage = "The item is not in the database";
+          errorMessage = "The product is not available in our database, can you please send us a message and we will add it?";
         } else {
           errorMessage = errorData.message || "No product found with this barcode";
         }
       } catch {
         // If not JSON, check the raw message
         if ((error as any).message && (error as any).message.includes("Product not found")) {
-          errorMessage = "The item is not in the database";
+          errorMessage = "The product is not available in our database, can you please send us a message and we will add it?";
         }
       }
       
