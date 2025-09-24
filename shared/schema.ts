@@ -28,6 +28,10 @@ export const users = pgTable("users", {
   referralCode: text("referral_code").unique(),
   usedReferralCode: text("used_referral_code"),
   
+  // Password recovery fields
+  resetToken: text("reset_token"),
+  resetTokenExpiry: timestamp("reset_token_expiry"),
+  
   // Replit Auth fields - referenced from blueprint integration
   firstName: text("first_name"),
   lastName: text("last_name"),
@@ -116,9 +120,18 @@ export const upsertUserSchema = createInsertSchema(users).omit({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type LoginCredentials = z.infer<typeof loginSchema>;
 
-// Password recovery schema
-export const passwordRecoverySchema = z.object({
+// Password recovery schemas
+export const passwordRecoveryRequestSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
+});
+
+export const passwordResetSchema = z.object({
+  token: z.string().min(1, "Reset token is required"),
+  newPassword: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string().min(1, "Please confirm your password"),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
 });
 export type UpsertUser = z.infer<typeof upsertUserSchema>; // For Replit Auth
 export type User = typeof users.$inferSelect;
