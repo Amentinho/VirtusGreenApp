@@ -262,6 +262,44 @@ export default function AuthPage() {
                     {registerMutation.isPending ? "Registering..." : "Register"}
                   </Button>
                 </form>
+
+                {/* SSO Section for Registration */}
+                <div className="mt-6">
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">
+                        Or sign up with
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3 mt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => window.location.href = "/api/replit-login"}
+                      className="w-full"
+                      data-testid="button-google-register"
+                    >
+                      <FaGoogle className="mr-2 h-4 w-4" />
+                      Google
+                    </Button>
+                    
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => window.location.href = "/api/replit-login"}
+                      className="w-full"
+                      data-testid="button-apple-register"
+                    >
+                      <FaApple className="mr-2 h-4 w-4" />
+                      Apple
+                    </Button>
+                  </div>
+                </div>
               </TabsContent>
             </Tabs>
           </CardContent>
