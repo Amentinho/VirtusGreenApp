@@ -33,8 +33,8 @@ export default function HomePage() {
             </div>
             <div className="flex items-center gap-4">
               <TokenDisplay />
-              <Link href="/marketplace">
-                <Button variant="outline">Marketplace</Button>
+              <Link href="/rewards">
+                <Button variant="outline">Rewards</Button>
               </Link>
               <ProfileDropdown />
             </div>

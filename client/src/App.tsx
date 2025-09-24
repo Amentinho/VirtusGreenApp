@@ -6,9 +6,10 @@ import { AuthProvider } from "./hooks/use-auth";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import HomePage from "@/pages/home-page";
-import MarketplacePage from "@/pages/marketplace";
+import RewardsPage from "@/pages/marketplace";
 import ProfilePage from "@/pages/profile-page";
 import ReferralPage from "@/pages/referral-page";
+import MyRewardsPage from "@/pages/my-rewards-page";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -16,9 +17,10 @@ function Router() {
     <Switch>
       <Route path="/auth" component={AuthPage} />
       <ProtectedRoute path="/" component={HomePage} />
-      <ProtectedRoute path="/marketplace" component={MarketplacePage} />
+      <ProtectedRoute path="/rewards" component={RewardsPage} />
       <ProtectedRoute path="/profile" component={ProfilePage} />
       <ProtectedRoute path="/referral" component={ReferralPage} />
+      <ProtectedRoute path="/my-rewards" component={MyRewardsPage} />
       <Route component={NotFound} />
     </Switch>
   );
