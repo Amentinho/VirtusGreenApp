@@ -38,8 +38,11 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
     
     console.log(`Email sent successfully to ${params.to}`);
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error('SendGrid email error:', error);
+    if (error.response?.body?.errors) {
+      console.error('SendGrid error details:', JSON.stringify(error.response.body.errors, null, 2));
+    }
     return false;
   }
 }
@@ -50,7 +53,7 @@ export function generatePasswordResetEmail(resetToken: string, userEmail: string
   
   return {
     to: userEmail,
-    from: 'noreply@replit.app', // Use Replit's verified sender for testing
+    from: process.env.SENDGRID_FROM || 'test@example.com', // Use environment variable for verified sender
     subject: 'Reset your VirtusGreen password',
     text: `
 Password Reset Request
@@ -135,7 +138,7 @@ export function generateVerificationEmail(email: string, username: string, verif
   
   return {
     to: email,
-    from: 'noreply@replit.app', // Use Replit's verified sender for testing
+    from: process.env.SENDGRID_FROM || 'test@example.com', // Use environment variable for verified sender
     subject: 'Please verify your VirtusGreen email address',
     text: `
 Welcome to VirtusGreen!
