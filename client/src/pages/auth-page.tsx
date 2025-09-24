@@ -10,7 +10,7 @@ import { insertUserSchema, loginSchema, InsertUser, LoginCredentials } from "@sh
 import { PasswordRecoveryModal } from "@/components/PasswordRecoveryModal";
 import { Redirect } from "wouter";
 import { Leaf, Eye, EyeOff } from "lucide-react";
-import { FaGoogle, FaApple } from "react-icons/fa";
+import { FaGoogle } from "react-icons/fa";
 import { useState } from "react";
 
 export default function AuthPage() {
@@ -130,27 +130,16 @@ export default function AuthPage() {
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-3 mt-4">
+                  <div className="mt-4">
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => window.location.href = "/api/replit-login"}
+                      onClick={() => window.location.href = "/api/oauth/google/login"}
                       className="w-full"
                       data-testid="button-google-login"
                     >
                       <FaGoogle className="mr-2 h-4 w-4" />
-                      Google
-                    </Button>
-                    
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => window.location.href = "/api/replit-login"}
-                      className="w-full"
-                      data-testid="button-apple-login"
-                    >
-                      <FaApple className="mr-2 h-4 w-4" />
-                      Apple
+                      Continue with Google
                     </Button>
                   </div>
                 </div>
@@ -276,27 +265,16 @@ export default function AuthPage() {
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-3 mt-4">
+                  <div className="mt-4">
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => window.location.href = "/api/replit-login"}
+                      onClick={() => window.location.href = "/api/oauth/google/login"}
                       className="w-full"
                       data-testid="button-google-register"
                     >
                       <FaGoogle className="mr-2 h-4 w-4" />
-                      Google
-                    </Button>
-                    
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => window.location.href = "/api/replit-login"}
-                      className="w-full"
-                      data-testid="button-apple-register"
-                    >
-                      <FaApple className="mr-2 h-4 w-4" />
-                      Apple
+                      Sign up with Google
                     </Button>
                   </div>
                 </div>
