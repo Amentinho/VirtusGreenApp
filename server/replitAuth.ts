@@ -67,41 +67,60 @@ async function upsertUser(
 }
 
 export async function setupReplitAuth(app: Express) {
-  const config = await getOidcConfig();
+  try {
+    const config = await getOidcConfig();
 
-  const verify: VerifyFunction = async (
-    tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers,
-    verified: passport.AuthenticateCallback
-  ) => {
-    const claims = tokens.claims();
-    const userData = await upsertUser(claims);
-    const user = { 
-      ...userData,
-      claims,
-      access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token,
-      expires_at: claims?.exp
+    const verify: VerifyFunction = async (
+      tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers,
+      verified: passport.AuthenticateCallback
+    ) => {
+      const claims = tokens.claims();
+      const userData = await upsertUser(claims);
+      const user = { 
+        ...userData,
+        claims,
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        expires_at: claims?.exp
+      };
+      verified(null, user);
     };
-    verified(null, user);
-  };
 
-  for (const domain of process.env
-    .REPLIT_DOMAINS!.split(",")) {
-    const strategy = new Strategy(
-      {
-        name: `replitauth:${domain}`,
-        config,
-        scope: "openid email profile offline_access",
-        callbackURL: `https://${domain}/api/replit-callback`,
-      },
-      verify,
-    );
-    passport.use(strategy);
+    const domains = process.env.REPLIT_DOMAINS!.split(",");
+    
+    // Add localhost for development
+    const allDomains = [...domains, "localhost"];
+    
+    for (const domain of allDomains) {
+      const strategy = new Strategy(
+        {
+          name: `replitauth:${domain}`,
+          config,
+          scope: "openid email profile offline_access",
+          callbackURL: domain === "localhost" 
+            ? `http://${domain}:5000/api/replit-callback`
+            : `https://${domain}/api/replit-callback`,
+        },
+        verify,
+      );
+      passport.use(strategy);
+      console.log(`Registered Replit Auth strategy for domain: ${domain}`);
+    }
+  } catch (error) {
+    console.error("Failed to setup Replit Auth:", error);
+    console.log("Continuing without SSO authentication");
+    return; // Exit early if SSO setup fails
   }
 
   // Replit Auth routes - referenced from blueprint integration
   app.get("/api/replit-login", (req, res, next) => {
-    passport.authenticate(`replitauth:${req.hostname}`, {
+    const strategy = `replitauth:${req.hostname}`;
+    if (!(passport as any)._strategies[strategy]) {
+      console.error(`Strategy ${strategy} not found. Available strategies:`, Object.keys((passport as any)._strategies));
+      return res.status(500).json({ message: "SSO authentication not available" });
+    }
+    
+    passport.authenticate(strategy, {
       prompt: "login consent",
       scope: ["openid", "email", "profile", "offline_access"],
     })(req, res, next);
@@ -114,7 +133,8 @@ export async function setupReplitAuth(app: Express) {
     })(req, res, next);
   });
 
-  app.get("/api/replit-logout", (req, res) => {
+  app.get("/api/replit-logout", async (req, res) => {
+    const config = await getOidcConfig();
     req.logout(() => {
       res.redirect(
         client.buildEndSessionUrl(config, {
