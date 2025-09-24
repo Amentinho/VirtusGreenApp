@@ -8,6 +8,59 @@ import { insertProductSchema, insertRewardSchema, updatePasswordSchema } from "@
 import { comparePasswords, hashPassword } from "./auth";
 import { sendEmail, generatePasswordResetEmail, generateEmailVerificationToken, generateVerificationEmail } from "./emailService";
 
+// Helper functions to calculate environmental metrics from Open Food Facts data
+function calculateEcoScore(product: any): number {
+  // Use nutrition grade as base score, convert letter grades to numbers
+  const nutritionGrade = product.nutrition_grades?.toLowerCase();
+  let baseScore = 50; // Default score
+  
+  switch (nutritionGrade) {
+    case 'a': baseScore = 85; break;
+    case 'b': baseScore = 70; break;
+    case 'c': baseScore = 55; break;
+    case 'd': baseScore = 40; break;
+    case 'e': baseScore = 25; break;
+  }
+  
+  // Adjust based on processing level and additives (if available)
+  if (product.nutriments?.energy_kcal_100g > 500) baseScore -= 5;
+  if (product.nutriments?.sugars_100g > 20) baseScore -= 10;
+  if (product.nutriments?.salt_100g > 1.5) baseScore -= 5;
+  
+  return Math.max(1, Math.min(100, baseScore));
+}
+
+function calculateCarbonFootprint(product: any): number {
+  // Estimate based on nutrition data and product type
+  const energy = product.nutriments?.energy_kcal_100g || 200;
+  const protein = product.nutriments?.proteins_100g || 0;
+  
+  // Simple estimation: higher energy and protein generally means higher footprint
+  let footprint = (energy / 100) + (protein * 0.5);
+  return Math.round(Math.max(0.1, Math.min(10, footprint)) * 10) / 10;
+}
+
+function calculateWaterUsage(product: any): number {
+  // Estimate water usage based on product characteristics
+  const protein = product.nutriments?.proteins_100g || 0;
+  const energy = product.nutriments?.energy_kcal_100g || 200;
+  
+  // Simple estimation: protein-rich foods typically use more water
+  let waterUsage = (protein * 5) + (energy / 50);
+  return Math.round(Math.max(1, Math.min(1000, waterUsage)));
+}
+
+function calculatePackaging(product: any): number {
+  // Simple estimation based on product name/category
+  const productName = (product.product_name || "").toLowerCase();
+  
+  if (productName.includes("fresh") || productName.includes("organic")) return 7;
+  if (productName.includes("bottle") || productName.includes("can")) return 4;
+  if (productName.includes("package") || productName.includes("box")) return 3;
+  
+  return 5; // Default packaging score
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication systems - referenced from blueprint integration
   setupAuth(app);
@@ -41,8 +94,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const barcode = req.query.barcode as string;
 
     if (barcode) {
-      const product = await storage.getProductByBarcode(barcode);
-      if (!product) return res.status(404).send("Product not found");
+      // First check our internal database
+      let product = await storage.getProductByBarcode(barcode);
+      
+      if (!product) {
+        // If not found locally, check Open Food Facts API
+        try {
+          const openFoodFactsResponse = await fetch(
+            `https://world.openfoodfacts.net/api/v2/product/${barcode}?fields=product_name,brands,nutriscore_data,nutrition_grades,nutriments`
+          );
+          
+          if (openFoodFactsResponse.ok) {
+            const offData = await openFoodFactsResponse.json();
+            
+            if (offData.status === 1 && offData.product) {
+              // Transform Open Food Facts data to our Product schema
+              const transformedProduct = {
+                id: Date.now(), // Temporary ID for display
+                name: offData.product.product_name || "Unknown Product",
+                brand: offData.product.brands || "Unknown Brand", 
+                barcode: barcode,
+                environmentalImpact: {
+                  ecoScore: calculateEcoScore(offData.product),
+                  carbonFootprint: calculateCarbonFootprint(offData.product),
+                  waterUsage: calculateWaterUsage(offData.product),
+                  packaging: calculatePackaging(offData.product)
+                }
+              };
+              
+              return res.json(transformedProduct);
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching from Open Food Facts:", error);
+        }
+      }
+      
+      if (!product) {
+        return res.status(404).json({ 
+          message: "Product not found", 
+          errorType: "product_not_found" 
+        });
+      }
+      
       return res.json(product);
     }
 

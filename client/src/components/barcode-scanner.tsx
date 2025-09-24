@@ -18,26 +18,52 @@ export default function BarcodeScanner({ onProductFound }: BarcodeScannerProps) 
   const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
   const { toast } = useToast();
 
-  const { refetch } = useQuery<Product>({
+  const { refetch, data: product, error, isLoading } = useQuery<Product>({
     queryKey: [`/api/products?barcode=${barcode}`],
     enabled: false,
-    onSuccess: (product) => {
-      if (product) {
-        onProductFound(product);
-        toast({
-          title: "Product Found",
-          description: `Found: ${product.name} by ${product.brand}`,
-        });
+  });
+
+  // Handle successful product fetch
+  useEffect(() => {
+    if (product) {
+      onProductFound(product);
+      toast({
+        title: "Product Found",
+        description: `Found: ${product.name} by ${product.brand}`,
+      });
+    }
+  }, [product, onProductFound, toast]);
+
+  // Handle errors
+  useEffect(() => {
+    if (error) {
+      console.log("Product search error:", error);
+      
+      // Check if it's our custom "not found" error
+      let errorMessage = "The item is not in the database";
+      
+      try {
+        // Parse error response if it's JSON
+        const errorData = JSON.parse((error as any).message);
+        if (errorData.errorType === "product_not_found") {
+          errorMessage = "The item is not in the database";
+        } else {
+          errorMessage = errorData.message || "No product found with this barcode";
+        }
+      } catch {
+        // If not JSON, check the raw message
+        if ((error as any).message && (error as any).message.includes("Product not found")) {
+          errorMessage = "The item is not in the database";
+        }
       }
-    },
-    onError: () => {
+      
       toast({
         title: "Product Not Found",
-        description: "No product found with this barcode",
+        description: errorMessage,
         variant: "destructive",
       });
-    },
-  });
+    }
+  }, [error, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,7 +120,7 @@ export default function BarcodeScanner({ onProductFound }: BarcodeScannerProps) 
   const stopScanning = () => {
     setIsScanning(false);
     if (codeReaderRef.current) {
-      codeReaderRef.current.reset();
+      // Clean up the code reader
       codeReaderRef.current = null;
     }
     if (videoRef.current?.srcObject) {
@@ -119,9 +145,9 @@ export default function BarcodeScanner({ onProductFound }: BarcodeScannerProps) 
           placeholder="Enter product barcode..."
           className="flex-1"
         />
-        <Button type="submit">
+        <Button type="submit" disabled={isLoading}>
           <Scan className="h-4 w-4 mr-2" />
-          Search
+          {isLoading ? "Searching..." : "Search"}
         </Button>
       </form>
 
