@@ -43,6 +43,18 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
     if (error.response?.body?.errors) {
       console.error('SendGrid error details:', JSON.stringify(error.response.body.errors, null, 2));
     }
+    
+    // Fallback: Log password reset URL for development
+    if (params.subject.includes('Reset your VirtusGreen password') && params.text) {
+      const urlMatch = params.text.match(/https?:\/\/[^\s]+/);
+      if (urlMatch) {
+        console.log('===== PASSWORD RESET FALLBACK =====');
+        console.log(`User: ${params.to}`);
+        console.log(`Reset URL: ${urlMatch[0]}`);
+        console.log('===================================');
+      }
+    }
+    
     return false;
   }
 }
