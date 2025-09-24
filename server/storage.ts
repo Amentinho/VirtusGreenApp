@@ -34,6 +34,9 @@ export interface IStorage {
   // User operations for Replit Auth - referenced from blueprint integration
   upsertUser(user: UpsertUser): Promise<User>;
   
+  // Referral operations
+  getReferralStats(userId: string): Promise<{ referralCount: number; tokensEarned: number }>;
+  
   // Product operations
   searchProducts(search: string): Promise<Product[]>;
   getProductByBarcode(barcode: string): Promise<Product | undefined>;
@@ -229,6 +232,24 @@ export class DatabaseStorage implements IStorage {
       .update(coupons)
       .set({ available: false })
       .where(eq(coupons.id, couponId));
+  }
+
+  async getReferralStats(userId: string): Promise<{ referralCount: number; tokensEarned: number }> {
+    const user = await this.getUser(userId);
+    if (!user?.referralCode) {
+      return { referralCount: 0, tokensEarned: 0 };
+    }
+
+    // Count users who used this user's referral code
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(users)
+      .where(eq(users.usedReferralCode, user.referralCode));
+
+    const referralCount = result[0]?.count || 0;
+    const tokensEarned = referralCount * REFERRAL_BONUS;
+
+    return { referralCount, tokensEarned };
   }
 }
 
@@ -479,6 +500,22 @@ export class MemStorage implements IStorage {
     user.resetTokenExpiry = null;
     user.updatedAt = new Date();
     this.users.set(userId, user);
+  }
+
+  async getReferralStats(userId: string): Promise<{ referralCount: number; tokensEarned: number }> {
+    const user = await this.getUser(userId);
+    if (!user?.referralCode) {
+      return { referralCount: 0, tokensEarned: 0 };
+    }
+
+    // Count users who used this user's referral code
+    const referralCount = Array.from(this.users.values()).filter(
+      u => u.usedReferralCode === user.referralCode
+    ).length;
+
+    const tokensEarned = referralCount * REFERRAL_BONUS;
+
+    return { referralCount, tokensEarned };
   }
 }
 
