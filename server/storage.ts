@@ -1,6 +1,6 @@
 import createMemoryStore from "memorystore";
 import session from "express-session";
-import { Product, User, Coupon, InsertUser, UpsertUser } from "@shared/schema";
+import { Product, User, Coupon, InsertUser, CreateUser, UpsertUser } from "@shared/schema";
 import { customAlphabet } from "nanoid";
 import connectPg from "connect-pg-simple";
 import { db } from "./db";
@@ -23,7 +23,7 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserByUsernameOrEmail(usernameOrEmail: string): Promise<User | undefined>;
   getUserByReferralCode(code: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  createUser(user: CreateUser): Promise<User>;
   updateUserPassword(userId: string, newPassword: string): Promise<void>;
   
   // Password recovery operations
@@ -90,7 +90,7 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async createUser(insertUser: CreateUser): Promise<User> {
     let tokens = 0;
 
     // Handle referral code if provided
@@ -334,7 +334,7 @@ export class MemStorage implements IStorage {
     );
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async createUser(insertUser: CreateUser): Promise<User> {
     const id = crypto.randomUUID();
     let tokens = 0;
 

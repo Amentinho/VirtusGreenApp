@@ -118,6 +118,7 @@ export const upsertUserSchema = createInsertSchema(users).omit({
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type CreateUser = Omit<InsertUser, 'confirmPassword'>;
 export type LoginCredentials = z.infer<typeof loginSchema>;
 
 // Password recovery schemas

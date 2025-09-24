@@ -5,7 +5,7 @@ import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
-import { User as SelectUser, passwordRecoveryRequestSchema, passwordResetSchema } from "@shared/schema";
+import { User as SelectUser, passwordRecoveryRequestSchema, passwordResetSchema, insertUserSchema } from "@shared/schema";
 import { sendEmail, generatePasswordResetEmail } from "./emailService";
 
 declare global {
@@ -66,8 +66,20 @@ export function setupAuth(app: Express) {
     try {
       console.log("Registration attempt:", { username: req.body.username, email: req.body.email });
       
+      // Validate request body against schema
+      const validationResult = insertUserSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        console.error("Validation error:", validationResult.error);
+        return res.status(400).json({ 
+          message: "Validation failed",
+          errors: validationResult.error.errors
+        });
+      }
+
+      const { confirmPassword, ...userData } = validationResult.data;
+      
       // Check if username already exists
-      const existingUserByUsername = await storage.getUserByUsername(req.body.username);
+      const existingUserByUsername = await storage.getUserByUsername(userData.username);
       if (existingUserByUsername) {
         return res.status(400).json({ 
           message: "The account already exists",
@@ -77,7 +89,7 @@ export function setupAuth(app: Express) {
       }
 
       // Check if email already exists
-      const existingUserByEmail = await storage.getUserByEmail(req.body.email);
+      const existingUserByEmail = await storage.getUserByEmail(userData.email);
       if (existingUserByEmail) {
         return res.status(400).json({ 
           message: "The account already exists", 
@@ -87,8 +99,8 @@ export function setupAuth(app: Express) {
       }
 
       const user = await storage.createUser({
-        ...req.body,
-        password: await hashPassword(req.body.password),
+        ...userData,
+        password: await hashPassword(userData.password),
       });
 
       req.login(user, (err) => {
