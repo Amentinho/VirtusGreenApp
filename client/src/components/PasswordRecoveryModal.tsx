@@ -33,11 +33,20 @@ export function PasswordRecoveryModal({ open, onOpenChange, trigger }: PasswordR
 
   const forgotPasswordMutation = useMutation({
     mutationFn: async (data: PasswordRecoveryRequest) => {
-      const response = await apiRequest("/api/forgot-password", {
+      const response = await fetch("/api/forgot-password", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(data),
       });
-      return response;
+      
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error);
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       toast({
