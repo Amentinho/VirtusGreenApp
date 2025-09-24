@@ -1,36 +1,42 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import TokenDisplay from "@/components/token-display";
 import { Reward } from "@shared/schema";
 import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { ArrowLeft, Coins } from "lucide-react";
 
 export default function RewardsPage() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const { data: rewards, isLoading } = useQuery<Reward[]>({
     queryKey: ["/api/rewards"],
   });
 
-  const purchaseReward = async (rewardId: number) => {
-    try {
-      await apiRequest("POST", `/api/rewards/${rewardId}/purchase`);
+  const purchaseRewardMutation = useMutation({
+    mutationFn: async (rewardId: number) => {
+      return await apiRequest("POST", `/api/rewards/${rewardId}/purchase`);
+    },
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       queryClient.invalidateQueries({ queryKey: ["/api/rewards"] });
       toast({
-        title: "Success",
-        description: "Reward purchased successfully!",
+        title: "Success!",
+        description: "Reward redeemed successfully!",
       });
-    } catch (error) {
+    },
+    onError: (error: Error) => {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to purchase reward",
+        description: error.message || "Failed to redeem reward",
         variant: "destructive",
       });
-    }
-  };
+    },
+  });
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -53,6 +59,17 @@ export default function RewardsPage() {
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Available Tokens Display */}
+        <div className="mb-8 text-center">
+          <div className="inline-flex items-center gap-2 bg-white rounded-lg px-6 py-4 shadow-sm border">
+            <Coins className="h-5 w-5 text-yellow-500" />
+            <span className="text-lg font-semibold text-gray-700">Your available tokens:</span>
+            <span className="text-2xl font-bold text-green-600" data-testid="text-available-tokens">
+              {user?.tokens || 0}
+            </span>
+          </div>
+        </div>
+
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {isLoading ? (
             <div className="col-span-full text-center">Loading rewards...</div>
@@ -64,16 +81,35 @@ export default function RewardsPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-600 mb-4">{reward.description}</p>
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-green-600" data-testid={`text-token-cost-${reward.id}`}>
-                      {reward.tokenCost} tokens
-                    </span>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-green-600" data-testid={`text-token-cost-${reward.id}`}>
+                        {reward.tokenCost} tokens
+                      </span>
+                      <Badge variant="outline" data-testid={`text-remaining-${reward.id}`}>
+                        {reward.remainingQuantity || 0} left
+                      </Badge>
+                    </div>
                     <Button
-                      onClick={() => purchaseReward(reward.id)}
-                      disabled={!reward.available}
-                      data-testid={`button-purchase-${reward.id}`}
+                      onClick={() => purchaseRewardMutation.mutate(reward.id)}
+                      disabled={
+                        !reward.available || 
+                        (user?.tokens || 0) < reward.tokenCost ||
+                        (reward.remainingQuantity || 0) <= 0 ||
+                        purchaseRewardMutation.isPending
+                      }
+                      className="w-full"
+                      data-testid={`button-redeem-${reward.id}`}
                     >
-                      Purchase
+                      {purchaseRewardMutation.isPending ? (
+                        "Redeeming..."
+                      ) : (user?.tokens || 0) < reward.tokenCost ? (
+                        "Insufficient tokens"
+                      ) : (reward.remainingQuantity || 0) <= 0 ? (
+                        "Out of stock"
+                      ) : (
+                        "Redeem"
+                      )}
                     </Button>
                   </div>
                 </CardContent>
