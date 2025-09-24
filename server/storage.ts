@@ -5,7 +5,7 @@ import { customAlphabet } from "nanoid";
 import connectPg from "connect-pg-simple";
 import { db } from "./db";
 import { users, products, rewards, userPurchases } from "@shared/schema";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, and } from "drizzle-orm";
 
 const MemoryStore = createMemoryStore(session);
 const REFERRAL_BONUS = 50; // Tokens awarded for successful referral
@@ -221,13 +221,31 @@ export class DatabaseStorage implements IStorage {
     const user = await this.getUser(userId);
     const reward = await this.getReward(rewardId);
 
-    if (!user || !reward || user.tokens < reward.tokenCost) return;
+    if (!user || !reward || user.tokens < reward.tokenCost || reward.remainingQuantity <= 0) {
+      throw new Error("Cannot purchase reward");
+    }
 
-    // Update user tokens and create purchase record
+    // Check if user has already purchased this reward (one per user limit)
+    const existingPurchase = await db
+      .select()
+      .from(userPurchases)
+      .where(and(eq(userPurchases.userId, userId), eq(userPurchases.rewardId, rewardId)))
+      .limit(1);
+
+    if (existingPurchase.length > 0) {
+      throw new Error("You have already redeemed this reward");
+    }
+
+    // Update user tokens, decrease reward quantity, and create purchase record
     await db
       .update(users)
       .set({ tokens: user.tokens - reward.tokenCost, updatedAt: new Date() })
       .where(eq(users.id, userId));
+      
+    await db
+      .update(rewards)
+      .set({ remainingQuantity: reward.remainingQuantity - 1 })
+      .where(eq(rewards.id, rewardId));
       
     await db
       .insert(userPurchases)
@@ -332,20 +350,26 @@ export class MemStorage implements IStorage {
       {
         name: "20% discount on DUMMY1",
         description: "Get 20% off on DUMMY1 product",
-        tokenCost: 60,
+        tokenCost: 10,
         available: true,
+        totalAvailable: 100,
+        remainingQuantity: 100,
       },
       {
         name: "50% discount on DUMMY2", 
         description: "Get 50% off on DUMMY2 product",
         tokenCost: 100,
         available: true,
+        totalAvailable: 100,
+        remainingQuantity: 100,
       },
       {
         name: "one Dummy3",
         description: "Get one free Dummy3 product",
         tokenCost: 150,
         available: true,
+        totalAvailable: 100,
+        remainingQuantity: 100,
       },
     ];
 
@@ -476,25 +500,20 @@ export class MemStorage implements IStorage {
     );
   }
 
-  async getCoupons(): Promise<Coupon[]> {
-    return Array.from(this.coupons.values());
-  }
-
-  async getCoupon(id: number): Promise<Coupon | undefined> {
-    return this.coupons.get(id);
-  }
-
-  async redeemCoupon(userId: string, couponId: number): Promise<void> {
+  async getReferralStats(userId: string): Promise<{ referralCount: number; tokensEarned: number }> {
     const user = await this.getUser(userId);
-    const coupon = this.coupons.get(couponId);
+    if (!user?.referralCode) {
+      return { referralCount: 0, tokensEarned: 0 };
+    }
 
-    if (!user || !coupon) return;
+    // Count users who used this user's referral code
+    const referralCount = Array.from(this.users.values()).filter(
+      u => u.usedReferralCode === user.referralCode
+    ).length;
 
-    user.tokens -= coupon.tokenCost;
-    coupon.available = false;
+    const tokensEarned = referralCount * REFERRAL_BONUS;
 
-    this.users.set(userId, user);
-    this.coupons.set(couponId, coupon);
+    return { referralCount, tokensEarned };
   }
 
   async updateUserPassword(userId: string, newPassword: string): Promise<void> {
@@ -532,22 +551,6 @@ export class MemStorage implements IStorage {
     this.users.set(userId, user);
   }
 
-  async getReferralStats(userId: string): Promise<{ referralCount: number; tokensEarned: number }> {
-    const user = await this.getUser(userId);
-    if (!user?.referralCode) {
-      return { referralCount: 0, tokensEarned: 0 };
-    }
-
-    // Count users who used this user's referral code
-    const referralCount = Array.from(this.users.values()).filter(
-      u => u.usedReferralCode === user.referralCode
-    ).length;
-
-    const tokensEarned = referralCount * REFERRAL_BONUS;
-
-    return { referralCount, tokensEarned };
-  }
-
   async getRewards(): Promise<Reward[]> {
     return Array.from(this.rewards.values());
   }
@@ -560,31 +563,42 @@ export class MemStorage implements IStorage {
     const user = await this.getUser(userId);
     const reward = this.rewards.get(rewardId);
 
-    if (!user || !reward || user.tokens < reward.tokenCost) return;
+    if (!user || !reward || user.tokens < reward.tokenCost || reward.remainingQuantity <= 0) {
+      throw new Error("Cannot purchase reward");
+    }
 
-    // Update user tokens
+    // Check if user has already purchased this reward (one per user limit)
+    const existingPurchase = Array.from(this.userPurchases.values()).find(
+      p => p.userId === userId && p.rewardId === rewardId
+    );
+
+    if (existingPurchase) {
+      throw new Error("You have already redeemed this reward");
+    }
+
+    // Update user tokens, decrease reward quantity, and create purchase record
     user.tokens -= reward.tokenCost;
-    this.users.set(userId, user);
-
-    // Create purchase record
+    reward.remainingQuantity -= 1;
+    
     const purchaseId = this.currentId.userPurchases++;
     const purchase: UserPurchase = {
       id: purchaseId,
       userId,
       rewardId,
-      purchasedAt: new Date()
+      purchasedAt: new Date(),
     };
+
+    this.users.set(userId, user);
+    this.rewards.set(rewardId, reward);
     this.userPurchases.set(purchaseId, purchase);
   }
 
   async getUserPurchases(userId: string): Promise<Array<UserPurchase & { reward: Reward }>> {
-    const purchases = Array.from(this.userPurchases.values())
-      .filter(p => p.userId === userId);
-
-    return purchases.map(purchase => {
-      const reward = this.rewards.get(purchase.rewardId)!;
-      return { ...purchase, reward };
-    });
+    const purchases = Array.from(this.userPurchases.values()).filter(p => p.userId === userId);
+    return purchases.map(purchase => ({
+      ...purchase,
+      reward: this.rewards.get(purchase.rewardId)!
+    }));
   }
 }
 

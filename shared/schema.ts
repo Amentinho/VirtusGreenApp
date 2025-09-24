@@ -66,6 +66,8 @@ export const rewards = pgTable("rewards", {
   description: text("description").notNull(),
   tokenCost: integer("token_cost").notNull(),
   available: boolean("available").notNull().default(true),
+  totalAvailable: integer("total_available").notNull().default(100),
+  remainingQuantity: integer("remaining_quantity").notNull().default(100),
 });
 
 export const userPurchases = pgTable("user_purchases", {
