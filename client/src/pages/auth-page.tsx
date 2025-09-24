@@ -51,15 +51,17 @@ export default function AuthPage() {
                   className="space-y-4"
                 >
                   <div className="space-y-2">
-                    <Label htmlFor="username">Username</Label>
+                    <Label htmlFor="usernameOrEmail">Username or Email</Label>
                     <Input
-                      id="username"
-                      {...loginForm.register("username")}
+                      id="usernameOrEmail"
+                      {...loginForm.register("usernameOrEmail")}
+                      placeholder="Enter your username or email"
+                      data-testid="input-username-email"
                       required
                     />
-                    {loginForm.formState.errors.username && (
+                    {loginForm.formState.errors.usernameOrEmail && (
                       <p className="text-sm text-red-600">
-                        {loginForm.formState.errors.username.message}
+                        {loginForm.formState.errors.usernameOrEmail.message}
                       </p>
                     )}
                   </div>
@@ -69,6 +71,7 @@ export default function AuthPage() {
                       id="password"
                       type="password"
                       {...loginForm.register("password")}
+                      data-testid="input-password"
                       required
                     />
                     {loginForm.formState.errors.password && (
@@ -76,6 +79,16 @@ export default function AuthPage() {
                         {loginForm.formState.errors.password.message}
                       </p>
                     )}
+                    <div className="text-right">
+                      <button
+                        type="button"
+                        className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                        data-testid="link-forgot-password"
+                        onClick={() => {/* TODO: Implement password recovery */}}
+                      >
+                        Forgot password?
+                      </button>
+                    </div>
                   </div>
                   <Button
                     type="submit"

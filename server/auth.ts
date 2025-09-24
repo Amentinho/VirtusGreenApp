@@ -42,8 +42,11 @@ export function setupAuth(app: Express) {
   app.use(passport.session());
 
   passport.use(
-    new LocalStrategy(async (username, password, done) => {
-      const user = await storage.getUserByUsername(username);
+    new LocalStrategy({
+      usernameField: 'usernameOrEmail',
+      passwordField: 'password'
+    }, async (usernameOrEmail, password, done) => {
+      const user = await storage.getUserByUsernameOrEmail(usernameOrEmail);
       if (!user || !user.password || !(await comparePasswords(password, user.password))) {
         return done(null, false);
       } else {
@@ -59,9 +62,24 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/register", async (req, res, next) => {
-    const existingUser = await storage.getUserByUsername(req.body.username);
-    if (existingUser) {
-      return res.status(400).send("Username already exists");
+    // Check if username already exists
+    const existingUserByUsername = await storage.getUserByUsername(req.body.username);
+    if (existingUserByUsername) {
+      return res.status(400).json({ 
+        message: "The account already exists",
+        field: "username",
+        suggestion: "recover_password"
+      });
+    }
+
+    // Check if email already exists
+    const existingUserByEmail = await storage.getUserByEmail(req.body.email);
+    if (existingUserByEmail) {
+      return res.status(400).json({ 
+        message: "The account already exists", 
+        field: "email",
+        suggestion: "recover_password"
+      });
     }
 
     const user = await storage.createUser({

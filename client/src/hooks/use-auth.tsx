@@ -55,10 +55,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.setQueryData(["/api/auth/user"], user);
     },
     onError: (error: Error) => {
+      let errorMessage = error.message;
+      let showRecoverPassword = false;
+      
+      try {
+        const errorData = JSON.parse(error.message);
+        if (errorData.message === "The account already exists") {
+          errorMessage = "The account already exists";
+          showRecoverPassword = true;
+        }
+      } catch {
+        // If parsing fails, use the original error message
+      }
+      
       toast({
         title: "Registration failed",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
+        action: showRecoverPassword ? (
+          <button 
+            className="text-sm underline"
+            onClick={() => {/* TODO: Implement password recovery */}}
+          >
+            Recover Password
+          </button>
+        ) : undefined,
       });
     },
   });

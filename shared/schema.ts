@@ -70,8 +70,11 @@ const userCredentialsSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
-// Login schema (just username and password)
-export const loginSchema = userCredentialsSchema;
+// Login schema - allow both username and email
+export const loginSchema = z.object({
+  usernameOrEmail: z.string().min(1, "Username or email is required"),
+  password: z.string().min(1, "Password is required"),
+});
 
 // Registration schema (full user details with confirmation)
 export const insertUserSchema = userCredentialsSchema
@@ -112,6 +115,11 @@ export const upsertUserSchema = createInsertSchema(users).omit({
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type LoginCredentials = z.infer<typeof loginSchema>;
+
+// Password recovery schema
+export const passwordRecoverySchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+});
 export type UpsertUser = z.infer<typeof upsertUserSchema>; // For Replit Auth
 export type User = typeof users.$inferSelect;
 export type Product = typeof products.$inferSelect;

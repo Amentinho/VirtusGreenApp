@@ -20,6 +20,8 @@ export interface IStorage {
   // User operations for local auth
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByUsernameOrEmail(usernameOrEmail: string): Promise<User | undefined>;
   getUserByReferralCode(code: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserPassword(userId: string, newPassword: string): Promise<void>;
@@ -63,6 +65,19 @@ export class DatabaseStorage implements IStorage {
   async getUserByUsername(username: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.username, username));
     return user;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async getUserByUsernameOrEmail(usernameOrEmail: string): Promise<User | undefined> {
+    // Check if it's an email (contains @)
+    if (usernameOrEmail.includes('@')) {
+      return this.getUserByEmail(usernameOrEmail);
+    }
+    return this.getUserByUsername(usernameOrEmail);
   }
 
   async getUserByReferralCode(code: string): Promise<User | undefined> {
@@ -256,6 +271,20 @@ export class MemStorage implements IStorage {
     return Array.from(this.users.values()).find(
       (user) => user.username === username
     );
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.email === email
+    );
+  }
+
+  async getUserByUsernameOrEmail(usernameOrEmail: string): Promise<User | undefined> {
+    // Check if it's an email (contains @)
+    if (usernameOrEmail.includes('@')) {
+      return this.getUserByEmail(usernameOrEmail);
+    }
+    return this.getUserByUsername(usernameOrEmail);
   }
 
   async getUserByReferralCode(code: string): Promise<User | undefined> {
