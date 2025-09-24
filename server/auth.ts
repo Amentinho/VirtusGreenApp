@@ -50,9 +50,8 @@ export function setupAuth(app: Express) {
       const user = await storage.getUserByUsernameOrEmail(usernameOrEmail);
       if (!user || !user.password || !(await comparePasswords(password, user.password))) {
         return done(null, false);
-      } else if (!user.emailVerified) {
-        return done(null, false, { message: "Please verify your email before logging in" });
       } else {
+        // Allow unverified users through so we can handle verification in the login route
         return done(null, user);
       }
     }),
@@ -134,15 +133,30 @@ export function setupAuth(app: Express) {
     }
   });
 
-  app.post("/api/login", passport.authenticate("local"), (req: any, res) => {
-    // Check if email is verified for local users (SSO users are automatically verified)
-    if (req.user && !req.user.emailVerified && req.user.password) {
-      return res.status(403).json({ 
-        message: "Please verify your email address before logging in. Check your email for the verification link.",
-        emailNotVerified: true 
+  app.post("/api/login", (req, res, next) => {
+    passport.authenticate("local", (err: any, user: any, info: any) => {
+      if (err) {
+        return next(err);
+      }
+      if (!user) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+      
+      // Check if email is verified for local users (SSO users are automatically verified)
+      if (user && !user.emailVerified && user.password) {
+        return res.status(403).json({ 
+          message: "User not verified, please verify your email",
+          emailNotVerified: true 
+        });
+      }
+      
+      req.logIn(user, (err) => {
+        if (err) {
+          return next(err);
+        }
+        return res.status(200).json(user);
       });
-    }
-    res.status(200).json(req.user);
+    })(req, res, next);
   });
 
   app.post("/api/logout", (req, res, next) => {
