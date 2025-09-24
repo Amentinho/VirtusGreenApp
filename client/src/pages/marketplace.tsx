@@ -22,7 +22,7 @@ export default function RewardsPage() {
       return await apiRequest("POST", `/api/rewards/${rewardId}/purchase`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       queryClient.invalidateQueries({ queryKey: ["/api/rewards"] });
       toast({
         title: "Success!",
