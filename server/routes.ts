@@ -331,6 +331,159 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Sharing endpoints
+  app.post("/api/share/product", async (req: any, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const { productId, platform } = req.body;
+      const userId = req.user.claims?.sub || req.user.id;
+      
+      if (!productId || !platform) {
+        return res.status(400).json({ error: "Product ID and platform are required" });
+      }
+
+      const validPlatforms = ["whatsapp", "telegram", "instagram"];
+      if (!validPlatforms.includes(platform)) {
+        return res.status(400).json({ error: "Invalid platform" });
+      }
+
+      const result = await storage.recordProductShare(userId, productId, platform);
+      
+      // Get updated user tokens
+      const user = await storage.getUser(userId);
+      
+      res.json({
+        ...result,
+        tokens: user?.tokens || 0,
+      });
+    } catch (error) {
+      console.error("Error recording product share:", error);
+      res.status(500).json({ error: "Failed to record product share" });
+    }
+  });
+
+  app.post("/api/share/app", async (req: any, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const { platform } = req.body;
+      const userId = req.user.claims?.sub || req.user.id;
+      
+      if (!platform) {
+        return res.status(400).json({ error: "Platform is required" });
+      }
+
+      const validPlatforms = ["whatsapp", "telegram", "instagram"];
+      if (!validPlatforms.includes(platform)) {
+        return res.status(400).json({ error: "Invalid platform" });
+      }
+
+      const result = await storage.recordAppShare(userId, platform);
+      res.json(result);
+    } catch (error) {
+      console.error("Error recording app share:", error);
+      res.status(500).json({ error: "Failed to record app share" });
+    }
+  });
+
+  // Profile completion endpoints
+  app.get("/api/profile/completion-status", async (req: any, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const status = await storage.isProfileComplete(userId);
+      res.json(status);
+    } catch (error) {
+      console.error("Error checking profile completion:", error);
+      res.status(500).json({ error: "Failed to check profile completion" });
+    }
+  });
+
+  app.post("/api/profile/claim-completion", async (req: any, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const result = await storage.awardProfileCompletionBonus(userId);
+      
+      // Get updated user tokens
+      const user = await storage.getUser(userId);
+      
+      res.json({
+        ...result,
+        tokens: user?.tokens || 0,
+      });
+    } catch (error) {
+      console.error("Error claiming profile completion bonus:", error);
+      res.status(500).json({ error: "Failed to claim profile completion bonus" });
+    }
+  });
+
+  // Social media verification endpoints
+  app.post("/api/social/initiate-verification", async (req: any, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const { platform, handle } = req.body;
+      const userId = req.user.claims?.sub || req.user.id;
+      
+      if (!platform) {
+        return res.status(400).json({ error: "Platform is required" });
+      }
+
+      const validPlatforms = ["instagram", "linkedin"];
+      if (!validPlatforms.includes(platform)) {
+        return res.status(400).json({ error: "Invalid platform" });
+      }
+
+      const result = await storage.initiateSocialFollowVerification(userId, platform, handle);
+      res.json(result);
+    } catch (error) {
+      console.error("Error initiating social verification:", error);
+      res.status(500).json({ error: "Failed to initiate social verification" });
+    }
+  });
+
+  app.post("/api/social/verify", async (req: any, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const { platform, verificationCode } = req.body;
+      const userId = req.user.claims?.sub || req.user.id;
+      
+      if (!platform || !verificationCode) {
+        return res.status(400).json({ error: "Platform and verification code are required" });
+      }
+
+      const result = await storage.verifySocialFollow(userId, platform, verificationCode);
+      
+      // Get updated user tokens
+      const user = await storage.getUser(userId);
+      
+      res.json({
+        ...result,
+        tokens: user?.tokens || 0,
+      });
+    } catch (error) {
+      console.error("Error verifying social follow:", error);
+      res.status(500).json({ error: "Failed to verify social follow" });
+    }
+  });
+
   // Email verification endpoint
   app.get("/verify-email", async (req, res) => {
     try {
