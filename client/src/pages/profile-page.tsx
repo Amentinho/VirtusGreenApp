@@ -12,6 +12,8 @@ import { Copy, ArrowLeft, LogOut } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import ProfileCompletion from "@/components/profile-completion";
+import SocialMediaVerification from "@/components/social-media-verification";
 
 type UpdatePasswordForm = {
   currentPassword: string;
@@ -89,7 +91,7 @@ export default function ProfilePage() {
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle>User Information</CardTitle>
@@ -172,6 +174,11 @@ export default function ProfilePage() {
               </form>
             </CardContent>
           </Card>
+
+          <div className="space-y-6">
+            <ProfileCompletion />
+            <SocialMediaVerification />
+          </div>
         </div>
       </main>
     </div>
