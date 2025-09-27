@@ -4,11 +4,15 @@ import { Product, User, Reward, UserPurchase, InsertUser, CreateUser, UpsertUser
 import { customAlphabet } from "nanoid";
 import connectPg from "connect-pg-simple";
 import { db } from "./db";
-import { users, products, rewards, userPurchases } from "@shared/schema";
+import { users, products, rewards, userPurchases, productShares, appShares, referralEvents, userActions, socialFollowVerifications } from "@shared/schema";
 import { eq, sql, and } from "drizzle-orm";
 
 const MemoryStore = createMemoryStore(session);
-const REFERRAL_BONUS = 50; // Tokens awarded for successful referral
+const REFERRAL_BONUS = 10; // Tokens awarded for successful referral
+const PRODUCT_SHARE_BONUS = 5; // Tokens for sharing products
+const PRODUCT_SHARE_DAILY_CAP = 5; // Maximum product shares per day
+const PROFILE_COMPLETION_BONUS = 5; // Tokens for completing profile fields
+const SOCIAL_FOLLOW_BONUS = 10; // Tokens for following on social media
 
 const generateReferralCode = customAlphabet(
   "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",
@@ -133,22 +137,61 @@ export class DatabaseStorage implements IStorage {
 
   // Replit Auth upsert - referenced from blueprint integration
   async upsertUser(userData: UpsertUser): Promise<User> {
-    const referralCode = generateReferralCode();
-    const [user] = await db
-      .insert(users)
-      .values({
-        ...userData,
-        referralCode,
-      })
-      .onConflictDoUpdate({
-        target: users.id,
-        set: {
+    if (!userData.id) {
+      throw new Error("User ID is required for upsert operation");
+    }
+    
+    // Check if user already exists
+    const existingUser = await this.getUser(userData.id);
+    
+    if (existingUser) {
+      // Update existing user, preserving referral code
+      const [user] = await db
+        .update(users)
+        .set({
           ...userData,
           updatedAt: new Date(),
-        },
-      })
-      .returning();
-    return user;
+        })
+        .where(eq(users.id, userData.id))
+        .returning();
+      return user;
+    } else {
+      // New SSO user - handle referral bonus
+      let tokens = 0;
+      
+      // Handle referral code if provided
+      if (userData.usedReferralCode) {
+        const referrer = await this.getUserByReferralCode(userData.usedReferralCode);
+        if (referrer) {
+          // Award tokens to both the referrer and the new user
+          tokens = REFERRAL_BONUS;
+          await db
+            .update(users)
+            .set({ tokens: referrer.tokens + REFERRAL_BONUS, updatedAt: new Date() })
+            .where(eq(users.id, referrer.id));
+          
+          // Record referral event
+          await db
+            .insert(referralEvents)
+            .values({
+              referrerId: referrer.id,
+              referredUserId: userData.id,
+            });
+        }
+      }
+
+      const referralCode = generateReferralCode();
+      const [user] = await db
+        .insert(users)
+        .values({
+          ...userData,
+          tokens,
+          referralCode,
+          emailVerified: true, // SSO users are considered verified
+        })
+        .returning();
+      return user;
+    }
   }
 
   async updateUserPassword(userId: string, newPassword: string): Promise<void> {

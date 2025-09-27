@@ -82,6 +82,58 @@ export const userPurchases = pgTable("user_purchases", {
   purchasedAt: timestamp("purchased_at").defaultNow().notNull(),
 });
 
+// New tables for sharing and rewards tracking
+export const productShares = pgTable("product_shares", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull(),
+  productId: text("product_id").notNull(), // Can be barcode or internal ID
+  platform: text("platform").notNull(), // whatsapp, telegram, instagram
+  sharedAt: timestamp("shared_at").defaultNow().notNull(),
+  pointsAwarded: integer("points_awarded").notNull().default(0),
+}, (table) => [
+  index("idx_product_shares_user_date").on(table.userId, table.sharedAt),
+]);
+
+export const appShares = pgTable("app_shares", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull(),
+  platform: text("platform").notNull(), // whatsapp, telegram, instagram
+  sharedAt: timestamp("shared_at").defaultNow().notNull(),
+  referralCode: text("referral_code").notNull(),
+  shareUrl: text("share_url").notNull(),
+});
+
+export const referralEvents = pgTable("referral_events", {
+  id: serial("id").primaryKey(),
+  referrerId: varchar("referrer_id").notNull(),
+  referredUserId: varchar("referred_user_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const userActions = pgTable("user_actions", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull(),
+  action: text("action").notNull(), // email_shared, telegram_shared, instagram_shared, wallet_shared
+  awardedTokens: integer("awarded_tokens").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_user_actions_unique").on(table.userId, table.action),
+]);
+
+export const socialFollowVerifications = pgTable("social_follow_verifications", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull(),
+  platform: text("platform").notNull(), // instagram, linkedin
+  handle: text("handle"),
+  status: text("status").notNull().default("pending"), // pending, verified, failed
+  verificationCode: text("verification_code"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  verifiedAt: timestamp("verified_at"),
+  tokensAwarded: integer("tokens_awarded").notNull().default(0),
+}, (table) => [
+  index("idx_social_follow_user_platform").on(table.userId, table.platform),
+]);
+
 // Base schema for user credentials
 const userCredentialsSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -154,9 +206,52 @@ export const passwordResetSchema = z.object({
   path: ["confirmPassword"],
 });
 export type UpsertUser = z.infer<typeof upsertUserSchema>; // For Replit Auth
+
+// Inferred types for better type safety
 export type User = typeof users.$inferSelect;
 export type Product = typeof products.$inferSelect;
 export type Reward = typeof rewards.$inferSelect;
 export type UserPurchase = typeof userPurchases.$inferSelect;
+export type ProductShare = typeof productShares.$inferSelect;
+export type AppShare = typeof appShares.$inferSelect;
+export type ReferralEvent = typeof referralEvents.$inferSelect;
+export type UserAction = typeof userActions.$inferSelect;
+export type SocialFollowVerification = typeof socialFollowVerifications.$inferSelect;
+
 export type InsertReward = z.infer<typeof insertRewardSchema>;
 export type InsertUserPurchase = z.infer<typeof insertUserPurchaseSchema>;
+
+// Insert schemas for new tables
+export const insertProductShareSchema = createInsertSchema(productShares).omit({
+  id: true,
+  sharedAt: true,
+  pointsAwarded: true
+});
+
+export const insertAppShareSchema = createInsertSchema(appShares).omit({
+  id: true,
+  sharedAt: true
+});
+
+export const insertReferralEventSchema = createInsertSchema(referralEvents).omit({
+  id: true,
+  createdAt: true
+});
+
+export const insertUserActionSchema = createInsertSchema(userActions).omit({
+  id: true,
+  createdAt: true
+});
+
+export const insertSocialFollowVerificationSchema = createInsertSchema(socialFollowVerifications).omit({
+  id: true,
+  createdAt: true,
+  verifiedAt: true,
+  tokensAwarded: true
+});
+
+export type InsertProductShare = z.infer<typeof insertProductShareSchema>;
+export type InsertAppShare = z.infer<typeof insertAppShareSchema>;
+export type InsertReferralEvent = z.infer<typeof insertReferralEventSchema>;
+export type InsertUserAction = z.infer<typeof insertUserActionSchema>;
+export type InsertSocialFollowVerification = z.infer<typeof insertSocialFollowVerificationSchema>;
