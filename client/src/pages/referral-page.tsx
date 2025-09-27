@@ -102,7 +102,7 @@ export default function ReferralPage() {
                   </div>
 
                   <div className="text-sm text-gray-600 text-center">
-                    Share this code with friends to earn 50 tokens when they sign up!
+                    Share this code with friends to earn 10 tokens when they sign up!
                   </div>
                 </>
               ) : (
@@ -186,7 +186,7 @@ export default function ReferralPage() {
                   </div>
                   <h3 className="font-semibold mb-2">3. Earn Tokens</h3>
                   <p className="text-sm text-gray-600">
-                    Get 50 tokens for each successful referral to spend in the marketplace
+                    Get 10 tokens for each successful referral to spend in the rewards section
                   </p>
                 </div>
               </div>

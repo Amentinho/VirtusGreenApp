@@ -56,6 +56,16 @@ export interface IStorage {
   purchaseReward(userId: string, rewardId: number): Promise<void>;
   getUserPurchases(userId: string): Promise<Array<UserPurchase & { reward: Reward }>>;
   
+  // Sharing and gamification methods
+  recordProductShare(userId: string, productId: string, platform: string): Promise<{ awarded: number; sharesLeftToday: number }>;
+  recordAppShare(userId: string, platform: string): Promise<{ shareUrl: string; referralCode: string }>;
+  getTodayShareCount(userId: string): Promise<number>;
+  awardProfileCompletionBonus(userId: string): Promise<{ awarded: boolean; tokensEarned: number }>;
+  markOneTimeAction(userId: string, action: string, awardedTokens: number): Promise<boolean>;
+  initiateSocialFollowVerification(userId: string, platform: string, handle?: string): Promise<{ verificationCode: string; message: string }>;
+  verifySocialFollow(userId: string, platform: string, verificationCode: string): Promise<{ verified: boolean; tokensAwarded: number }>;
+  isProfileComplete(userId: string): Promise<{ complete: boolean; missingFields: string[] }>;
+
   // Session store
   sessionStore: session.Store;
 }
@@ -353,21 +363,219 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getReferralStats(userId: string): Promise<{ referralCount: number; tokensEarned: number }> {
-    const user = await this.getUser(userId);
-    if (!user?.referralCode) {
-      return { referralCount: 0, tokensEarned: 0 };
-    }
-
-    // Count users who used this user's referral code
+    // Use referral events table for accurate tracking
     const result = await db
       .select({ count: sql<number>`count(*)` })
-      .from(users)
-      .where(eq(users.usedReferralCode, user.referralCode));
+      .from(referralEvents)
+      .where(eq(referralEvents.referrerId, userId));
 
     const referralCount = result[0]?.count || 0;
     const tokensEarned = referralCount * REFERRAL_BONUS;
 
     return { referralCount, tokensEarned };
+  }
+
+  async recordProductShare(userId: string, productId: string, platform: string): Promise<{ awarded: number; sharesLeftToday: number }> {
+    // Check today's share count
+    const todayCount = await this.getTodayShareCount(userId);
+    
+    if (todayCount >= PRODUCT_SHARE_DAILY_CAP) {
+      return { awarded: 0, sharesLeftToday: 0 };
+    }
+
+    // Record the share
+    await db
+      .insert(productShares)
+      .values({
+        userId,
+        productId,
+        platform,
+        pointsAwarded: PRODUCT_SHARE_BONUS,
+      });
+
+    // Award tokens to user
+    await db
+      .update(users)
+      .set({ 
+        tokens: sql`${users.tokens} + ${PRODUCT_SHARE_BONUS}`,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId));
+
+    const sharesLeftToday = PRODUCT_SHARE_DAILY_CAP - (todayCount + 1);
+    return { awarded: PRODUCT_SHARE_BONUS, sharesLeftToday };
+  }
+
+  async recordAppShare(userId: string, platform: string): Promise<{ shareUrl: string; referralCode: string }> {
+    const user = await this.getUser(userId);
+    if (!user?.referralCode) {
+      throw new Error("User not found or no referral code");
+    }
+
+    const shareUrl = `${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000'}/auth?ref=${user.referralCode}`;
+    
+    await db
+      .insert(appShares)
+      .values({
+        userId,
+        platform,
+        referralCode: user.referralCode,
+        shareUrl,
+      });
+
+    return { shareUrl, referralCode: user.referralCode };
+  }
+
+  async getTodayShareCount(userId: string): Promise<number> {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(productShares)
+      .where(
+        and(
+          eq(productShares.userId, userId),
+          sql`${productShares.sharedAt} >= ${startOfDay}`
+        )
+      );
+
+    return result[0]?.count || 0;
+  }
+
+  async awardProfileCompletionBonus(userId: string): Promise<{ awarded: boolean; tokensEarned: number }> {
+    const { complete } = await this.isProfileComplete(userId);
+    
+    if (!complete) {
+      return { awarded: false, tokensEarned: 0 };
+    }
+
+    // Check if already awarded profile completion bonus
+    const alreadyAwarded = await this.markOneTimeAction(userId, "profile_completion", PROFILE_COMPLETION_BONUS);
+    
+    if (!alreadyAwarded) {
+      return { awarded: false, tokensEarned: 0 };
+    }
+
+    // Award tokens
+    await db
+      .update(users)
+      .set({
+        tokens: sql`${users.tokens} + ${PROFILE_COMPLETION_BONUS}`,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId));
+
+    return { awarded: true, tokensEarned: PROFILE_COMPLETION_BONUS };
+  }
+
+  async markOneTimeAction(userId: string, action: string, awardedTokens: number): Promise<boolean> {
+    try {
+      await db
+        .insert(userActions)
+        .values({
+          userId,
+          action,
+          awardedTokens,
+        });
+      return true; // Successfully marked as completed
+    } catch (error) {
+      // If constraint error, action was already completed
+      return false;
+    }
+  }
+
+  async initiateSocialFollowVerification(userId: string, platform: string, handle?: string): Promise<{ verificationCode: string; message: string }> {
+    const verificationCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+    
+    await db
+      .insert(socialFollowVerifications)
+      .values({
+        userId,
+        platform,
+        handle: handle || null,
+        verificationCode,
+        status: "pending",
+      })
+      .onConflictDoUpdate({
+        target: [socialFollowVerifications.userId, socialFollowVerifications.platform],
+        set: {
+          verificationCode,
+          status: "pending",
+          createdAt: new Date(),
+        },
+      });
+
+    let message = "";
+    if (platform === "instagram") {
+      message = `Follow @virtusgreen on Instagram and post a story mentioning us with code ${verificationCode}`;
+    } else if (platform === "linkedin") {
+      message = `Follow VirtusGreen on LinkedIn and post about us with code ${verificationCode}`;
+    }
+
+    return { verificationCode, message };
+  }
+
+  async verifySocialFollow(userId: string, platform: string, verificationCode: string): Promise<{ verified: boolean; tokensAwarded: number }> {
+    const verification = await db
+      .select()
+      .from(socialFollowVerifications)
+      .where(
+        and(
+          eq(socialFollowVerifications.userId, userId),
+          eq(socialFollowVerifications.platform, platform),
+          eq(socialFollowVerifications.verificationCode, verificationCode)
+        )
+      )
+      .limit(1);
+
+    if (verification.length === 0) {
+      return { verified: false, tokensAwarded: 0 };
+    }
+
+    const record = verification[0];
+    if (record.status === "verified") {
+      return { verified: true, tokensAwarded: record.tokensAwarded };
+    }
+
+    // Mark as verified and award tokens
+    await db
+      .update(socialFollowVerifications)
+      .set({
+        status: "verified",
+        verifiedAt: new Date(),
+        tokensAwarded: SOCIAL_FOLLOW_BONUS,
+      })
+      .where(eq(socialFollowVerifications.id, record.id));
+
+    // Award tokens to user
+    await db
+      .update(users)
+      .set({
+        tokens: sql`${users.tokens} + ${SOCIAL_FOLLOW_BONUS}`,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId));
+
+    return { verified: true, tokensAwarded: SOCIAL_FOLLOW_BONUS };
+  }
+
+  async isProfileComplete(userId: string): Promise<{ complete: boolean; missingFields: string[] }> {
+    const user = await this.getUser(userId);
+    if (!user) {
+      return { complete: false, missingFields: ["user_not_found"] };
+    }
+
+    const missingFields: string[] = [];
+    
+    if (!user.email) missingFields.push("email");
+    if (!user.firstName) missingFields.push("firstName");
+    if (!user.lastName) missingFields.push("lastName");
+
+    return {
+      complete: missingFields.length === 0,
+      missingFields,
+    };
   }
 }
 
