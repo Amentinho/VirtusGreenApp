@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Product } from "@shared/schema";
 import EnvImpactChart from "./env-impact-chart";
+import ShareButton from "./share-button";
 
 export default function ProductCard({ product }: { product: Product }) {
   const { name, brand, environmentalImpact: impact } = product;
@@ -28,6 +29,14 @@ export default function ProductCard({ product }: { product: Product }) {
             </span>
           </div>
           <EnvImpactChart impact={impact} />
+        </div>
+        
+        <div className="flex justify-end mt-4">
+          <ShareButton
+            productId={product.barcode}
+            productName={product.name}
+            variant="product"
+          />
         </div>
       </CardContent>
     </Card>

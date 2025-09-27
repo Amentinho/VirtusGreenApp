@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import ShareButton from "@/components/share-button";
 
 interface ReferralStats {
   referralCount: number;
@@ -99,6 +100,10 @@ export default function ReferralPage() {
                       <Share2 className="h-4 w-4 mr-2" />
                       Share
                     </Button>
+                  </div>
+
+                  <div className="mt-4">
+                    <ShareButton variant="app" className="w-full" />
                   </div>
 
                   <div className="text-sm text-gray-600 text-center">
