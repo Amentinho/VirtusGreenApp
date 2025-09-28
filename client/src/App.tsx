@@ -11,6 +11,7 @@ import ProfilePage from "@/pages/profile-page";
 import ReferralPage from "@/pages/referral-page";
 import MyRewardsPage from "@/pages/my-rewards-page";
 import ResetPasswordPage from "@/pages/reset-password-page";
+import ProductDetailPage from "@/pages/product-detail";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -19,6 +20,7 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
       <Route path="/reset-password" component={ResetPasswordPage} />
       <ProtectedRoute path="/" component={HomePage} />
+      <ProtectedRoute path="/product/:barcode" component={ProductDetailPage} />
       <ProtectedRoute path="/rewards" component={RewardsPage} />
       <ProtectedRoute path="/profile" component={ProfilePage} />
       <ProtectedRoute path="/referral" component={ReferralPage} />

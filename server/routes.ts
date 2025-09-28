@@ -331,6 +331,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/user/token-earnings", async (req: any, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const earnings = await storage.getTokenEarnings(userId);
+      res.json(earnings);
+    } catch (error) {
+      console.error("Error fetching token earnings:", error);
+      res.status(500).json({ message: "Failed to fetch token earnings" });
+    }
+  });
+
   // Sharing endpoints
   app.post("/api/share/product", async (req: any, res) => {
     if (!req.isAuthenticated()) {
@@ -443,7 +458,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Platform is required" });
       }
 
-      const validPlatforms = ["instagram", "linkedin"];
+      const validPlatforms = ["instagram", "linkedin", "twitter"];
       if (!validPlatforms.includes(platform)) {
         return res.status(400).json({ error: "Invalid platform" });
       }
@@ -481,6 +496,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error verifying social follow:", error);
       res.status(500).json({ error: "Failed to verify social follow" });
+    }
+  });
+
+  // EVM wallet verification endpoint
+  app.post("/api/verify-evm-wallet", async (req: any, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const { walletAddress } = req.body;
+      const userId = req.user.claims?.sub || req.user.id;
+      
+      if (!walletAddress) {
+        return res.status(400).json({ error: "Wallet address is required" });
+      }
+
+      const result = await storage.verifyEvmWallet(userId, walletAddress);
+      
+      // Get updated user tokens
+      const user = await storage.getUser(userId);
+      
+      res.json({
+        ...result,
+        tokens: user?.tokens || 0,
+      });
+    } catch (error) {
+      console.error("Error verifying EVM wallet:", error);
+      res.status(500).json({ error: error instanceof Error ? error.message : "Failed to verify EVM wallet" });
+    }
+  });
+
+  // Telegram verification endpoint
+  app.post("/api/verify-telegram", async (req: any, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const { telegramUsername } = req.body;
+      const userId = req.user.claims?.sub || req.user.id;
+      
+      if (!telegramUsername) {
+        return res.status(400).json({ error: "Telegram username is required" });
+      }
+
+      const result = await storage.verifyTelegram(userId, telegramUsername);
+      
+      // Get updated user tokens
+      const user = await storage.getUser(userId);
+      
+      res.json({
+        ...result,
+        tokens: user?.tokens || 0,
+      });
+    } catch (error) {
+      console.error("Error verifying Telegram:", error);
+      res.status(500).json({ error: error instanceof Error ? error.message : "Failed to verify Telegram" });
     }
   });
 

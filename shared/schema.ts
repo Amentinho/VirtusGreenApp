@@ -42,6 +42,18 @@ export const users = pgTable("users", {
   lastName: text("last_name"),
   profileImageUrl: text("profile_image_url"),
   
+  // Profile completion fields
+  dateOfBirth: timestamp("date_of_birth"),
+  country: text("country"),
+  city: text("city"),
+  gender: text("gender"), // Male, Female, Non-binary
+  
+  // Verification fields
+  evmWalletAddress: text("evm_wallet_address"),
+  evmWalletVerified: boolean("evm_wallet_verified").notNull().default(false),
+  telegramUsername: text("telegram_username"),
+  telegramVerified: boolean("telegram_verified").notNull().default(false),
+  
   // Timestamps for both systems
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -134,6 +146,17 @@ export const socialFollowVerifications = pgTable("social_follow_verifications", 
   index("idx_social_follow_user_platform").on(table.userId, table.platform),
 ]);
 
+export const tokenEarnings = pgTable("token_earnings", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull(),
+  source: text("source").notNull(), // referral, product_share, app_share, profile_completion, social_follow, etc.
+  amount: integer("amount").notNull(),
+  description: text("description").notNull(), // Human readable description
+  earnedAt: timestamp("earned_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_token_earnings_user_date").on(table.userId, table.earnedAt),
+]);
+
 // Base schema for user credentials
 const userCredentialsSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -217,6 +240,7 @@ export type AppShare = typeof appShares.$inferSelect;
 export type ReferralEvent = typeof referralEvents.$inferSelect;
 export type UserAction = typeof userActions.$inferSelect;
 export type SocialFollowVerification = typeof socialFollowVerifications.$inferSelect;
+export type TokenEarning = typeof tokenEarnings.$inferSelect;
 
 export type InsertReward = z.infer<typeof insertRewardSchema>;
 export type InsertUserPurchase = z.infer<typeof insertUserPurchaseSchema>;
@@ -250,8 +274,14 @@ export const insertSocialFollowVerificationSchema = createInsertSchema(socialFol
   tokensAwarded: true
 });
 
+export const insertTokenEarningSchema = createInsertSchema(tokenEarnings).omit({
+  id: true,
+  earnedAt: true
+});
+
 export type InsertProductShare = z.infer<typeof insertProductShareSchema>;
 export type InsertAppShare = z.infer<typeof insertAppShareSchema>;
 export type InsertReferralEvent = z.infer<typeof insertReferralEventSchema>;
 export type InsertUserAction = z.infer<typeof insertUserActionSchema>;
 export type InsertSocialFollowVerification = z.infer<typeof insertSocialFollowVerificationSchema>;
+export type InsertTokenEarning = z.infer<typeof insertTokenEarningSchema>;

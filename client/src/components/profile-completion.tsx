@@ -72,18 +72,24 @@ export default function ProfileCompletion() {
 
   const getFieldDisplayName = (field: string) => {
     switch (field) {
-      case "email":
-        return "Email Address";
       case "firstName":
         return "First Name";
       case "lastName":
         return "Last Name";
+      case "dateOfBirth":
+        return "Date of Birth";
+      case "country":
+        return "Country";
+      case "city":
+        return "City";
+      case "gender":
+        return "Gender";
       default:
         return field;
     }
   };
 
-  const allFields = ["email", "firstName", "lastName"];
+  const allFields = ["firstName", "lastName", "dateOfBirth", "country", "city", "gender"];
 
   if (isLoading) {
     return (

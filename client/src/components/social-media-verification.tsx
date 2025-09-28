@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ExternalLink, Check } from "lucide-react";
-import { SiInstagram, SiLinkedin } from "react-icons/si";
+import { SiInstagram, SiLinkedin, SiX } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
 
 interface VerificationResponse {
@@ -152,6 +152,14 @@ export default function SocialMediaVerification() {
       color: "text-blue-600",
       url: "https://linkedin.com/company/virtusgreen",
       instructions: "Follow our company page and post about us with your code"
+    },
+    {
+      id: "twitter",
+      name: "Twitter",
+      icon: <SiX className="h-5 w-5" />,
+      color: "text-blue-400",
+      url: "https://twitter.com/virtusgreen",
+      instructions: "Follow us and tweet your verification code mentioning @virtusgreen"
     }
   ];
 

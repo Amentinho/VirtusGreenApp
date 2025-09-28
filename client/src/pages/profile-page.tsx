@@ -14,6 +14,9 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import ProfileCompletion from "@/components/profile-completion";
 import SocialMediaVerification from "@/components/social-media-verification";
+import TokenEarningsHistory from "@/components/token-earnings-history";
+import { EvmWalletVerification } from "@/components/evm-wallet-verification";
+import { TelegramVerification } from "@/components/telegram-verification";
 
 type UpdatePasswordForm = {
   currentPassword: string;
@@ -178,6 +181,9 @@ export default function ProfilePage() {
           <div className="space-y-6">
             <ProfileCompletion />
             <SocialMediaVerification />
+            <EvmWalletVerification />
+            <TelegramVerification />
+            <TokenEarningsHistory />
           </div>
         </div>
       </main>

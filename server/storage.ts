@@ -1,10 +1,10 @@
 import createMemoryStore from "memorystore";
 import session from "express-session";
-import { Product, User, Reward, UserPurchase, InsertUser, CreateUser, UpsertUser, InsertUserPurchase } from "@shared/schema";
+import { Product, User, Reward, UserPurchase, InsertUser, CreateUser, UpsertUser, InsertUserPurchase, TokenEarning } from "@shared/schema";
 import { customAlphabet } from "nanoid";
 import connectPg from "connect-pg-simple";
 import { db } from "./db";
-import { users, products, rewards, userPurchases, productShares, appShares, referralEvents, userActions, socialFollowVerifications } from "@shared/schema";
+import { users, products, rewards, userPurchases, productShares, appShares, referralEvents, userActions, socialFollowVerifications, tokenEarnings } from "@shared/schema";
 import { eq, sql, and } from "drizzle-orm";
 
 const MemoryStore = createMemoryStore(session);
@@ -65,6 +65,10 @@ export interface IStorage {
   initiateSocialFollowVerification(userId: string, platform: string, handle?: string): Promise<{ verificationCode: string; message: string }>;
   verifySocialFollow(userId: string, platform: string, verificationCode: string): Promise<{ verified: boolean; tokensAwarded: number }>;
   isProfileComplete(userId: string): Promise<{ complete: boolean; missingFields: string[] }>;
+  getTokenEarnings(userId: string): Promise<TokenEarning[]>;
+  recordTokenEarning(userId: string, source: string, amount: number, description: string): Promise<void>;
+  verifyEvmWallet(userId: string, walletAddress: string): Promise<{ verified: boolean; tokensAwarded: number }>;
+  verifyTelegram(userId: string, telegramUsername: string): Promise<{ verified: boolean; tokensAwarded: number }>;
 
   // Session store
   sessionStore: session.Store;
@@ -187,6 +191,22 @@ export class DatabaseStorage implements IStorage {
               referrerId: referrer.id,
               referredUserId: userData.id,
             });
+
+          // Record token earnings for referrer
+          await this.recordTokenEarning(
+            referrer.id,
+            "referral",
+            REFERRAL_BONUS,
+            `Referral bonus for inviting ${userData.firstName || userData.email || "new user"}`
+          );
+
+          // Record token earnings for new user
+          await this.recordTokenEarning(
+            userData.id,
+            "referral_signup",
+            REFERRAL_BONUS,
+            "Welcome bonus for joining with referral code"
+          );
         }
       }
 
@@ -376,11 +396,27 @@ export class DatabaseStorage implements IStorage {
   }
 
   async recordProductShare(userId: string, productId: string, platform: string): Promise<{ awarded: number; sharesLeftToday: number }> {
+    // Check if user has already shared this product
+    const existingShare = await db
+      .select()
+      .from(productShares)
+      .where(
+        and(
+          eq(productShares.userId, userId),
+          eq(productShares.productId, productId)
+        )
+      )
+      .limit(1);
+    
+    if (existingShare.length > 0) {
+      throw new Error("Product already shared");
+    }
+
     // Check today's share count
     const todayCount = await this.getTodayShareCount(userId);
     
     if (todayCount >= PRODUCT_SHARE_DAILY_CAP) {
-      return { awarded: 0, sharesLeftToday: 0 };
+      throw new Error("Daily sharing limit reached");
     }
 
     // Record the share
@@ -401,6 +437,15 @@ export class DatabaseStorage implements IStorage {
         updatedAt: new Date()
       })
       .where(eq(users.id, userId));
+
+    // Record token earning
+    const product = await this.getProductByBarcode(productId);
+    await this.recordTokenEarning(
+      userId,
+      "product_share",
+      PRODUCT_SHARE_BONUS,
+      `Shared ${product?.name || "product"} on ${platform}`
+    );
 
     const sharesLeftToday = PRODUCT_SHARE_DAILY_CAP - (todayCount + 1);
     return { awarded: PRODUCT_SHARE_BONUS, sharesLeftToday };
@@ -465,6 +510,14 @@ export class DatabaseStorage implements IStorage {
         updatedAt: new Date()
       })
       .where(eq(users.id, userId));
+
+    // Record token earning
+    await this.recordTokenEarning(
+      userId,
+      "profile_completion",
+      PROFILE_COMPLETION_BONUS,
+      "Profile completion bonus"
+    );
 
     return { awarded: true, tokensEarned: PROFILE_COMPLETION_BONUS };
   }
@@ -557,6 +610,14 @@ export class DatabaseStorage implements IStorage {
       })
       .where(eq(users.id, userId));
 
+    // Record token earning
+    await this.recordTokenEarning(
+      userId,
+      "social_follow",
+      SOCIAL_FOLLOW_BONUS,
+      `Social media verification bonus for ${platform}`
+    );
+
     return { verified: true, tokensAwarded: SOCIAL_FOLLOW_BONUS };
   }
 
@@ -568,14 +629,149 @@ export class DatabaseStorage implements IStorage {
 
     const missingFields: string[] = [];
     
-    if (!user.email) missingFields.push("email");
     if (!user.firstName) missingFields.push("firstName");
     if (!user.lastName) missingFields.push("lastName");
+    if (!user.dateOfBirth) missingFields.push("dateOfBirth");
+    if (!user.country) missingFields.push("country");
+    if (!user.city) missingFields.push("city");
+    if (!user.gender) missingFields.push("gender");
 
     return {
       complete: missingFields.length === 0,
       missingFields,
     };
+  }
+
+  async getTokenEarnings(userId: string): Promise<TokenEarning[]> {
+    const earnings = await db
+      .select()
+      .from(tokenEarnings)
+      .where(eq(tokenEarnings.userId, userId))
+      .orderBy(sql`${tokenEarnings.earnedAt} DESC`);
+    
+    return earnings;
+  }
+
+  async recordTokenEarning(userId: string, source: string, amount: number, description: string): Promise<void> {
+    await db
+      .insert(tokenEarnings)
+      .values({
+        userId,
+        source,
+        amount,
+        description,
+      });
+  }
+
+  async verifyEvmWallet(userId: string, walletAddress: string): Promise<{ verified: boolean; tokensAwarded: number }> {
+    // Check if user already has a verified EVM wallet
+    const user = await this.getUser(userId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    if (user.evmWalletVerified) {
+      throw new Error("EVM wallet already verified");
+    }
+
+    // Comprehensive EVM address validation
+    const isValidAddress = /^0x[a-fA-F0-9]{40}$/.test(walletAddress);
+    if (!isValidAddress) {
+      throw new Error("Invalid EVM wallet address format. Must be a valid 42-character hex address starting with 0x");
+    }
+
+    // Additional validation - ensure it's not a zero address
+    if (walletAddress.toLowerCase() === "0x0000000000000000000000000000000000000000") {
+      throw new Error("Zero address is not allowed");
+    }
+
+    // Check if this wallet address is already used by another user
+    const existingUser = await db
+      .select()
+      .from(users)
+      .where(eq(users.evmWalletAddress, walletAddress))
+      .limit(1);
+
+    if (existingUser.length > 0 && existingUser[0].id !== userId) {
+      throw new Error("This wallet address is already verified by another user");
+    }
+
+    // Update user with verified wallet
+    await db
+      .update(users)
+      .set({
+        evmWalletAddress: walletAddress,
+        evmWalletVerified: true,
+        tokens: sql`${users.tokens} + 10`,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId));
+
+    // Record token earning
+    await this.recordTokenEarning(
+      userId,
+      "evm_wallet",
+      10,
+      "EVM wallet verification bonus"
+    );
+
+    return { verified: true, tokensAwarded: 10 };
+  }
+
+  async verifyTelegram(userId: string, telegramUsername: string): Promise<{ verified: boolean; tokensAwarded: number }> {
+    // Check if user already has verified Telegram
+    const user = await this.getUser(userId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    if (user.telegramVerified) {
+      throw new Error("Telegram already verified");
+    }
+
+    // Comprehensive Telegram username validation
+    const isValidUsername = /^[a-zA-Z0-9_]{5,32}$/.test(telegramUsername);
+    if (!isValidUsername) {
+      throw new Error("Invalid Telegram username format. Must be 5-32 characters, alphanumeric and underscores only");
+    }
+
+    // Additional validation - prevent reserved usernames
+    const reservedUsernames = ["admin", "support", "telegram", "bot", "api", "channel"];
+    if (reservedUsernames.includes(telegramUsername.toLowerCase())) {
+      throw new Error("This username is reserved and cannot be used");
+    }
+
+    // Check if this username is already used by another user
+    const existingUser = await db
+      .select()
+      .from(users)
+      .where(eq(users.telegramUsername, telegramUsername))
+      .limit(1);
+
+    if (existingUser.length > 0 && existingUser[0].id !== userId) {
+      throw new Error("This Telegram username is already verified by another user");
+    }
+
+    // Update user with verified Telegram
+    await db
+      .update(users)
+      .set({
+        telegramUsername: telegramUsername,
+        telegramVerified: true,
+        tokens: sql`${users.tokens} + 10`,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId));
+
+    // Record token earning
+    await this.recordTokenEarning(
+      userId,
+      "telegram",
+      10,
+      "Telegram verification bonus"
+    );
+
+    return { verified: true, tokensAwarded: 10 };
   }
 }
 
@@ -584,6 +780,11 @@ export class MemStorage implements IStorage {
   private products: Map<number, Product>;
   private rewards: Map<number, Reward>;
   private userPurchases: Map<number, UserPurchase>;
+  private productShares: Array<{ userId: string; productId: string; platform: string; sharedAt: Date }>;
+  private appShares: Array<{ userId: string; platform: string; sharedAt: Date; shareUrl: string; referralCode: string }>;
+  private userActions: Array<{ userId: string; action: string; completedAt: Date; tokensAwarded: number }>;
+  private socialVerifications: Array<{ userId: string; platform: string; verificationCode: string; status: string; createdAt: Date; tokensAwarded?: number }>;
+  private tokenEarnings: Array<{ userId: string; source: string; amount: number; description: string; earnedAt: Date }>;
   sessionStore: session.Store;
   currentId: { products: number; rewards: number; userPurchases: number };
 
@@ -592,6 +793,11 @@ export class MemStorage implements IStorage {
     this.products = new Map();
     this.rewards = new Map();
     this.userPurchases = new Map();
+    this.productShares = [];
+    this.appShares = [];
+    this.userActions = [];
+    this.socialVerifications = [];
+    this.tokenEarnings = [];
     this.currentId = { products: 1, rewards: 1, userPurchases: 1 };
     this.sessionStore = new MemoryStore({ checkPeriod: 86400000 });
 
@@ -729,6 +935,14 @@ export class MemStorage implements IStorage {
       firstName: null,
       lastName: null,
       profileImageUrl: null,
+      dateOfBirth: null,
+      country: null,
+      city: null,
+      gender: null,
+      evmWalletAddress: null,
+      evmWalletVerified: false,
+      telegramUsername: null,
+      telegramVerified: false,
       emailVerified: false,
       emailVerificationToken: null,
       emailVerificationExpires: null,
@@ -761,6 +975,10 @@ export class MemStorage implements IStorage {
         firstName: userData.firstName || null,
         lastName: userData.lastName || null,
         profileImageUrl: userData.profileImageUrl || null,
+        dateOfBirth: null,
+        country: null,
+        city: null,
+        gender: null,
         username: null,
         password: null,
         tokens: 0,
@@ -926,6 +1144,342 @@ export class MemStorage implements IStorage {
       ...purchase,
       reward: this.rewards.get(purchase.rewardId)!
     }));
+  }
+
+  async recordProductShare(userId: string, productId: string, platform: string): Promise<{ awarded: number; sharesLeftToday: number }> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Check if user has already shared this product
+    const existingShare = this.productShares.find(s => 
+      s.userId === userId && s.productId === productId
+    );
+    
+    if (existingShare) {
+      throw new Error("Product already shared");
+    }
+
+    // Check daily limit
+    const todayShares = this.productShares.filter(s => 
+      s.userId === userId && s.sharedAt >= today
+    ).length;
+    
+    if (todayShares >= PRODUCT_SHARE_DAILY_CAP) {
+      throw new Error("Daily sharing limit reached");
+    }
+
+    // Record the share
+    this.productShares.push({
+      userId,
+      productId,
+      platform,
+      sharedAt: new Date(),
+    });
+
+    // Award tokens
+    const user = await this.getUser(userId);
+    if (user) {
+      user.tokens += PRODUCT_SHARE_BONUS;
+      this.users.set(userId, user);
+    }
+
+    const sharesLeftToday = PRODUCT_SHARE_DAILY_CAP - (todayShares + 1);
+    return { awarded: PRODUCT_SHARE_BONUS, sharesLeftToday };
+  }
+
+  async recordAppShare(userId: string, platform: string): Promise<{ shareUrl: string; referralCode: string }> {
+    const user = await this.getUser(userId);
+    if (!user?.referralCode) {
+      throw new Error("User not found or missing referral code");
+    }
+
+    const shareUrl = `${process.env.FRONTEND_URL || 'http://localhost:5000'}?ref=${user.referralCode}`;
+    
+    // Record the share
+    this.appShares.push({
+      userId,
+      platform,
+      sharedAt: new Date(),
+      shareUrl,
+      referralCode: user.referralCode,
+    });
+
+    return { shareUrl, referralCode: user.referralCode };
+  }
+
+  async getTodayShareCount(userId: string): Promise<number> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return this.productShares.filter(s => 
+      s.userId === userId && s.sharedAt >= today
+    ).length;
+  }
+
+  async awardProfileCompletionBonus(userId: string): Promise<{ awarded: boolean; tokensEarned: number }> {
+    // Check if user has already claimed profile completion bonus
+    const existingAction = this.userActions.find(a => 
+      a.userId === userId && a.action === "profile_completion"
+    );
+    
+    if (existingAction) {
+      return { awarded: false, tokensEarned: 0 };
+    }
+
+    // Check if profile is complete
+    const profileStatus = await this.isProfileComplete(userId);
+    if (!profileStatus.complete) {
+      throw new Error(`Profile incomplete. Missing: ${profileStatus.missingFields.join(", ")}`);
+    }
+
+    // Award tokens
+    const user = await this.getUser(userId);
+    if (user) {
+      user.tokens += PROFILE_COMPLETION_BONUS;
+      this.users.set(userId, user);
+    }
+
+    // Record the action
+    this.userActions.push({
+      userId,
+      action: "profile_completion",
+      completedAt: new Date(),
+      tokensAwarded: PROFILE_COMPLETION_BONUS,
+    });
+
+    return { awarded: true, tokensEarned: PROFILE_COMPLETION_BONUS };
+  }
+
+  async markOneTimeAction(userId: string, action: string, awardedTokens: number): Promise<boolean> {
+    // Check if action was already completed
+    const existingAction = this.userActions.find(a => 
+      a.userId === userId && a.action === action
+    );
+    
+    if (existingAction) {
+      return false;
+    }
+
+    // Record the action
+    this.userActions.push({
+      userId,
+      action,
+      completedAt: new Date(),
+      tokensAwarded: awardedTokens,
+    });
+
+    return true;
+  }
+
+  async initiateSocialFollowVerification(userId: string, platform: string, handle?: string): Promise<{ verificationCode: string; message: string }> {
+    // Check if user already has a pending or completed verification for this platform
+    const existingVerification = this.socialVerifications.find(v => 
+      v.userId === userId && v.platform === platform
+    );
+    
+    if (existingVerification && existingVerification.status === "verified") {
+      throw new Error(`${platform} verification already completed`);
+    }
+
+    // Generate verification code
+    const verificationCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    
+    // Remove any existing pending verification for this platform
+    this.socialVerifications = this.socialVerifications.filter(v => 
+      !(v.userId === userId && v.platform === platform && v.status === "pending")
+    );
+
+    // Create new verification record
+    this.socialVerifications.push({
+      userId,
+      platform,
+      verificationCode,
+      status: "pending",
+      createdAt: new Date(),
+    });
+
+    const platformHandles: Record<string, string> = {
+      instagram: "@virtusgreen",
+      linkedin: "VirtusGreen",
+      twitter: "@virtusgreen"
+    };
+
+    const message = `Please follow us on ${platform} (${platformHandles[platform]}) and post this code: ${verificationCode}. Then click verify to claim your 10 tokens!`;
+    
+    return { verificationCode, message };
+  }
+
+  async verifySocialFollow(userId: string, platform: string, verificationCode: string): Promise<{ verified: boolean; tokensAwarded: number }> {
+    // Find the verification record
+    const record = this.socialVerifications.find(v => 
+      v.userId === userId && 
+      v.platform === platform && 
+      v.verificationCode === verificationCode &&
+      v.status === "pending"
+    );
+
+    if (!record) {
+      throw new Error("Invalid verification code or verification not found");
+    }
+
+    // Check if verification code is expired (24 hours)
+    const expiryTime = 24 * 60 * 60 * 1000; // 24 hours in ms
+    if (new Date().getTime() - record.createdAt.getTime() > expiryTime) {
+      throw new Error("Verification code has expired");
+    }
+
+    // Mark as verified
+    record.status = "verified";
+    record.tokensAwarded = SOCIAL_FOLLOW_BONUS;
+
+    // Award tokens to user
+    const user = await this.getUser(userId);
+    if (user) {
+      user.tokens += SOCIAL_FOLLOW_BONUS;
+      this.users.set(userId, user);
+    }
+
+    return { verified: true, tokensAwarded: SOCIAL_FOLLOW_BONUS };
+  }
+
+  async isProfileComplete(userId: string): Promise<{ complete: boolean; missingFields: string[] }> {
+    const user = await this.getUser(userId);
+    if (!user) {
+      return { complete: false, missingFields: ["user_not_found"] };
+    }
+
+    const missingFields: string[] = [];
+    
+    if (!user.firstName) missingFields.push("firstName");
+    if (!user.lastName) missingFields.push("lastName");
+    if (!user.dateOfBirth) missingFields.push("dateOfBirth");
+    if (!user.country) missingFields.push("country");
+    if (!user.city) missingFields.push("city");
+    if (!user.gender) missingFields.push("gender");
+
+    return {
+      complete: missingFields.length === 0,
+      missingFields,
+    };
+  }
+
+  async getTokenEarnings(userId: string): Promise<TokenEarning[]> {
+    return this.tokenEarnings
+      .filter(earning => earning.userId === userId)
+      .sort((a, b) => b.earnedAt.getTime() - a.earnedAt.getTime())
+      .map(earning => ({
+        id: 0, // Not needed for in-memory
+        userId: earning.userId,
+        source: earning.source,
+        amount: earning.amount,
+        description: earning.description,
+        earnedAt: earning.earnedAt,
+      }));
+  }
+
+  async recordTokenEarning(userId: string, source: string, amount: number, description: string): Promise<void> {
+    this.tokenEarnings.push({
+      userId,
+      source,
+      amount,
+      description,
+      earnedAt: new Date(),
+    });
+  }
+
+  async verifyEvmWallet(userId: string, walletAddress: string): Promise<{ verified: boolean; tokensAwarded: number }> {
+    // Check if user already has a verified EVM wallet
+    const user = await this.getUser(userId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    if (user.evmWalletVerified) {
+      throw new Error("EVM wallet already verified");
+    }
+
+    // Comprehensive EVM address validation
+    const isValidAddress = /^0x[a-fA-F0-9]{40}$/.test(walletAddress);
+    if (!isValidAddress) {
+      throw new Error("Invalid EVM wallet address format. Must be a valid 42-character hex address starting with 0x");
+    }
+
+    // Additional validation - ensure it's not a zero address
+    if (walletAddress.toLowerCase() === "0x0000000000000000000000000000000000000000") {
+      throw new Error("Zero address is not allowed");
+    }
+
+    // Check if this wallet address is already used by another user
+    for (const [existingUserId, existingUser] of this.users) {
+      if (existingUser.evmWalletAddress === walletAddress && existingUserId !== userId) {
+        throw new Error("This wallet address is already verified by another user");
+      }
+    }
+
+    // Update user with verified wallet
+    user.evmWalletAddress = walletAddress;
+    user.evmWalletVerified = true;
+    user.tokens += 10;
+    user.updatedAt = new Date();
+    this.users.set(userId, user);
+
+    // Record token earning
+    await this.recordTokenEarning(
+      userId,
+      "evm_wallet",
+      10,
+      "EVM wallet verification bonus"
+    );
+
+    return { verified: true, tokensAwarded: 10 };
+  }
+
+  async verifyTelegram(userId: string, telegramUsername: string): Promise<{ verified: boolean; tokensAwarded: number }> {
+    // Check if user already has verified Telegram
+    const user = await this.getUser(userId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    if (user.telegramVerified) {
+      throw new Error("Telegram already verified");
+    }
+
+    // Comprehensive Telegram username validation
+    const isValidUsername = /^[a-zA-Z0-9_]{5,32}$/.test(telegramUsername);
+    if (!isValidUsername) {
+      throw new Error("Invalid Telegram username format. Must be 5-32 characters, alphanumeric and underscores only");
+    }
+
+    // Additional validation - prevent reserved usernames
+    const reservedUsernames = ["admin", "support", "telegram", "bot", "api", "channel"];
+    if (reservedUsernames.includes(telegramUsername.toLowerCase())) {
+      throw new Error("This username is reserved and cannot be used");
+    }
+
+    // Check if this username is already used by another user
+    for (const [existingUserId, existingUser] of this.users) {
+      if (existingUser.telegramUsername === telegramUsername && existingUserId !== userId) {
+        throw new Error("This Telegram username is already verified by another user");
+      }
+    }
+
+    // Update user with verified Telegram
+    user.telegramUsername = telegramUsername;
+    user.telegramVerified = true;
+    user.tokens += 10;
+    user.updatedAt = new Date();
+    this.users.set(userId, user);
+
+    // Record token earning
+    await this.recordTokenEarning(
+      userId,
+      "telegram",
+      10,
+      "Telegram verification bonus"
+    );
+
+    return { verified: true, tokensAwarded: 10 };
   }
 }
 
