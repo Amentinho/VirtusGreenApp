@@ -235,8 +235,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/products/:barcode", async (req, res) => {
-    const product = await storage.getProductByBarcode(req.params.barcode);
-    if (!product) return res.status(404).send("Product not found");
+    const barcode = req.params.barcode;
+    
+    // First check our internal database
+    let product = await storage.getProductByBarcode(barcode);
+    
+    if (!product) {
+      // If not found locally, check Open Food Facts API
+      try {
+        const openFoodFactsResponse = await fetch(
+          `https://world.openfoodfacts.net/api/v2/product/${barcode}?fields=product_name,brands,nutriscore_data,nutrition_grades,nutriments`
+        );
+        
+        if (openFoodFactsResponse.ok) {
+          const offData = await openFoodFactsResponse.json();
+          
+          if (offData.status === 1 && offData.product) {
+            // Transform Open Food Facts data to our Product schema
+            const transformedProduct = {
+              id: Date.now(), // Temporary ID for display
+              name: offData.product.product_name || "Unknown Product",
+              brand: offData.product.brands || "Unknown Brand", 
+              barcode: barcode,
+              environmentalImpact: {
+                ecoScore: calculateEcoScore(offData.product),
+                co2Emissions: calculateCarbonFootprint(offData.product),
+                renewableEnergy: calculateRenewableEnergy(offData.product),
+                recyclableMaterials: calculateRecyclableMaterials(offData.product),
+                recycledContent: calculateRecycledContent(offData.product),
+                waterUsage: calculateWaterUsage(offData.product),
+                landUsage: calculateLandUsage(offData.product)
+              }
+            };
+            
+            return res.json(transformedProduct);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching from Open Food Facts:", error);
+      }
+    }
+    
+    if (!product) {
+      return res.status(404).json({ 
+        message: "The product is not available in our database, can you please send us a message and we will add it?", 
+        errorType: "product_not_found" 
+      });
+    }
+    
     res.json(product);
   });
 
