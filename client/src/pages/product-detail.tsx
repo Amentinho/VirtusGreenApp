@@ -41,15 +41,9 @@ export default function ProductDetailPage() {
 
   const contactMutation = useMutation({
     mutationFn: async (formData: typeof contactForm) => {
-      return apiRequest("/api/contact", {
-        method: "POST",
-        body: JSON.stringify({
-          ...formData,
-          productName: product?.name
-        }),
-        headers: {
-          "Content-Type": "application/json",
-        },
+      return apiRequest("POST", "/api/contact", {
+        ...formData,
+        productName: product?.name
       });
     },
     onSuccess: () => {
