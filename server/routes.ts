@@ -10,34 +10,59 @@ import { sendEmail, generatePasswordResetEmail, generateEmailVerificationToken, 
 
 // Helper functions to calculate environmental metrics from Open Food Facts data
 function calculateEcoScore(product: any): number {
-  // Use nutrition grade as base score, convert letter grades to numbers
-  const nutritionGrade = product.nutrition_grades?.toLowerCase();
-  let baseScore = 50; // Default score
-  
-  switch (nutritionGrade) {
-    case 'a': baseScore = 85; break;
-    case 'b': baseScore = 70; break;
-    case 'c': baseScore = 55; break;
-    case 'd': baseScore = 40; break;
-    case 'e': baseScore = 25; break;
+  // Use real Eco-Score from OpenFoodFacts if available
+  if (product.ecoscore_score && typeof product.ecoscore_score === 'number') {
+    return product.ecoscore_score;
   }
   
-  // Adjust based on processing level and additives (if available)
-  if (product.nutriments?.energy_kcal_100g > 500) baseScore -= 5;
-  if (product.nutriments?.sugars_100g > 20) baseScore -= 10;
-  if (product.nutriments?.salt_100g > 1.5) baseScore -= 5;
+  // Fallback: Create environmental score (different from nutri-score)
+  // Focus on environmental factors, not nutritional quality
+  let envScore = 50; // Default environmental score
   
-  return Math.max(1, Math.min(100, baseScore));
+  // Environmental adjustments based on product characteristics
+  const productName = (product.product_name || "").toLowerCase();
+  const brands = (product.brands || "").toLowerCase();
+  
+  // Organic/sustainable products get higher scores
+  if (productName.includes("organic") || brands.includes("organic")) envScore += 20;
+  if (productName.includes("bio") || brands.includes("bio")) envScore += 15;
+  if (productName.includes("sustainable") || brands.includes("eco")) envScore += 15;
+  
+  // Animal products typically have higher environmental impact (lower score)
+  if (productName.includes("beef") || productName.includes("meat")) envScore -= 25;
+  if (productName.includes("dairy") || productName.includes("milk")) envScore -= 15;
+  if (productName.includes("fish") || productName.includes("seafood")) envScore -= 10;
+  
+  // Plant-based products typically better for environment
+  if (productName.includes("plant") || productName.includes("vegan")) envScore += 10;
+  
+  return Math.max(1, Math.min(100, envScore));
 }
 
 function calculateCarbonFootprint(product: any): number {
-  // Estimate based on nutrition data and product type
+  // Use real carbon footprint from OpenFoodFacts if available
+  if (product['carbon-footprint-from-known-ingredients_100g']) {
+    return Math.round(product['carbon-footprint-from-known-ingredients_100g'] * 10) / 10;
+  }
+  
+  // Use Agribalyse total CO2 if available
+  if (product.ecoscore_data?.agribalyse?.co2_total) {
+    return Math.round(product.ecoscore_data.agribalyse.co2_total * 100 * 10) / 10;
+  }
+  
+  // Fallback estimation based on nutrition data and product type
   const energy = product.nutriments?.energy_kcal_100g || 200;
   const protein = product.nutriments?.proteins_100g || 0;
+  const productName = (product.product_name || "").toLowerCase();
   
-  // Simple estimation: higher energy and protein generally means higher footprint
   let footprint = (energy / 100) + (protein * 0.5);
-  return Math.round(Math.max(0.1, Math.min(10, footprint)) * 10) / 10;
+  
+  // Product type adjustments
+  if (productName.includes("beef") || productName.includes("meat")) footprint *= 3;
+  if (productName.includes("dairy") || productName.includes("milk")) footprint *= 2;
+  if (productName.includes("organic")) footprint *= 0.8;
+  
+  return Math.round(Math.max(0.1, Math.min(100, footprint)) * 10) / 10;
 }
 
 function calculateWaterUsage(product: any): number {
@@ -244,7 +269,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // If not found locally, check Open Food Facts API
       try {
         const openFoodFactsResponse = await fetch(
-          `https://world.openfoodfacts.net/api/v2/product/${barcode}?fields=product_name,brands,nutriscore_data,nutrition_grades,nutriments`
+          `https://world.openfoodfacts.net/api/v2/product/${barcode}?fields=product_name,brands,nutriscore_data,nutrition_grades,nutriments,ecoscore_score,ecoscore_grade,ecoscore_data,carbon-footprint-from-known-ingredients_100g`
         );
         
         if (openFoodFactsResponse.ok) {
