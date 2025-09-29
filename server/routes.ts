@@ -623,6 +623,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Contact form endpoint for requesting additional metrics analysis
+  app.post("/api/contact", async (req, res) => {
+    try {
+      const { name, email, message, productName } = req.body;
+      
+      if (!name || !email || !message) {
+        return res.status(400).json({ error: "Name, email, and message are required" });
+      }
+
+      const emailContent = `
+        New metric analysis request from VirtusGreen user:
+        
+        Name: ${name}
+        Email: ${email}
+        Product: ${productName || 'Not specified'}
+        
+        Message:
+        ${message}
+        
+        ---
+        This request was sent from the VirtusGreen product details page.
+      `;
+
+      const success = await sendEmail({
+        to: "hello@virtusgreen.com", // VirtusGreen team email
+        from: "noreply@virtusgreen.com",
+        subject: `Metric Analysis Request: ${productName || 'Product Analysis'}`,
+        text: emailContent,
+        html: emailContent.replace(/\n/g, '<br>')
+      });
+
+      if (success) {
+        res.json({ success: true, message: "Your message has been sent successfully!" });
+      } else {
+        res.status(500).json({ error: "Failed to send message. Please try again later." });
+      }
+    } catch (error) {
+      console.error("Error sending contact message:", error);
+      res.status(500).json({ error: "Failed to send message. Please try again later." });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
