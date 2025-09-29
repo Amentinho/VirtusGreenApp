@@ -20,14 +20,14 @@ export default function ProductCard({ product }: { product: Product }) {
               <span className="text-sm font-medium">Eco Score</span>
               <span
                 className={`text-lg font-bold ${
-                  impact.ecoScore >= 70
+                  typeof impact.ecoScore === 'number' && impact.ecoScore >= 70
                     ? "text-green-600"
-                    : impact.ecoScore >= 40
+                    : typeof impact.ecoScore === 'number' && impact.ecoScore >= 40
                     ? "text-yellow-600"
                     : "text-red-600"
                 }`}
               >
-                {impact.ecoScore}/100
+                {impact.ecoScore === "NA" ? "NA" : `${impact.ecoScore}/100`}
               </span>
             </div>
             <EnvImpactChart impact={impact} />

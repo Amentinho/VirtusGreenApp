@@ -12,28 +12,28 @@ import { Product } from "@shared/schema";
 import { Link } from "wouter";
 
 export default function HomePage() {
-  // Load search state from localStorage on component mount
+  // Use sessionStorage instead of localStorage so search clears on page refresh
   const [search, setSearch] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('virtusgreen_search') || "";
+      return sessionStorage.getItem('virtusgreen_search') || "";
     }
     return "";
   });
   const [activeSearch, setActiveSearch] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('virtusgreen_activeSearch') || "";
+      return sessionStorage.getItem('virtusgreen_activeSearch') || "";
     }
     return "";
   });
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  // Save search state to localStorage whenever it changes
+  // Save search state to sessionStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem('virtusgreen_search', search);
+    sessionStorage.setItem('virtusgreen_search', search);
   }, [search]);
 
   useEffect(() => {
-    localStorage.setItem('virtusgreen_activeSearch', activeSearch);
+    sessionStorage.setItem('virtusgreen_activeSearch', activeSearch);
   }, [activeSearch]);
 
   const { data: products, isLoading } = useQuery<Product[]>({
