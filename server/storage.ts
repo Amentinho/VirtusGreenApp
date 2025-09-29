@@ -394,6 +394,14 @@ export class DatabaseStorage implements IStorage {
     await db
       .insert(userPurchases)
       .values({ userId, rewardId });
+
+    // Record token spending in the token earnings table as negative amount
+    await this.recordTokenEarning(
+      userId,
+      "reward_purchase",
+      -reward.tokenCost,
+      `Redeemed reward: ${reward.title}`
+    );
   }
 
   async getUserPurchases(userId: string): Promise<Array<UserPurchase & { reward: Reward }>> {

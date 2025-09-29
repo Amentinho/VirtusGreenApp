@@ -14,7 +14,6 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import ProfileCompletion from "@/components/profile-completion";
 import SocialMediaVerification from "@/components/social-media-verification";
-import TokenEarningsHistory from "@/components/token-earnings-history";
 import { EvmWalletVerification } from "@/components/evm-wallet-verification";
 import { TelegramVerification } from "@/components/telegram-verification";
 
@@ -183,7 +182,6 @@ export default function ProfilePage() {
             <SocialMediaVerification />
             <EvmWalletVerification />
             <TelegramVerification />
-            <TokenEarningsHistory />
           </div>
         </div>
       </main>

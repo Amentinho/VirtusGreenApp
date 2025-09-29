@@ -20,6 +20,9 @@ const sourceLabels: Record<string, { label: string; color: string }> = {
   app_share: { label: "App Share", color: "bg-purple-100 text-purple-800" },
   profile_completion: { label: "Profile Complete", color: "bg-indigo-100 text-indigo-800" },
   social_follow: { label: "Social Follow", color: "bg-pink-100 text-pink-800" },
+  evm_wallet: { label: "EVM Wallet Verified", color: "bg-emerald-100 text-emerald-800" },
+  telegram: { label: "Telegram Verified", color: "bg-teal-100 text-teal-800" },
+  reward_purchase: { label: "Reward Redeemed", color: "bg-red-100 text-red-800" },
 };
 
 export default function TokenEarningsHistory() {
@@ -33,7 +36,7 @@ export default function TokenEarningsHistory() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Coins className="h-5 w-5 text-yellow-600" />
-            Token Earnings History
+            Token History
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -56,13 +59,13 @@ export default function TokenEarningsHistory() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Coins className="h-5 w-5 text-yellow-600" />
-            Token Earnings History
+            Token History
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-gray-500">
             <Coins className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-            <p>No token earnings yet</p>
+            <p>No token transactions yet</p>
             <p className="text-sm">Start sharing products and completing actions to earn tokens!</p>
           </div>
         </CardContent>
@@ -70,7 +73,9 @@ export default function TokenEarningsHistory() {
     );
   }
 
-  const totalEarned = earnings.reduce((sum, earning) => sum + earning.amount, 0);
+  const totalEarned = earnings.filter(e => e.amount > 0).reduce((sum, earning) => sum + earning.amount, 0);
+  const totalSpent = earnings.filter(e => e.amount < 0).reduce((sum, earning) => sum + Math.abs(earning.amount), 0);
+  const netTotal = earnings.reduce((sum, earning) => sum + earning.amount, 0);
 
   return (
     <Card>
@@ -78,11 +83,19 @@ export default function TokenEarningsHistory() {
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Coins className="h-5 w-5 text-yellow-600" />
-            Token Earnings History
+            Token History
           </div>
-          <Badge variant="outline" className="text-yellow-700 border-yellow-300">
-            Total: {totalEarned} tokens
-          </Badge>
+          <div className="flex gap-2">
+            <Badge variant="outline" className="text-green-700 border-green-300">
+              Earned: {totalEarned}
+            </Badge>
+            <Badge variant="outline" className="text-red-700 border-red-300">
+              Spent: {totalSpent}
+            </Badge>
+            <Badge variant="outline" className="text-yellow-700 border-yellow-300">
+              Net: {netTotal}
+            </Badge>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -104,8 +117,8 @@ export default function TokenEarningsHistory() {
                     <Badge className={`text-xs ${sourceInfo.color}`}>
                       {sourceInfo.label}
                     </Badge>
-                    <span className="font-medium text-yellow-600">
-                      +{earning.amount} tokens
+                    <span className={`font-medium ${earning.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {earning.amount > 0 ? '+' : ''}{earning.amount} tokens
                     </span>
                   </div>
                   <p className="text-sm text-gray-600 mb-1">
@@ -123,7 +136,7 @@ export default function TokenEarningsHistory() {
         
         {earnings.length > 5 && (
           <div className="text-xs text-gray-500 text-center mt-4 pt-4 border-t">
-            Showing {earnings.length} earnings • Latest first
+            Showing {earnings.length} transactions • Latest first
           </div>
         )}
       </CardContent>
