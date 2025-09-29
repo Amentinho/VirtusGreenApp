@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +17,11 @@ import { apiRequest } from "@/lib/queryClient";
 export default function ProductDetailPage() {
   const [match, params] = useRoute("/product/:barcode");
   const barcode = params?.barcode;
+  
+  // Scroll to top when page loads or barcode changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [barcode]);
   const [showContactForm, setShowContactForm] = useState(false);
   const [contactForm, setContactForm] = useState({
     name: "",
