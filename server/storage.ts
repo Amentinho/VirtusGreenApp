@@ -447,14 +447,14 @@ export class DatabaseStorage implements IStorage {
       .limit(1);
     
     if (existingShare.length > 0) {
-      throw new Error("Product already shared");
+      throw new Error("The product has already been shared once.");
     }
 
     // Check today's share count
     const todayCount = await this.getTodayShareCount(userId);
     
     if (todayCount >= PRODUCT_SHARE_DAILY_CAP) {
-      throw new Error("Daily sharing limit reached");
+      throw new Error("You've reached the limit of 5 product shared. Please come back tomorrow to share more products with your friends.");
     }
 
     // Record the share
