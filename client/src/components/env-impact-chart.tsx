@@ -6,17 +6,18 @@ import {
 } from "victory";
 
 type ImpactMetrics = {
-  ecoScore: number;
-  co2Emissions: number;
-  renewableEnergy: number;
-  recyclableMaterials: number;
-  recycledContent: number;
-  waterUsage: number;
-  landUsage: number;
+  ecoScore: number | string;
+  co2Emissions: number | string;
+  renewableEnergy: number | string;
+  recyclableMaterials: number | string;
+  recycledContent: number | string;
+  waterUsage: number | string;
+  landUsage: number | string;
 };
 
 export default function EnvImpactChart({ impact }: { impact: ImpactMetrics }) {
-  const data = [
+  // Filter out "NA" values and only include numeric data for the chart
+  const allMetrics = [
     { metric: "CO₂", value: impact.co2Emissions },
     { metric: "Renewable", value: impact.renewableEnergy },
     { metric: "Recyclable", value: impact.recyclableMaterials },
@@ -24,6 +25,9 @@ export default function EnvImpactChart({ impact }: { impact: ImpactMetrics }) {
     { metric: "Water", value: impact.waterUsage },
     { metric: "Land", value: impact.landUsage },
   ];
+  
+  // Only include metrics with numeric values (exclude "NA")
+  const data = allMetrics.filter(item => typeof item.value === 'number');
 
   return (
     <VictoryChart

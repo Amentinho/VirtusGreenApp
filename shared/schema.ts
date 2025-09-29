@@ -66,13 +66,13 @@ export const products = pgTable("products", {
   brand: text("brand").notNull(),
   environmentalImpact: json("environmental_impact")
     .$type<{
-      ecoScore: number;
-      co2Emissions: number;
-      renewableEnergy: number;
-      recyclableMaterials: number;
-      recycledContent: number;
-      waterUsage: number;
-      landUsage: number;
+      ecoScore: number | string;
+      co2Emissions: number | string;
+      renewableEnergy: number | string;
+      recyclableMaterials: number | string;
+      recycledContent: number | string;
+      waterUsage: number | string;
+      landUsage: number | string;
     }>()
     .notNull(),
 });

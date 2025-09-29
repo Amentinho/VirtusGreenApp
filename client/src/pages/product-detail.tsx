@@ -145,37 +145,37 @@ export default function ProductDetailPage() {
     { 
       icon: <Leaf className="h-5 w-5 text-green-600" />, 
       label: "Eco Score", 
-      value: `${impact.ecoScore}/100`,
+      value: impact.ecoScore === "NA" ? "NA" : `${impact.ecoScore}/100`,
       description: "Overall environmental friendliness"
     },
     { 
       icon: <Factory className="h-5 w-5 text-gray-600" />, 
       label: "CO₂ Emissions", 
-      value: `${impact.co2Emissions}/100`,
-      description: "Carbon footprint score"
+      value: impact.co2Emissions === "NA" ? "NA" : `${impact.co2Emissions}g/100g`,
+      description: "Carbon footprint from OpenFoodFacts"
     },
     { 
       icon: <Zap className="h-5 w-5 text-yellow-600" />, 
       label: "Renewable Energy", 
-      value: `${impact.renewableEnergy}/100`,
+      value: impact.renewableEnergy,
       description: "Use of clean energy in production"
     },
     { 
       icon: <Recycle className="h-5 w-5 text-blue-600" />, 
       label: "Recyclable Materials", 
-      value: `${impact.recyclableMaterials}/100`,
+      value: impact.recyclableMaterials,
       description: "Packaging recyclability"
     },
     { 
       icon: <Droplets className="h-5 w-5 text-blue-400" />, 
       label: "Water Usage", 
-      value: `${impact.waterUsage}/100`,
+      value: impact.waterUsage,
       description: "Water efficiency in production"
     },
     { 
       icon: <Mountain className="h-5 w-5 text-green-700" />, 
       label: "Land Usage", 
-      value: `${impact.landUsage}/100`,
+      value: impact.landUsage,
       description: "Sustainable land management"
     },
   ];
@@ -208,13 +208,13 @@ export default function ProductDetailPage() {
                 </div>
                 <div className="flex flex-col items-end gap-2">
                   <div className={`text-3xl font-bold ${
-                    impact.ecoScore >= 70
+                    typeof impact.ecoScore === 'number' && impact.ecoScore >= 70
                       ? "text-green-600"
-                      : impact.ecoScore >= 40
+                      : typeof impact.ecoScore === 'number' && impact.ecoScore >= 40
                       ? "text-yellow-600"
                       : "text-red-600"
                   }`}>
-                    {impact.ecoScore}/100
+                    {impact.ecoScore === "NA" ? "NA" : `${impact.ecoScore}/100`}
                   </div>
                   <ShareButton
                     productId={product.barcode}
