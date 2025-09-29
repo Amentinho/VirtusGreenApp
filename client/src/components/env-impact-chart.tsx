@@ -3,6 +3,7 @@ import {
   VictoryBar,
   VictoryAxis,
   VictoryTheme,
+  VictoryTooltip,
 } from "victory";
 
 type ImpactMetrics = {
@@ -18,12 +19,42 @@ type ImpactMetrics = {
 export default function EnvImpactChart({ impact }: { impact: ImpactMetrics }) {
   // Filter out "NA" values and only include numeric data for the chart
   const allMetrics = [
-    { metric: "CO₂", value: impact.co2Emissions },
-    { metric: "Renewable", value: impact.renewableEnergy },
-    { metric: "Recyclable", value: impact.recyclableMaterials },
-    { metric: "Recycled", value: impact.recycledContent },
-    { metric: "Water", value: impact.waterUsage },
-    { metric: "Land", value: impact.landUsage },
+    { 
+      metric: "CO₂", 
+      value: impact.co2Emissions,
+      displayValue: typeof impact.co2Emissions === 'number' ? `${impact.co2Emissions}g` : "NA",
+      unit: "g"
+    },
+    { 
+      metric: "Renewable", 
+      value: impact.renewableEnergy,
+      displayValue: typeof impact.renewableEnergy === 'number' ? `${impact.renewableEnergy}%` : "NA",
+      unit: "%"
+    },
+    { 
+      metric: "Recyclable", 
+      value: impact.recyclableMaterials,
+      displayValue: typeof impact.recyclableMaterials === 'number' ? `${impact.recyclableMaterials}%` : "NA", 
+      unit: "%"
+    },
+    { 
+      metric: "Recycled", 
+      value: impact.recycledContent,
+      displayValue: typeof impact.recycledContent === 'number' ? `${impact.recycledContent}%` : "NA",
+      unit: "%"
+    },
+    { 
+      metric: "Water", 
+      value: impact.waterUsage,
+      displayValue: typeof impact.waterUsage === 'number' ? `${impact.waterUsage}%` : "NA",
+      unit: "%"
+    },
+    { 
+      metric: "Land", 
+      value: impact.landUsage,
+      displayValue: typeof impact.landUsage === 'number' ? `${impact.landUsage}%` : "NA",
+      unit: "%"
+    },
   ];
   
   // Only include metrics with numeric values (exclude "NA")
@@ -43,7 +74,7 @@ export default function EnvImpactChart({ impact }: { impact: ImpactMetrics }) {
       />
       <VictoryAxis
         dependentAxis
-        tickFormat={(t) => `${t}%`}
+        tickFormat={(t) => t}
         style={{
           tickLabels: { fontSize: 8, padding: 5 },
         }}
@@ -52,6 +83,7 @@ export default function EnvImpactChart({ impact }: { impact: ImpactMetrics }) {
         data={data}
         x="metric"
         y="value"
+        labelComponent={<VictoryTooltip />}
         style={{
           data: {
             fill: ({ datum }) =>
