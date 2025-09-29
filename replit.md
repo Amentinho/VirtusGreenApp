@@ -51,3 +51,11 @@ Preferred communication style: Simple, everyday language.
 - **Barcode Processing**: ZXing browser library for barcode scanning capabilities
 - **Charting**: Victory charts for environmental impact data visualization
 - **Development**: Replit-specific plugins for theme management and development tools
+
+# Recent Changes
+
+## September 29, 2025
+- **Fixed referral tracking system**: Resolved critical issue where local auth users (email/password registration) were getting referral tokens but referral events weren't being recorded in the database
+- **Backfilled missing data**: Added missing referral events and token earnings history for existing users who had used referral codes
+- **Enhanced referral validation**: Improved EVM wallet and Telegram verification with better input validation and duplicate prevention
+- **Completed gamification features**: All social sharing, verification systems, and abuse prevention mechanisms are now fully functional

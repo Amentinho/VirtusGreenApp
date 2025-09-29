@@ -145,6 +145,36 @@ export class DatabaseStorage implements IStorage {
         usedReferralCode: insertUser.usedReferralCode || null,
       })
       .returning();
+
+    // Record referral event if referral code was used
+    if (insertUser.usedReferralCode) {
+      const referrer = await this.getUserByReferralCode(insertUser.usedReferralCode);
+      if (referrer) {
+        // Record referral event
+        await db
+          .insert(referralEvents)
+          .values({
+            referrerId: referrer.id,
+            referredUserId: user.id,
+          });
+
+        // Record token earnings for referrer
+        await this.recordTokenEarning(
+          referrer.id,
+          "referral",
+          REFERRAL_BONUS,
+          `Referral bonus for inviting ${user.username || user.email || "new user"}`
+        );
+
+        // Record token earnings for new user
+        await this.recordTokenEarning(
+          user.id,
+          "referral_signup",
+          REFERRAL_BONUS,
+          "Welcome bonus for joining with referral code"
+        );
+      }
+    }
     
     return user;
   }
@@ -1410,7 +1440,7 @@ export class MemStorage implements IStorage {
     }
 
     // Check if this wallet address is already used by another user
-    for (const [existingUserId, existingUser] of this.users) {
+    for (const [existingUserId, existingUser] of this.users.entries()) {
       if (existingUser.evmWalletAddress === walletAddress && existingUserId !== userId) {
         throw new Error("This wallet address is already verified by another user");
       }
@@ -1458,7 +1488,7 @@ export class MemStorage implements IStorage {
     }
 
     // Check if this username is already used by another user
-    for (const [existingUserId, existingUser] of this.users) {
+    for (const [existingUserId, existingUser] of this.users.entries()) {
       if (existingUser.telegramUsername === telegramUsername && existingUserId !== userId) {
         throw new Error("This Telegram username is already verified by another user");
       }
