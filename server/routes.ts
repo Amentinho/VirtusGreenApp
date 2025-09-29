@@ -9,37 +9,17 @@ import { comparePasswords, hashPassword } from "./auth";
 import { sendEmail, generatePasswordResetEmail, generateEmailVerificationToken, generateVerificationEmail } from "./emailService";
 
 // Helper functions to calculate environmental metrics from Open Food Facts data
-function calculateEcoScore(product: any): number {
-  // Use real Eco-Score from OpenFoodFacts if available
+function calculateEcoScore(product: any): number | string {
+  // Only use real Eco-Score from OpenFoodFacts
   if (product.ecoscore_score && typeof product.ecoscore_score === 'number') {
     return product.ecoscore_score;
   }
   
-  // Fallback: Create environmental score (different from nutri-score)
-  // Focus on environmental factors, not nutritional quality
-  let envScore = 50; // Default environmental score
-  
-  // Environmental adjustments based on product characteristics
-  const productName = (product.product_name || "").toLowerCase();
-  const brands = (product.brands || "").toLowerCase();
-  
-  // Organic/sustainable products get higher scores
-  if (productName.includes("organic") || brands.includes("organic")) envScore += 20;
-  if (productName.includes("bio") || brands.includes("bio")) envScore += 15;
-  if (productName.includes("sustainable") || brands.includes("eco")) envScore += 15;
-  
-  // Animal products typically have higher environmental impact (lower score)
-  if (productName.includes("beef") || productName.includes("meat")) envScore -= 25;
-  if (productName.includes("dairy") || productName.includes("milk")) envScore -= 15;
-  if (productName.includes("fish") || productName.includes("seafood")) envScore -= 10;
-  
-  // Plant-based products typically better for environment
-  if (productName.includes("plant") || productName.includes("vegan")) envScore += 10;
-  
-  return Math.max(1, Math.min(100, envScore));
+  // Return NA if no real data available
+  return "NA";
 }
 
-function calculateCarbonFootprint(product: any): number {
+function calculateCarbonFootprint(product: any): number | string {
   // Use real carbon footprint from OpenFoodFacts if available
   if (product['carbon-footprint-from-known-ingredients_100g']) {
     return Math.round(product['carbon-footprint-from-known-ingredients_100g'] * 10) / 10;
@@ -50,78 +30,33 @@ function calculateCarbonFootprint(product: any): number {
     return Math.round(product.ecoscore_data.agribalyse.co2_total * 100 * 10) / 10;
   }
   
-  // Fallback estimation based on nutrition data and product type
-  const energy = product.nutriments?.energy_kcal_100g || 200;
-  const protein = product.nutriments?.proteins_100g || 0;
-  const productName = (product.product_name || "").toLowerCase();
-  
-  let footprint = (energy / 100) + (protein * 0.5);
-  
-  // Product type adjustments
-  if (productName.includes("beef") || productName.includes("meat")) footprint *= 3;
-  if (productName.includes("dairy") || productName.includes("milk")) footprint *= 2;
-  if (productName.includes("organic")) footprint *= 0.8;
-  
-  return Math.round(Math.max(0.1, Math.min(100, footprint)) * 10) / 10;
+  // Return NA if no real data available
+  return "NA";
 }
 
-function calculateWaterUsage(product: any): number {
-  // Estimate water usage based on product characteristics
-  const protein = product.nutriments?.proteins_100g || 0;
-  const energy = product.nutriments?.energy_kcal_100g || 200;
-  
-  // Simple estimation: protein-rich foods typically use more water
-  let waterUsage = (protein * 5) + (energy / 50);
-  return Math.round(Math.max(1, Math.min(1000, waterUsage)));
+function calculateWaterUsage(product: any): string {
+  // OpenFoodFacts doesn't provide water usage data
+  return "NA";
 }
 
-function calculateRenewableEnergy(product: any): number {
-  // Simple estimation based on organic/environmental labels
-  const productName = (product.product_name || "").toLowerCase();
-  const brands = (product.brands || "").toLowerCase();
-  
-  if (productName.includes("organic") || brands.includes("organic")) return 8;
-  if (productName.includes("bio") || brands.includes("bio")) return 7;
-  if (productName.includes("eco") || brands.includes("eco")) return 6;
-  
-  return 3; // Default renewable energy score
+function calculateRenewableEnergy(product: any): string {
+  // OpenFoodFacts doesn't provide renewable energy data
+  return "NA";
 }
 
-function calculateRecyclableMaterials(product: any): number {
-  // Estimate based on packaging type and product category
-  const productName = (product.product_name || "").toLowerCase();
-  
-  if (productName.includes("glass") || productName.includes("jar")) return 9;
-  if (productName.includes("bottle") || productName.includes("can")) return 7;
-  if (productName.includes("carton") || productName.includes("box")) return 6;
-  if (productName.includes("plastic")) return 4;
-  
-  return 5; // Default recyclable materials score
+function calculateRecyclableMaterials(product: any): string {
+  // OpenFoodFacts doesn't provide recyclable materials data
+  return "NA";
 }
 
-function calculateRecycledContent(product: any): number {
-  // Simple estimation based on environmental consciousness
-  const productName = (product.product_name || "").toLowerCase();
-  const brands = (product.brands || "").toLowerCase();
-  
-  if (productName.includes("organic") || brands.includes("organic")) return 6;
-  if (productName.includes("eco") || brands.includes("sustainable")) return 7;
-  
-  return 3; // Default recycled content score
+function calculateRecycledContent(product: any): string {
+  // OpenFoodFacts doesn't provide recycled content data
+  return "NA";
 }
 
-function calculateLandUsage(product: any): number {
-  // Estimate land usage based on product type and protein content
-  const protein = product.nutriments?.proteins_100g || 0;
-  const productName = (product.product_name || "").toLowerCase();
-  
-  // Animal products typically use more land
-  if (productName.includes("meat") || productName.includes("beef")) return 9;
-  if (productName.includes("dairy") || productName.includes("milk")) return 7;
-  if (protein > 20) return 8; // High protein products
-  if (productName.includes("organic")) return 4; // Organic typically more efficient
-  
-  return 5; // Default land usage score
+function calculateLandUsage(product: any): string {
+  // OpenFoodFacts doesn't provide land usage data
+  return "NA";
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
