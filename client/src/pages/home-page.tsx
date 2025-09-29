@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -12,9 +12,29 @@ import { Product } from "@shared/schema";
 import { Link } from "wouter";
 
 export default function HomePage() {
-  const [search, setSearch] = useState("");
-  const [activeSearch, setActiveSearch] = useState("");
+  // Load search state from localStorage on component mount
+  const [search, setSearch] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('virtusgreen_search') || "";
+    }
+    return "";
+  });
+  const [activeSearch, setActiveSearch] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('virtusgreen_activeSearch') || "";
+    }
+    return "";
+  });
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  // Save search state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('virtusgreen_search', search);
+  }, [search]);
+
+  useEffect(() => {
+    localStorage.setItem('virtusgreen_activeSearch', activeSearch);
+  }, [activeSearch]);
 
   const { data: products, isLoading } = useQuery<Product[]>({
     queryKey: activeSearch ? ["/api/products", "search", activeSearch] : ["/api/products"],
