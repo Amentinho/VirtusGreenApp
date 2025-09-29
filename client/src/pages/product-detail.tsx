@@ -1,17 +1,29 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Leaf, Droplets, Factory, Recycle, Zap, Mountain } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { ArrowLeft, Leaf, Droplets, Factory, Recycle, Zap, Mountain, Mail } from "lucide-react";
 import { Link } from "wouter";
 import EnvImpactChart from "@/components/env-impact-chart";
 import ShareButton from "@/components/share-button";
 import { Product } from "@shared/schema";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function ProductDetailPage() {
   const [match, params] = useRoute("/product/:barcode");
   const barcode = params?.barcode;
+  const [showContactForm, setShowContactForm] = useState(false);
+  const [contactForm, setContactForm] = useState({
+    name: "",
+    email: "",
+    message: ""
+  });
+  const { toast } = useToast();
 
   const { data: product, isLoading, isError } = useQuery<Product>({
     queryKey: ["/api/products", barcode],
@@ -25,6 +37,36 @@ export default function ProductDetailPage() {
       return response.json();
     },
     enabled: !!barcode,
+  });
+
+  const contactMutation = useMutation({
+    mutationFn: async (formData: typeof contactForm) => {
+      return apiRequest("/api/contact", {
+        method: "POST",
+        body: JSON.stringify({
+          ...formData,
+          productName: product?.name
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Message Sent",
+        description: "Your request has been sent to VirtusGreen team!",
+      });
+      setContactForm({ name: "", email: "", message: "" });
+      setShowContactForm(false);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   if (!match || !barcode) {
@@ -227,22 +269,97 @@ export default function ProductDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Additional Information */}
+          {/* Data Source Information and Contact */}
           <Card>
             <CardHeader>
-              <CardTitle>About This Product</CardTitle>
+              <CardTitle>Data Source & Additional Analysis</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="prose prose-sm max-w-none">
-                <p>
-                  This product has been analyzed for its environmental impact across multiple dimensions. 
-                  The eco-score provides an overall assessment, while individual metrics show specific 
-                  areas of environmental performance.
-                </p>
-                <Separator className="my-4" />
-                <div className="flex justify-between text-sm text-gray-600">
+              <div className="space-y-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-sm text-blue-800">
+                    <strong>Environmental data disclaimer:</strong> This is an estimation of eco scoring coming from OpenFoodFacts. 
+                    Only metrics with real data from OpenFoodFacts are displayed. 
+                    Metrics showing "NA" indicate no data is available from the source.
+                  </p>
+                </div>
+                
+                <Separator />
+                
+                <div className="text-center">
+                  <p className="text-sm text-gray-600 mb-4">
+                    If you want VirtusGreen to analyze the other metrics, please drop us a message.
+                  </p>
+                  
+                  {!showContactForm ? (
+                    <Button 
+                      onClick={() => setShowContactForm(true)}
+                      className="bg-green-600 hover:bg-green-700"
+                      data-testid="button-contact-analysis"
+                    >
+                      <Mail className="h-4 w-4 mr-2" />
+                      Request Additional Analysis
+                    </Button>
+                  ) : (
+                    <div className="max-w-md mx-auto space-y-4">
+                      <div className="text-left">
+                        <label className="block text-sm font-medium mb-1">Name</label>
+                        <Input
+                          value={contactForm.name}
+                          onChange={(e) => setContactForm(prev => ({...prev, name: e.target.value}))}
+                          placeholder="Your name"
+                          data-testid="input-contact-name"
+                        />
+                      </div>
+                      
+                      <div className="text-left">
+                        <label className="block text-sm font-medium mb-1">Email</label>
+                        <Input
+                          type="email"
+                          value={contactForm.email}
+                          onChange={(e) => setContactForm(prev => ({...prev, email: e.target.value}))}
+                          placeholder="your.email@example.com"
+                          data-testid="input-contact-email"
+                        />
+                      </div>
+                      
+                      <div className="text-left">
+                        <label className="block text-sm font-medium mb-1">Message</label>
+                        <Textarea
+                          value={contactForm.message}
+                          onChange={(e) => setContactForm(prev => ({...prev, message: e.target.value}))}
+                          placeholder="Please analyze additional environmental metrics for this product..."
+                          rows={4}
+                          data-testid="textarea-contact-message"
+                        />
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => contactMutation.mutate(contactForm)}
+                          disabled={!contactForm.name || !contactForm.email || !contactForm.message || contactMutation.isPending}
+                          className="bg-green-600 hover:bg-green-700"
+                          data-testid="button-send-contact"
+                        >
+                          {contactMutation.isPending ? "Sending..." : "Send Message"}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowContactForm(false)}
+                          data-testid="button-cancel-contact"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                <Separator />
+                
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>Data source: OpenFoodFacts.org</span>
                   <span>Last updated: {new Date().toLocaleDateString()}</span>
-                  <span>Data source: OpenFoodFacts & VirtusGreen Analysis</span>
                 </div>
               </div>
             </CardContent>
