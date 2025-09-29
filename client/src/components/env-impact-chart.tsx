@@ -86,12 +86,23 @@ export default function EnvImpactChart({ impact }: { impact: ImpactMetrics }) {
         labelComponent={<VictoryTooltip />}
         style={{
           data: {
-            fill: ({ datum }) =>
-              datum.value >= 70
+            fill: ({ datum }) => {
+              // CO2 emissions: lower is better (inverted scale)
+              // Based on OpenFoodFacts averages: <100g = good, 100-300g = moderate, >300g = high
+              if (datum.metric === "CO₂") {
+                return datum.value < 100
+                  ? "#059669"  // Green for low emissions
+                  : datum.value < 300
+                  ? "#CA8A04"  // Yellow/Orange for moderate emissions
+                  : "#DC2626"; // Red for high emissions
+              }
+              // Other metrics: higher is better (percentage scale)
+              return datum.value >= 70
                 ? "#059669"
                 : datum.value >= 40
                 ? "#CA8A04"
-                : "#DC2626",
+                : "#DC2626";
+            },
           },
         }}
       />
