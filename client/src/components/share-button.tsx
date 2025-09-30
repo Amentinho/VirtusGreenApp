@@ -115,34 +115,100 @@ export default function ShareButton({
   };
 
   const shareToSocialMedia = async (platform: string, text: string, url: string) => {
+    const shareContent = `${text}\n\n${url}`;
+    
+    // Try native share first on mobile for better UX
+    if (navigator.share && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      try {
+        await navigator.share({
+          title: variant === "app" ? "Join VirtusGreen" : productName || "Eco-Friendly Product",
+          text: shareContent,
+        });
+        return;
+      } catch (err: any) {
+        // User cancelled or share failed, continue to platform-specific sharing
+        if (err.name !== 'AbortError') {
+          console.log('Native share failed, falling back to platform-specific', err);
+        } else {
+          return; // User cancelled, don't show error
+        }
+      }
+    }
+    
     const encodedText = encodeURIComponent(text);
     const encodedUrl = encodeURIComponent(url);
+    const fullMessage = encodeURIComponent(shareContent);
     
     switch (platform) {
       case "whatsapp":
-        window.open(`https://wa.me/?text=${encodedText} ${encodedUrl}`, "_blank");
+        // Use mobile app URL scheme if on mobile, web URL otherwise
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        if (isMobile) {
+          window.location.href = `whatsapp://send?text=${fullMessage}`;
+          // Fallback to web version if app not installed
+          setTimeout(() => {
+            window.open(`https://wa.me/?text=${fullMessage}`, "_blank");
+          }, 1000);
+        } else {
+          window.open(`https://wa.me/?text=${fullMessage}`, "_blank");
+        }
         break;
       case "telegram":
-        window.open(`https://t.me/share/url?url=${encodedUrl}&text=${encodedText}`, "_blank");
+        // Telegram mobile and web URLs
+        const telegramUrl = `https://t.me/share/url?url=${encodedUrl}&text=${encodedText}`;
+        window.location.href = `tg://msg?text=${fullMessage}`;
+        // Fallback to web version
+        setTimeout(() => {
+          window.open(telegramUrl, "_blank");
+        }, 1000);
         break;
       case "instagram":
         // Instagram doesn't have direct URL sharing, copy to clipboard
-        await navigator.clipboard.writeText(`${text} ${url}`);
-        toast({
-          title: "Copied to Clipboard!",
-          description: "Share text copied! You can now paste it in your Instagram story or post.",
-        });
+        try {
+          await navigator.clipboard.writeText(shareContent);
+          toast({
+            title: "Copied to Clipboard!",
+            description: "Share text copied! You can now paste it in your Instagram story or post.",
+          });
+        } catch (err) {
+          // Fallback for browsers that don't support clipboard API
+          const textArea = document.createElement("textarea");
+          textArea.value = shareContent;
+          textArea.style.position = "fixed";
+          textArea.style.left = "-999999px";
+          document.body.appendChild(textArea);
+          textArea.select();
+          try {
+            document.execCommand('copy');
+            toast({
+              title: "Copied to Clipboard!",
+              description: "Share text copied! You can now paste it in your Instagram story or post.",
+            });
+          } catch (e) {
+            toast({
+              title: "Copy Failed",
+              description: "Please manually copy the link from the browser address bar.",
+              variant: "destructive",
+            });
+          }
+          document.body.removeChild(textArea);
+        }
         break;
       default:
         // Fallback to Web Share API or clipboard
         if (navigator.share) {
-          await navigator.share({
-            title: variant === "app" ? "Join VirtusGreen" : productName || "Eco-Friendly Product",
-            text,
-            url,
-          });
+          try {
+            await navigator.share({
+              title: variant === "app" ? "Join VirtusGreen" : productName || "Eco-Friendly Product",
+              text: shareContent,
+            });
+          } catch (err: any) {
+            if (err.name !== 'AbortError') {
+              throw err;
+            }
+          }
         } else {
-          await navigator.clipboard.writeText(`${text} ${url}`);
+          await navigator.clipboard.writeText(shareContent);
           toast({
             title: "Copied to Clipboard!",
             description: "Share link copied to clipboard",
