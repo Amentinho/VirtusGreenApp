@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,17 @@ export default function HomePage() {
   const [search, setSearch] = useState("");
   const [activeSearch, setActiveSearch] = useState("");
   const [showScanner, setShowScanner] = useState(false);
+
+  useEffect(() => {
+    const fromProduct = sessionStorage.getItem('virtusgreen_from_product');
+    if (fromProduct === 'true') {
+      const savedSearch = sessionStorage.getItem('virtusgreen_search');
+      const savedActiveSearch = sessionStorage.getItem('virtusgreen_activeSearch');
+      if (savedSearch) setSearch(savedSearch);
+      if (savedActiveSearch) setActiveSearch(savedActiveSearch);
+      sessionStorage.removeItem('virtusgreen_from_product');
+    }
+  }, []);
 
   const { data: products, isLoading } = useQuery<Product[]>({
     queryKey: activeSearch ? ["/api/products", "search", activeSearch] : ["/api/products"],

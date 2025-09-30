@@ -2,9 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Product } from "@shared/schema";
 import { Link } from "wouter";
-import EnvImpactChart from "./env-impact-chart";
 import ShareButton from "./share-button";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Leaf, Factory } from "lucide-react";
 
 type ProductCardProps = {
   product: Product;
@@ -31,7 +30,17 @@ export default function ProductCard({ product, searchState }: ProductCardProps) 
     return { bg: "from-gray-400 to-gray-500", text: "text-white", ring: "ring-gray-200" };
   };
 
-  const colors = getEcoScoreColor(impact.ecoScore);
+  const getCO2Color = (co2: number | string) => {
+    if (typeof co2 === 'number') {
+      if (co2 < 100) return { bg: "from-emerald-500 to-green-600", text: "text-white", ring: "ring-emerald-200" };
+      if (co2 < 300) return { bg: "from-amber-500 to-orange-600", text: "text-white", ring: "ring-amber-200" };
+      return { bg: "from-red-500 to-rose-600", text: "text-white", ring: "ring-red-200" };
+    }
+    return { bg: "from-gray-400 to-gray-500", text: "text-white", ring: "ring-gray-200" };
+  };
+
+  const ecoScoreColors = getEcoScoreColor(impact.ecoScore);
+  const co2Colors = getCO2Color(impact.co2Emissions);
 
   return (
     <Card 
@@ -41,13 +50,13 @@ export default function ProductCard({ product, searchState }: ProductCardProps) 
       <Link href={`/product/${product.barcode}`} className="block" onClick={handleProductClick}>
         {/* Eco Score Badge */}
         <div className="absolute top-4 right-4 z-10">
-          <div className={`relative w-20 h-20 rounded-full bg-gradient-to-br ${colors.bg} shadow-lg ${colors.ring} ring-4 flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+          <div className={`relative w-20 h-20 rounded-full bg-gradient-to-br ${ecoScoreColors.bg} shadow-lg ${ecoScoreColors.ring} ring-4 flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
             <div className="text-center">
-              <div className={`text-2xl font-bold ${colors.text}`}>
+              <div className={`text-2xl font-bold ${ecoScoreColors.text}`}>
                 {impact.ecoScore === "NA" ? "NA" : impact.ecoScore}
               </div>
               {impact.ecoScore !== "NA" && (
-                <div className={`text-[10px] ${colors.text} opacity-90`}>/ 100</div>
+                <div className={`text-[10px] ${ecoScoreColors.text} opacity-90`}>/ 100</div>
               )}
             </div>
           </div>
@@ -63,8 +72,34 @@ export default function ProductCard({ product, searchState }: ProductCardProps) 
         </CardHeader>
         
         <CardContent className="space-y-4">
-          <div className="bg-gradient-to-br from-emerald-50/50 to-lime-50/30 dark:from-emerald-900/20 dark:to-lime-900/10 rounded-lg p-3 -mx-1">
-            <EnvImpactChart impact={impact} />
+          <div className="grid grid-cols-2 gap-3">
+            {/* Eco Score */}
+            <div className={`p-4 rounded-lg bg-gradient-to-br ${ecoScoreColors.bg} shadow-md hover:shadow-lg transition-shadow duration-200`}>
+              <div className="flex items-center gap-2 mb-2">
+                <Leaf className="h-4 w-4 text-white" />
+                <span className="text-xs font-medium text-white/90">Eco Score</span>
+              </div>
+              <div className="text-2xl font-bold text-white">
+                {impact.ecoScore === "NA" ? "NA" : impact.ecoScore}
+              </div>
+              {impact.ecoScore !== "NA" && (
+                <div className="text-xs text-white/80">out of 100</div>
+              )}
+            </div>
+
+            {/* CO2 Emissions */}
+            <div className={`p-4 rounded-lg bg-gradient-to-br ${co2Colors.bg} shadow-md hover:shadow-lg transition-shadow duration-200`}>
+              <div className="flex items-center gap-2 mb-2">
+                <Factory className="h-4 w-4 text-white" />
+                <span className="text-xs font-medium text-white/90">CO₂</span>
+              </div>
+              <div className="text-2xl font-bold text-white">
+                {impact.co2Emissions === "NA" ? "NA" : impact.co2Emissions}
+              </div>
+              {impact.co2Emissions !== "NA" && (
+                <div className="text-xs text-white/80">g/100g</div>
+              )}
+            </div>
           </div>
         </CardContent>
       </Link>
