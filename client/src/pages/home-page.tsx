@@ -12,10 +12,14 @@ import { Product } from "@shared/schema";
 import { Link } from "wouter";
 
 export default function HomePage() {
-  // Use sessionStorage instead of localStorage so search clears on page refresh
+  // Use sessionStorage to preserve search only when viewing product details
   const [search, setSearch] = useState(() => {
     if (typeof window !== 'undefined') {
-      return sessionStorage.getItem('virtusgreen_search') || "";
+      const savedSearch = sessionStorage.getItem('virtusgreen_search') || "";
+      // Clear it immediately after reading so it doesn't persist on next visit
+      sessionStorage.removeItem('virtusgreen_search');
+      sessionStorage.removeItem('virtusgreen_activeSearch');
+      return savedSearch;
     }
     return "";
   });
@@ -27,14 +31,13 @@ export default function HomePage() {
   });
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  // Save search state to sessionStorage whenever it changes
+  // Only save search when a product is selected (viewing details)
   useEffect(() => {
-    sessionStorage.setItem('virtusgreen_search', search);
-  }, [search]);
-
-  useEffect(() => {
-    sessionStorage.setItem('virtusgreen_activeSearch', activeSearch);
-  }, [activeSearch]);
+    if (selectedProduct) {
+      sessionStorage.setItem('virtusgreen_search', search);
+      sessionStorage.setItem('virtusgreen_activeSearch', activeSearch);
+    }
+  }, [selectedProduct, search, activeSearch]);
 
   const { data: products, isLoading } = useQuery<Product[]>({
     queryKey: activeSearch ? ["/api/products", "search", activeSearch] : ["/api/products"],
