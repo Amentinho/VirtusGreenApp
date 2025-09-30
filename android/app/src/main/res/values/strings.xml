@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">VirtusGreen</string>
+    <string name="title_activity_main">VirtusGreen</string>
+    <string name="package_name">com.virtusgreen.app</string>
+    <string name="custom_url_scheme">com.virtusgreen.app</string>
+</resources>
