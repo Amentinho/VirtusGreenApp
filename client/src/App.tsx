@@ -14,6 +14,7 @@ import MyTokensPage from "@/pages/my-tokens-page";
 import ResetPasswordPage from "@/pages/reset-password-page";
 import ProductDetailPage from "@/pages/product-detail";
 import LeaderboardPage from "@/pages/leaderboard-page";
+import SupportPage from "@/pages/support-page";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -29,6 +30,7 @@ function Router() {
       <ProtectedRoute path="/referral" component={ReferralPage} />
       <ProtectedRoute path="/my-tokens" component={MyTokensPage} />
       <ProtectedRoute path="/my-rewards" component={MyRewardsPage} />
+      <ProtectedRoute path="/support" component={SupportPage} />
       <Route component={NotFound} />
     </Switch>
   );
