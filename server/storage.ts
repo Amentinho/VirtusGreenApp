@@ -64,6 +64,15 @@ export interface IStorage {
   purchaseCharacter(userId: string, characterId: number): Promise<User>;
   equipCharacter(userId: string, characterId: number): Promise<User>;
   
+  // Leaderboard operations
+  getLeaderboard(): Promise<Array<{
+    userId: string;
+    username: string | null;
+    totalTokensEarned: number;
+    currentCharacter: Character | null;
+    rank: number;
+  }>>;
+  
   // Sharing and gamification methods
   recordProductShare(userId: string, productId: string, platform: string): Promise<{ awarded: number; sharesLeftToday: number }>;
   recordAppShare(userId: string, platform: string): Promise<{ shareUrl: string; referralCode: string }>;
@@ -600,6 +609,47 @@ export class DatabaseStorage implements IStorage {
       .returning();
 
     return updatedUser;
+  }
+
+  async getLeaderboard(): Promise<Array<{
+    userId: string;
+    username: string | null;
+    totalTokensEarned: number;
+    currentCharacter: Character | null;
+    rank: number;
+  }>> {
+    // Calculate total tokens earned (only positive earnings) for each user
+    const leaderboardData = await db
+      .select({
+        userId: tokenEarnings.userId,
+        totalTokensEarned: sql<number>`COALESCE(SUM(CASE WHEN ${tokenEarnings.amount} > 0 THEN ${tokenEarnings.amount} ELSE 0 END), 0)`,
+      })
+      .from(tokenEarnings)
+      .groupBy(tokenEarnings.userId)
+      .orderBy(sql`COALESCE(SUM(CASE WHEN ${tokenEarnings.amount} > 0 THEN ${tokenEarnings.amount} ELSE 0 END), 0) DESC`);
+
+    // Get user info and character info for each user in the leaderboard
+    const leaderboardWithDetails = await Promise.all(
+      leaderboardData.map(async (entry, index) => {
+        const user = await this.getUser(entry.userId);
+        let currentCharacter: Character | null = null;
+        
+        if (user?.currentCharacterId) {
+          const char = await this.getCharacter(user.currentCharacterId);
+          currentCharacter = char || null;
+        }
+
+        return {
+          userId: entry.userId,
+          username: user?.username || null,
+          totalTokensEarned: entry.totalTokensEarned,
+          currentCharacter,
+          rank: index + 1,
+        };
+      })
+    );
+
+    return leaderboardWithDetails;
   }
 
   async getReferralStats(userId: string): Promise<{ referralCount: number; tokensEarned: number }> {
@@ -1510,6 +1560,50 @@ export class MemStorage implements IStorage {
     this.users.set(userId, user);
 
     return user;
+  }
+
+  async getLeaderboard(): Promise<Array<{
+    userId: string;
+    username: string | null;
+    totalTokensEarned: number;
+    currentCharacter: Character | null;
+    rank: number;
+  }>> {
+    // Calculate total tokens earned (only positive earnings) for each user
+    const userTokensMap = new Map<string, number>();
+    
+    this.tokenEarnings.forEach(earning => {
+      if (earning.amount > 0) {
+        const current = userTokensMap.get(earning.userId) || 0;
+        userTokensMap.set(earning.userId, current + earning.amount);
+      }
+    });
+
+    // Convert to array and sort by total tokens descending
+    const leaderboardData = Array.from(userTokensMap.entries())
+      .map(([userId, totalTokensEarned]) => ({ userId, totalTokensEarned }))
+      .sort((a, b) => b.totalTokensEarned - a.totalTokensEarned);
+
+    // Get user info and character info for each user in the leaderboard
+    const leaderboardWithDetails = leaderboardData.map((entry, index) => {
+      const user = this.users.get(entry.userId);
+      let currentCharacter: Character | null = null;
+      
+      if (user?.currentCharacterId) {
+        const char = this.characters.get(user.currentCharacterId);
+        currentCharacter = char || null;
+      }
+
+      return {
+        userId: entry.userId,
+        username: user?.username || null,
+        totalTokensEarned: entry.totalTokensEarned,
+        currentCharacter,
+        rank: index + 1,
+      };
+    });
+
+    return leaderboardWithDetails;
   }
 
   async recordProductShare(userId: string, productId: string, platform: string): Promise<{ awarded: number; sharesLeftToday: number }> {
