@@ -60,6 +60,10 @@ export const users = pgTable("users", {
   // Avatar selection (animal emoji)
   avatar: text("avatar"),
   
+  // Profile display preference: 'avatar', 'character', or 'custom'
+  displayPreference: text("display_preference").default("avatar"),
+  customProfileImage: text("custom_profile_image"),
+  
   // Timestamps for both systems
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -248,6 +252,8 @@ export const updateProfileFormSchema = z.object({
   city: z.string().min(1, "City is required").optional(),
   gender: z.enum(["Male", "Female", "Non-binary", "Prefer not to say"]).optional(),
   avatar: z.string().optional(),
+  displayPreference: z.enum(["avatar", "character", "custom"]).optional(),
+  customProfileImage: z.string().optional(),
 });
 
 // Backend schema for API validation (yyyy-mm-dd)
@@ -269,6 +275,8 @@ export const updateProfileSchema = z.object({
   city: z.string().min(1, "City is required").optional(),
   gender: z.enum(["Male", "Female", "Non-binary", "Prefer not to say"]).optional(),
   avatar: z.string().optional(),
+  displayPreference: z.enum(["avatar", "character", "custom"]).optional(),
+  customProfileImage: z.string().optional(),
 });
 
 export const insertProductSchema = createInsertSchema(products).omit({ 
