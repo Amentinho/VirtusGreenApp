@@ -12,11 +12,48 @@ import { Product } from "@shared/schema";
 import { Link } from "wouter";
 
 export default function HomePage() {
-  // No sessionStorage needed - state naturally persists when opening product dialog
-  // and naturally clears when navigating to other pages
-  const [search, setSearch] = useState("");
-  const [activeSearch, setActiveSearch] = useState("");
+  // Restore search only if coming from a product detail page
+  const [search, setSearch] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const fromProduct = sessionStorage.getItem('virtusgreen_from_product');
+      if (fromProduct === 'true') {
+        sessionStorage.removeItem('virtusgreen_from_product');
+        return sessionStorage.getItem('virtusgreen_search') || "";
+      }
+      // Clear search if coming from other pages
+      sessionStorage.removeItem('virtusgreen_search');
+      sessionStorage.removeItem('virtusgreen_activeSearch');
+    }
+    return "";
+  });
+  
+  const [activeSearch, setActiveSearch] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const fromProduct = sessionStorage.getItem('virtusgreen_from_product');
+      if (fromProduct === 'true') {
+        return sessionStorage.getItem('virtusgreen_activeSearch') || "";
+      }
+    }
+    return "";
+  });
+  
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  // Save search state before navigating to product page
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const productLink = target.closest('a[href^="/product/"]');
+      if (productLink) {
+        sessionStorage.setItem('virtusgreen_search', search);
+        sessionStorage.setItem('virtusgreen_activeSearch', activeSearch);
+        sessionStorage.setItem('virtusgreen_from_product', 'true');
+      }
+    };
+
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, [search, activeSearch]);
 
   const { data: products, isLoading } = useQuery<Product[]>({
     queryKey: activeSearch ? ["/api/products", "search", activeSearch] : ["/api/products"],
