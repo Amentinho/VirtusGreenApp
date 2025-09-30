@@ -6,17 +6,15 @@ import { Scan, Camera, X } from "lucide-react";
 import { Product } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { BrowserMultiFormatReader } from '@zxing/browser';
+import { useLocation } from "wouter";
 
-type BarcodeScannerProps = {
-  onProductFound: (product: Product) => void;
-};
-
-export default function BarcodeScanner({ onProductFound }: BarcodeScannerProps) {
+export default function BarcodeScanner() {
   const [barcode, setBarcode] = useState("");
   const [isScanning, setIsScanning] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   const { refetch, data: product, error, isLoading } = useQuery<Product>({
     queryKey: [`/api/products?barcode=${barcode}`],
@@ -26,13 +24,14 @@ export default function BarcodeScanner({ onProductFound }: BarcodeScannerProps) 
   // Handle successful product fetch
   useEffect(() => {
     if (product) {
-      onProductFound(product);
+      // Navigate to product detail page
+      setLocation(`/product/${product.barcode}`);
       toast({
         title: "Product Found",
         description: `Found: ${product.name} by ${product.brand}`,
       });
     }
-  }, [product, onProductFound, toast]);
+  }, [product, setLocation, toast]);
 
   // Handle errors
   useEffect(() => {

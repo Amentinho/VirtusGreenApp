@@ -6,7 +6,6 @@ import { Search } from "lucide-react";
 import ProductCard from "@/components/product-card";
 import TokenDisplay from "@/components/token-display";
 import BarcodeScanner from "@/components/barcode-scanner";
-import ProductDialog from "@/components/product-dialog";
 import ProfileDropdown from "@/components/profile-dropdown";
 import { Product } from "@shared/schema";
 import { Link } from "wouter";
@@ -36,24 +35,6 @@ export default function HomePage() {
     }
     return "";
   });
-  
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-
-  // Save search state before navigating to product page
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      const productLink = target.closest('a[href^="/product/"]');
-      if (productLink) {
-        sessionStorage.setItem('virtusgreen_search', search);
-        sessionStorage.setItem('virtusgreen_activeSearch', activeSearch);
-        sessionStorage.setItem('virtusgreen_from_product', 'true');
-      }
-    };
-
-    document.addEventListener('click', handleClick);
-    return () => document.removeEventListener('click', handleClick);
-  }, [search, activeSearch]);
 
   const { data: products, isLoading } = useQuery<Product[]>({
     queryKey: activeSearch ? ["/api/products", "search", activeSearch] : ["/api/products"],
@@ -64,10 +45,6 @@ export default function HomePage() {
       return fetch(url, { credentials: "include" }).then(res => res.json());
     }
   });
-
-  const handleProductFound = (product: Product) => {
-    setSelectedProduct(product);
-  };
 
   const handleSearch = () => {
     setActiveSearch(search);
@@ -101,7 +78,7 @@ export default function HomePage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <div className="col-span-full space-y-6">
-            <BarcodeScanner onProductFound={handleProductFound} />
+            <BarcodeScanner />
 
             <div className="flex gap-2">
               <Input
@@ -127,24 +104,16 @@ export default function HomePage() {
                 <div className="col-span-full text-center">Loading products...</div>
               ) : (
                 products?.map((product) => (
-                  <div
+                  <ProductCard 
                     key={product.id}
-                    onClick={() => setSelectedProduct(product)}
-                    className="cursor-pointer transition-transform hover:scale-105"
-                  >
-                    <ProductCard product={product} />
-                  </div>
+                    product={product} 
+                    searchState={{ search, activeSearch }}
+                  />
                 ))
               )}
             </div>
           </div>
         </div>
-
-        <ProductDialog
-          product={selectedProduct}
-          isOpen={!!selectedProduct}
-          onClose={() => setSelectedProduct(null)}
-        />
       </main>
     </div>
   );

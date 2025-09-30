@@ -90,11 +90,17 @@ export default function ProductDetailPage() {
         <nav className="bg-white border-b">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center h-16">
-              <Link href="/">
-                <Button variant="ghost" size="icon" data-testid="button-back">
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-              </Link>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                data-testid="button-back"
+                onClick={() => {
+                  sessionStorage.setItem('virtusgreen_from_product', 'true');
+                  window.location.href = '/';
+                }}
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
               <h1 className="ml-4 text-xl font-bold text-green-600">Loading Product...</h1>
             </div>
           </div>
@@ -117,11 +123,17 @@ export default function ProductDetailPage() {
         <nav className="bg-white border-b">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center h-16">
-              <Link href="/">
-                <Button variant="ghost" size="icon" data-testid="button-back">
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-              </Link>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                data-testid="button-back"
+                onClick={() => {
+                  sessionStorage.setItem('virtusgreen_from_product', 'true');
+                  window.location.href = '/';
+                }}
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
               <h1 className="ml-4 text-xl font-bold text-green-600">Product Not Found</h1>
             </div>
           </div>
@@ -190,11 +202,17 @@ export default function ProductDetailPage() {
       <nav className="bg-white border-b">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center h-16">
-            <Link href="/">
-              <Button variant="ghost" size="icon" data-testid="button-back">
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              data-testid="button-back"
+              onClick={() => {
+                sessionStorage.setItem('virtusgreen_from_product', 'true');
+                window.location.href = '/';
+              }}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
             <h1 className="ml-4 text-xl font-bold text-green-600">Product Details</h1>
           </div>
         </div>

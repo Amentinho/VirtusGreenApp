@@ -4,12 +4,25 @@ import { Link } from "wouter";
 import EnvImpactChart from "./env-impact-chart";
 import ShareButton from "./share-button";
 
-export default function ProductCard({ product }: { product: Product }) {
+type ProductCardProps = {
+  product: Product;
+  searchState?: { search: string; activeSearch: string };
+};
+
+export default function ProductCard({ product, searchState }: ProductCardProps) {
   const { name, brand, environmentalImpact: impact } = product;
+
+  const handleProductClick = () => {
+    // Save search state before navigating to product page
+    if (searchState) {
+      sessionStorage.setItem('virtusgreen_search', searchState.search);
+      sessionStorage.setItem('virtusgreen_activeSearch', searchState.activeSearch);
+    }
+  };
 
   return (
     <Card className="cursor-pointer transition-shadow hover:shadow-lg" data-testid={`product-card-${product.barcode}`}>
-      <Link href={`/product/${product.barcode}`} className="block">
+      <Link href={`/product/${product.barcode}`} className="block" onClick={handleProductClick}>
         <CardHeader>
           <CardTitle>{name}</CardTitle>
           <p className="text-sm text-gray-500">{brand}</p>
