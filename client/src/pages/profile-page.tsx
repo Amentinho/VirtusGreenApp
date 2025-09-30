@@ -98,7 +98,32 @@ export default function ProfilePage() {
     queryKey: ["/api/characters"],
   });
 
+  const { data: ownedCharacters } = useQuery<Character[]>({
+    queryKey: ["/api/users/characters"],
+    enabled: !!user,
+  });
+
   const currentCharacter = characters?.find(c => c.id === user?.currentCharacterId);
+
+  const equipMutation = useMutation({
+    mutationFn: async (characterId: number) => {
+      return apiRequest("POST", `/api/characters/${characterId}/equip`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      toast({
+        title: "Success",
+        description: "Character equipped successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to equip character",
+        variant: "destructive",
+      });
+    },
+  });
 
   const copyReferralCode = () => {
     if (user?.referralCode) {
@@ -195,33 +220,74 @@ export default function ProfilePage() {
           {/* Character Display Card */}
           <Card className="lg:col-span-2">
             <CardHeader>
-              <CardTitle>Your Character</CardTitle>
+              <CardTitle>Your Characters</CardTitle>
             </CardHeader>
             <CardContent>
-              {currentCharacter ? (
-                <div className="flex flex-col md:flex-row items-center gap-6">
-                  <div className="flex-shrink-0">
-                    <img
-                      src={currentCharacter.ipfsLink}
-                      alt={currentCharacter.title}
-                      className="w-40 h-40 rounded-full object-cover border-4 border-green-500"
-                      data-testid="img-current-character"
-                    />
-                  </div>
-                  <div className="flex-1 text-center md:text-left">
-                    <h3 className="text-2xl font-bold text-green-600 mb-2" data-testid="text-character-title">
-                      {currentCharacter.title}
-                    </h3>
-                    <p className="text-gray-600" data-testid="text-character-description">
-                      {currentCharacter.description}
-                    </p>
+              {ownedCharacters && ownedCharacters.length > 0 ? (
+                <div className="space-y-4">
+                  {/* Currently Equipped Character */}
+                  {currentCharacter && (
+                    <div className="border-2 border-green-500 rounded-lg p-4 bg-green-50">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span className="text-sm font-semibold text-green-700">Currently Equipped</span>
+                      </div>
+                      <div className="flex flex-col md:flex-row items-center gap-6">
+                        <div className="flex-shrink-0">
+                          <img
+                            src={currentCharacter.ipfsLink}
+                            alt={currentCharacter.title}
+                            className="w-32 h-32 rounded-full object-cover border-4 border-green-500"
+                            data-testid="img-current-character"
+                          />
+                        </div>
+                        <div className="flex-1 text-center md:text-left">
+                          <h3 className="text-2xl font-bold text-green-600 mb-2" data-testid="text-character-title">
+                            {currentCharacter.title}
+                          </h3>
+                          <p className="text-gray-600" data-testid="text-character-description">
+                            {currentCharacter.description}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Other Owned Characters */}
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-700 mb-3">
+                      {ownedCharacters.length > 1 ? "Switch to another character:" : ""}
+                    </h4>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {ownedCharacters
+                        .filter(char => char.id !== user?.currentCharacterId)
+                        .map(character => (
+                          <button
+                            key={character.id}
+                            onClick={() => equipMutation.mutate(character.id)}
+                            disabled={equipMutation.isPending}
+                            className="flex flex-col items-center p-4 border-2 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            data-testid={`button-equip-character-${character.id}`}
+                          >
+                            <img
+                              src={character.ipfsLink}
+                              alt={character.title}
+                              className="w-20 h-20 rounded-full object-cover mb-2"
+                              data-testid={`img-character-${character.id}`}
+                            />
+                            <span className="text-sm font-medium text-center" data-testid={`text-character-name-${character.id}`}>
+                              {character.title}
+                            </span>
+                          </button>
+                        ))}
+                    </div>
                   </div>
                 </div>
               ) : (
                 <div className="text-center py-8">
                   <p className="text-gray-500 mb-4">You haven't purchased a character yet.</p>
                   <Link href="/rewards">
-                    <Button>Browse Characters</Button>
+                    <Button data-testid="button-browse-characters">Browse Characters</Button>
                   </Link>
                 </div>
               )}
