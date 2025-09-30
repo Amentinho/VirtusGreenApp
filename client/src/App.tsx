@@ -15,6 +15,7 @@ import ResetPasswordPage from "@/pages/reset-password-page";
 import ProductDetailPage from "@/pages/product-detail";
 import LeaderboardPage from "@/pages/leaderboard-page";
 import SupportPage from "@/pages/support-page";
+import WatchAdsPage from "@/pages/watch-ads-page";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -31,6 +32,7 @@ function Router() {
       <ProtectedRoute path="/my-tokens" component={MyTokensPage} />
       <ProtectedRoute path="/my-rewards" component={MyRewardsPage} />
       <ProtectedRoute path="/support" component={SupportPage} />
+      <ProtectedRoute path="/watch-ads" component={WatchAdsPage} />
       <Route component={NotFound} />
     </Switch>
   );
