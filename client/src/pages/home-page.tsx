@@ -16,12 +16,8 @@ export default function HomePage() {
     if (typeof window !== 'undefined') {
       const fromProduct = sessionStorage.getItem('virtusgreen_from_product');
       if (fromProduct === 'true') {
-        sessionStorage.removeItem('virtusgreen_from_product');
         return sessionStorage.getItem('virtusgreen_search') || "";
       }
-      // Clear search if coming from other pages
-      sessionStorage.removeItem('virtusgreen_search');
-      sessionStorage.removeItem('virtusgreen_activeSearch');
     }
     return "";
   });
@@ -35,6 +31,20 @@ export default function HomePage() {
     }
     return "";
   });
+
+  // Clean up sessionStorage after both states are initialized
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const fromProduct = sessionStorage.getItem('virtusgreen_from_product');
+      if (fromProduct === 'true') {
+        sessionStorage.removeItem('virtusgreen_from_product');
+      } else {
+        // Clear search if NOT coming from product page
+        sessionStorage.removeItem('virtusgreen_search');
+        sessionStorage.removeItem('virtusgreen_activeSearch');
+      }
+    }
+  }, []);
 
   const { data: products, isLoading } = useQuery<Product[]>({
     queryKey: activeSearch ? ["/api/products", "search", activeSearch] : ["/api/products"],

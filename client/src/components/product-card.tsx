@@ -17,6 +17,7 @@ export default function ProductCard({ product, searchState }: ProductCardProps) 
     if (searchState) {
       sessionStorage.setItem('virtusgreen_search', searchState.search);
       sessionStorage.setItem('virtusgreen_activeSearch', searchState.activeSearch);
+      sessionStorage.setItem('virtusgreen_from_product', 'true');
     }
   };
 
