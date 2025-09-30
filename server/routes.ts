@@ -99,7 +99,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // If not found locally, check Open Food Facts API
         try {
           const openFoodFactsResponse = await fetch(
-            `https://world.openfoodfacts.net/api/v2/product/${barcode}?fields=product_name,brands,nutriscore_data,nutrition_grades,nutriments`
+            `https://world.openfoodfacts.net/api/v2/product/${barcode}?fields=product_name,brands,nutriscore_data,nutrition_grades,nutriments,ecoscore_score,ecoscore_grade,ecoscore_data,carbon-footprint-from-known-ingredients_100g`
           );
           
           if (openFoodFactsResponse.ok) {
