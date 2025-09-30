@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Copy, ArrowLeft, LogOut } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Copy, ArrowLeft, LogOut, Trophy } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -27,6 +28,14 @@ type UpdatePasswordForm = {
 };
 
 type UpdateProfileForm = z.infer<typeof updateProfileFormSchema>;
+
+type LeaderboardEntry = {
+  userId: string;
+  username: string | null;
+  totalTokensEarned: number;
+  currentCharacter: Character | null;
+  rank: number;
+};
 
 const COUNTRIES = [
   "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Argentina", "Armenia", "Australia",
@@ -101,6 +110,10 @@ export default function ProfilePage() {
   const { data: ownedCharacters } = useQuery<Character[]>({
     queryKey: ["/api/users/characters"],
     enabled: !!user,
+  });
+
+  const { data: leaderboard, isLoading: leaderboardLoading } = useQuery<LeaderboardEntry[]>({
+    queryKey: ["/api/leaderboard"],
   });
 
   const currentCharacter = characters?.find(c => c.id === user?.currentCharacterId);
@@ -493,6 +506,89 @@ export default function ProfilePage() {
                   {profileMutation.isPending ? "Saving..." : "Save Profile"}
                 </Button>
               </form>
+            </CardContent>
+          </Card>
+
+          {/* Leaderboard Card */}
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Trophy className="h-5 w-5 text-yellow-500" />
+                <CardTitle>Community Leaderboard</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {leaderboardLoading ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">Loading leaderboard...</p>
+                </div>
+              ) : leaderboard && leaderboard.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-20">Rank</TableHead>
+                        <TableHead>Username</TableHead>
+                        <TableHead className="text-right">Total Points Earned</TableHead>
+                        <TableHead className="w-32 text-center">Character</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {leaderboard.map((entry) => {
+                        const isCurrentUser = entry.userId === user?.id;
+                        return (
+                          <TableRow 
+                            key={entry.userId}
+                            className={isCurrentUser ? "bg-green-50 border-2 border-green-500" : ""}
+                            data-testid={isCurrentUser ? "row-current-user" : `row-user-${entry.userId}`}
+                          >
+                            <TableCell className="font-medium" data-testid={`text-rank-${entry.rank}`}>
+                              {entry.rank === 1 && <span className="text-yellow-500">🥇</span>}
+                              {entry.rank === 2 && <span className="text-gray-400">🥈</span>}
+                              {entry.rank === 3 && <span className="text-orange-600">🥉</span>}
+                              {entry.rank > 3 && <span>#{entry.rank}</span>}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <span data-testid={`text-username-${entry.userId}`}>
+                                  {entry.username || "Anonymous"}
+                                </span>
+                                {isCurrentUser && (
+                                  <span className="text-xs bg-green-500 text-white px-2 py-0.5 rounded-full">
+                                    You
+                                  </span>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right font-semibold" data-testid={`text-points-${entry.userId}`}>
+                              {entry.totalTokensEarned} points
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {entry.currentCharacter ? (
+                                <div className="flex justify-center">
+                                  <img
+                                    src={entry.currentCharacter.ipfsLink}
+                                    alt={entry.currentCharacter.title}
+                                    className="w-10 h-10 rounded-full object-cover"
+                                    title={entry.currentCharacter.title}
+                                    data-testid={`img-character-${entry.userId}`}
+                                  />
+                                </div>
+                              ) : (
+                                <span className="text-gray-400 text-sm">No character</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No leaderboard data available yet.</p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
