@@ -117,13 +117,6 @@ export default function ProfileDropdown() {
         </DropdownMenuItem>
 
         <DropdownMenuItem asChild>
-          <Link href="/watch-ads" className="w-full">
-            <Play className="mr-2 h-4 w-4" />
-            <span data-testid="text-watch-ads">Watch Ads</span>
-          </Link>
-        </DropdownMenuItem>
-
-        <DropdownMenuItem asChild>
           <Link href="/leaderboard" className="w-full">
             <Trophy className="mr-2 h-4 w-4" />
             <span data-testid="text-leaderboard">Leaderboard</span>
@@ -136,6 +129,13 @@ export default function ProfileDropdown() {
           <Link href="/support" className="w-full">
             <Coffee className="mr-2 h-4 w-4" />
             <span data-testid="text-buy-me-coffee">Buy Me a Coffee</span>
+          </Link>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem asChild>
+          <Link href="/watch-ads" className="w-full">
+            <Play className="mr-2 h-4 w-4" />
+            <span data-testid="text-watch-ads">Watch Ads</span>
           </Link>
         </DropdownMenuItem>
 
