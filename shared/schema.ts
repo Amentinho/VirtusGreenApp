@@ -54,6 +54,9 @@ export const users = pgTable("users", {
   telegramUsername: text("telegram_username"),
   telegramVerified: boolean("telegram_verified").notNull().default(false),
   
+  // Character system
+  currentCharacterId: integer("current_character_id"),
+  
   // Timestamps for both systems
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -85,6 +88,17 @@ export const rewards = pgTable("rewards", {
   available: boolean("available").notNull().default(true),
   totalAvailable: integer("total_available").notNull().default(100),
   remainingQuantity: integer("remaining_quantity").notNull().default(100),
+});
+
+export const characters = pgTable("characters", {
+  id: serial("id").primaryKey(),
+  rewardNumber: integer("reward_number").notNull().unique(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  maxAvailable: integer("max_available").notNull(),
+  tokenCost: integer("token_cost").notNull(),
+  ipfsLink: text("ipfs_link").notNull(),
+  purchasedCount: integer("purchased_count").notNull().default(0),
 });
 
 export const userPurchases = pgTable("user_purchases", {
@@ -239,6 +253,11 @@ export const insertRewardSchema = createInsertSchema(rewards).omit({
   id: true 
 });
 
+export const insertCharacterSchema = createInsertSchema(characters).omit({ 
+  id: true,
+  purchasedCount: true
+});
+
 export const insertUserPurchaseSchema = createInsertSchema(userPurchases).omit({
   id: true,
   purchasedAt: true
@@ -275,6 +294,7 @@ export type UpsertUser = z.infer<typeof upsertUserSchema>; // For Replit Auth
 export type User = typeof users.$inferSelect;
 export type Product = typeof products.$inferSelect;
 export type Reward = typeof rewards.$inferSelect;
+export type Character = typeof characters.$inferSelect;
 export type UserPurchase = typeof userPurchases.$inferSelect;
 export type ProductShare = typeof productShares.$inferSelect;
 export type AppShare = typeof appShares.$inferSelect;
@@ -284,6 +304,7 @@ export type SocialFollowVerification = typeof socialFollowVerifications.$inferSe
 export type TokenEarning = typeof tokenEarnings.$inferSelect;
 
 export type InsertReward = z.infer<typeof insertRewardSchema>;
+export type InsertCharacter = z.infer<typeof insertCharacterSchema>;
 export type InsertUserPurchase = z.infer<typeof insertUserPurchaseSchema>;
 
 // Insert schemas for new tables

@@ -2,8 +2,9 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TokenDisplay from "@/components/token-display";
-import { Reward } from "@shared/schema";
+import { Reward, Character } from "@shared/schema";
 import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -13,8 +14,12 @@ import { ArrowLeft, Coins } from "lucide-react";
 export default function RewardsPage() {
   const { toast } = useToast();
   const { user } = useAuth();
-  const { data: rewards, isLoading } = useQuery<Reward[]>({
+  const { data: rewards, isLoading: isLoadingRewards } = useQuery<Reward[]>({
     queryKey: ["/api/rewards"],
+  });
+
+  const { data: characters, isLoading: isLoadingCharacters } = useQuery<Character[]>({
+    queryKey: ["/api/characters"],
   });
 
   const purchaseRewardMutation = useMutation({
@@ -33,6 +38,27 @@ export default function RewardsPage() {
       toast({
         title: "Error",
         description: error.message || "Failed to redeem reward",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const purchaseCharacterMutation = useMutation({
+    mutationFn: async (characterId: number) => {
+      return await apiRequest("POST", `/api/characters/${characterId}/purchase`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/characters"] });
+      toast({
+        title: "Character Purchased!",
+        description: "Your profile has been updated with your new character.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to purchase character",
         variant: "destructive",
       });
     },
@@ -77,53 +103,122 @@ export default function RewardsPage() {
           </div>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {isLoading ? (
-            <div className="col-span-full text-center">Loading rewards...</div>
-          ) : (
-            rewards?.map((reward) => (
-              <Card key={reward.id} data-testid={`card-reward-${reward.id}`}>
-                <CardHeader>
-                  <CardTitle>{reward.name}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-600 mb-4">{reward.description}</p>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-green-600" data-testid={`text-token-cost-${reward.id}`}>
-                        {reward.tokenCost} tokens
-                      </span>
-                      <Badge variant="outline" data-testid={`text-remaining-${reward.id}`}>
-                        {reward.remainingQuantity || 0} left
-                      </Badge>
-                    </div>
-                    <Button
-                      onClick={() => purchaseRewardMutation.mutate(reward.id)}
-                      disabled={
-                        !reward.available || 
-                        (user?.tokens || 0) < reward.tokenCost ||
-                        (reward.remainingQuantity || 0) <= 0 ||
-                        purchaseRewardMutation.isPending
-                      }
-                      className="w-full"
-                      data-testid={`button-redeem-${reward.id}`}
-                    >
-                      {purchaseRewardMutation.isPending ? (
-                        "Redeeming..."
-                      ) : (user?.tokens || 0) < reward.tokenCost ? (
-                        "Insufficient tokens"
-                      ) : (reward.remainingQuantity || 0) <= 0 ? (
-                        "Out of stock"
-                      ) : (
-                        "Redeem"
-                      )}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
-        </div>
+        <Tabs defaultValue="characters" className="w-full">
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
+            <TabsTrigger value="characters">Characters</TabsTrigger>
+            <TabsTrigger value="coupons">Coupons</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="characters">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {isLoadingCharacters ? (
+                <div className="col-span-full text-center">Loading characters...</div>
+              ) : (
+                characters?.map((character) => (
+                  <Card key={character.id} data-testid={`card-character-${character.id}`}>
+                    <CardHeader>
+                      <div className="flex justify-center mb-4">
+                        <img
+                          src={character.ipfsLink}
+                          alt={character.title}
+                          className="w-32 h-32 rounded-full object-cover"
+                          data-testid={`img-character-${character.id}`}
+                        />
+                      </div>
+                      <CardTitle className="text-center">{character.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-gray-600 mb-4 text-sm">{character.description}</p>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-green-600" data-testid={`text-character-cost-${character.id}`}>
+                            {character.tokenCost} tokens
+                          </span>
+                          <Badge variant="outline" data-testid={`text-character-available-${character.id}`}>
+                            {character.maxAvailable - character.purchasedCount} left
+                          </Badge>
+                        </div>
+                        <Button
+                          onClick={() => purchaseCharacterMutation.mutate(character.id)}
+                          disabled={
+                            (user?.tokens || 0) < character.tokenCost ||
+                            character.purchasedCount >= character.maxAvailable ||
+                            purchaseCharacterMutation.isPending ||
+                            user?.currentCharacterId === character.id
+                          }
+                          className="w-full"
+                          data-testid={`button-purchase-character-${character.id}`}
+                        >
+                          {purchaseCharacterMutation.isPending ? (
+                            "Purchasing..."
+                          ) : user?.currentCharacterId === character.id ? (
+                            "Current Character"
+                          ) : (user?.tokens || 0) < character.tokenCost ? (
+                            "Insufficient tokens"
+                          ) : character.purchasedCount >= character.maxAvailable ? (
+                            "Sold out"
+                          ) : (
+                            "Purchase"
+                          )}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="coupons">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {isLoadingRewards ? (
+                <div className="col-span-full text-center">Loading rewards...</div>
+              ) : (
+                rewards?.map((reward) => (
+                  <Card key={reward.id} data-testid={`card-reward-${reward.id}`}>
+                    <CardHeader>
+                      <CardTitle>{reward.name}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-gray-600 mb-4">{reward.description}</p>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-green-600" data-testid={`text-token-cost-${reward.id}`}>
+                            {reward.tokenCost} tokens
+                          </span>
+                          <Badge variant="outline" data-testid={`text-remaining-${reward.id}`}>
+                            {reward.remainingQuantity || 0} left
+                          </Badge>
+                        </div>
+                        <Button
+                          onClick={() => purchaseRewardMutation.mutate(reward.id)}
+                          disabled={
+                            !reward.available || 
+                            (user?.tokens || 0) < reward.tokenCost ||
+                            (reward.remainingQuantity || 0) <= 0 ||
+                            purchaseRewardMutation.isPending
+                          }
+                          className="w-full"
+                          data-testid={`button-redeem-${reward.id}`}
+                        >
+                          {purchaseRewardMutation.isPending ? (
+                            "Redeeming..."
+                          ) : (user?.tokens || 0) < reward.tokenCost ? (
+                            "Insufficient tokens"
+                          ) : (reward.remainingQuantity || 0) <= 0 ? (
+                            "Out of stock"
+                          ) : (
+                            "Redeem"
+                          )}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );

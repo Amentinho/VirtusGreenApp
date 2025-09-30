@@ -332,6 +332,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/characters", async (_req, res) => {
+    const characters = await storage.getCharacters();
+    res.json(characters);
+  });
+
+  app.post("/api/characters/:id/purchase", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    try {
+      const characterId = parseInt(req.params.id);
+      
+      // Validate id parameter
+      if (isNaN(characterId)) {
+        return res.status(400).json({ message: "Invalid character ID" });
+      }
+
+      const userId = req.user!.id;
+      
+      const updatedUser = await storage.purchaseCharacter(userId, characterId);
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error purchasing character:", error);
+      
+      if (error instanceof Error) {
+        if (error.message === "You already own this character") {
+          return res.status(400).json({ message: "You already own this character" });
+        }
+        if (error.message === "Insufficient tokens") {
+          return res.status(400).json({ message: "You don't have enough tokens to purchase this character" });
+        }
+        if (error.message === "This character is no longer available") {
+          return res.status(400).json({ message: "This character is no longer available" });
+        }
+        if (error.message === "User or character not found") {
+          return res.status(404).json({ message: "Character not found" });
+        }
+      }
+      
+      res.status(500).json({ message: "Failed to purchase character" });
+    }
+  });
+
   app.post("/api/user/password", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 

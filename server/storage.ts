@@ -1,10 +1,10 @@
 import createMemoryStore from "memorystore";
 import session from "express-session";
-import { Product, User, Reward, UserPurchase, InsertUser, CreateUser, UpsertUser, InsertUserPurchase, TokenEarning } from "@shared/schema";
+import { Product, User, Reward, Character, UserPurchase, InsertUser, CreateUser, UpsertUser, InsertUserPurchase, TokenEarning } from "@shared/schema";
 import { customAlphabet } from "nanoid";
 import connectPg from "connect-pg-simple";
 import { db } from "./db";
-import { users, products, rewards, userPurchases, productShares, appShares, referralEvents, userActions, socialFollowVerifications, tokenEarnings } from "@shared/schema";
+import { users, products, rewards, characters, userPurchases, productShares, appShares, referralEvents, userActions, socialFollowVerifications, tokenEarnings } from "@shared/schema";
 import { eq, sql, and } from "drizzle-orm";
 
 const MemoryStore = createMemoryStore(session);
@@ -56,6 +56,11 @@ export interface IStorage {
   getReward(id: number): Promise<Reward | undefined>;
   purchaseReward(userId: string, rewardId: number): Promise<void>;
   getUserPurchases(userId: string): Promise<Array<UserPurchase & { reward: Reward }>>;
+  
+  // Character operations
+  getCharacters(): Promise<Character[]>;
+  getCharacter(id: number): Promise<Character | undefined>;
+  purchaseCharacter(userId: string, characterId: number): Promise<User>;
   
   // Sharing and gamification methods
   recordProductShare(userId: string, productId: string, platform: string): Promise<{ awarded: number; sharesLeftToday: number }>;
@@ -421,7 +426,7 @@ export class DatabaseStorage implements IStorage {
       userId,
       "reward_purchase",
       -reward.tokenCost,
-      `Redeemed reward: ${reward.title}`
+      `Redeemed reward: ${reward.name}`
     );
   }
 
@@ -439,6 +444,96 @@ export class DatabaseStorage implements IStorage {
       .where(eq(userPurchases.userId, userId));
 
     return purchases;
+  }
+
+  async getCharacters(): Promise<Character[]> {
+    return await db.select().from(characters).orderBy(characters.rewardNumber);
+  }
+
+  async getCharacter(id: number): Promise<Character | undefined> {
+    const [character] = await db.select().from(characters).where(eq(characters.id, id));
+    return character;
+  }
+
+  async purchaseCharacter(userId: string, characterId: number): Promise<User> {
+    const user = await this.getUser(userId);
+    const character = await this.getCharacter(characterId);
+
+    if (!user || !character) {
+      throw new Error("User or character not found");
+    }
+
+    // Check if user already owns this character
+    if (user.currentCharacterId === characterId) {
+      throw new Error("You already own this character");
+    }
+
+    if (user.tokens < character.tokenCost) {
+      throw new Error("Insufficient tokens");
+    }
+
+    if (character.purchasedCount >= character.maxAvailable) {
+      throw new Error("This character is no longer available");
+    }
+
+    // Use transaction to ensure atomic operations
+    try {
+      // Atomically update user tokens and character - ensure user has enough tokens
+      const userUpdateResult = await db
+        .update(users)
+        .set({ 
+          tokens: sql`${users.tokens} - ${character.tokenCost}`,
+          currentCharacterId: character.id,
+          updatedAt: new Date()
+        })
+        .where(and(
+          eq(users.id, userId),
+          sql`${users.tokens} >= ${character.tokenCost}`
+        ))
+        .returning();
+
+      if (userUpdateResult.length === 0) {
+        throw new Error("Insufficient tokens");
+      }
+
+      // Atomically increment character purchased count - ensure availability
+      const characterUpdateResult = await db
+        .update(characters)
+        .set({ purchasedCount: sql`${characters.purchasedCount} + 1` })
+        .where(and(
+          eq(characters.id, characterId),
+          sql`${characters.purchasedCount} < ${characters.maxAvailable}`
+        ))
+        .returning();
+
+      if (characterUpdateResult.length === 0) {
+        // Rollback user update by reverting the purchase
+        await db
+          .update(users)
+          .set({
+            tokens: sql`${users.tokens} + ${character.tokenCost}`,
+            currentCharacterId: user.currentCharacterId,
+            updatedAt: new Date()
+          })
+          .where(eq(users.id, userId));
+        
+        throw new Error("This character is no longer available");
+      }
+
+      // Record token spending
+      await this.recordTokenEarning(
+        userId,
+        "character_purchase",
+        -character.tokenCost,
+        `Purchased character: ${character.title}`
+      );
+
+      // Return updated user
+      return userUpdateResult[0];
+    } catch (error) {
+      // Re-throw the error for proper handling
+      throw error;
+    }
   }
 
   async getReferralStats(userId: string): Promise<{ referralCount: number; tokensEarned: number }> {
@@ -872,6 +967,7 @@ export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private products: Map<number, Product>;
   private rewards: Map<number, Reward>;
+  private characters: Map<number, Character>;
   private userPurchases: Map<number, UserPurchase>;
   private productShares: Array<{ userId: string; productId: string; platform: string; sharedAt: Date }>;
   private appShares: Array<{ userId: string; platform: string; sharedAt: Date; shareUrl: string; referralCode: string }>;
@@ -879,19 +975,20 @@ export class MemStorage implements IStorage {
   private socialVerifications: Array<{ userId: string; platform: string; verificationCode: string; status: string; createdAt: Date; tokensAwarded?: number }>;
   private tokenEarnings: Array<{ userId: string; source: string; amount: number; description: string; earnedAt: Date }>;
   sessionStore: session.Store;
-  currentId: { products: number; rewards: number; userPurchases: number };
+  currentId: { products: number; rewards: number; characters: number; userPurchases: number };
 
   constructor() {
     this.users = new Map();
     this.products = new Map();
     this.rewards = new Map();
+    this.characters = new Map();
     this.userPurchases = new Map();
     this.productShares = [];
     this.appShares = [];
     this.userActions = [];
     this.socialVerifications = [];
     this.tokenEarnings = [];
-    this.currentId = { products: 1, rewards: 1, userPurchases: 1 };
+    this.currentId = { products: 1, rewards: 1, characters: 1, userPurchases: 1 };
     this.sessionStore = new MemoryStore({ checkPeriod: 86400000 });
 
     // Seed some sample data
@@ -1036,6 +1133,7 @@ export class MemStorage implements IStorage {
       evmWalletVerified: false,
       telegramUsername: null,
       telegramVerified: false,
+      currentCharacterId: null,
       emailVerified: false,
       emailVerificationToken: null,
       emailVerificationExpires: null,
@@ -1079,6 +1177,11 @@ export class MemStorage implements IStorage {
         usedReferralCode: null,
         resetToken: null,
         resetTokenExpiry: null,
+        evmWalletAddress: null,
+        evmWalletVerified: false,
+        telegramUsername: null,
+        telegramVerified: false,
+        currentCharacterId: null,
         emailVerified: true, // SSO users are considered verified
         emailVerificationToken: null,
         emailVerificationExpires: null,
@@ -1256,6 +1359,48 @@ export class MemStorage implements IStorage {
       ...purchase,
       reward: this.rewards.get(purchase.rewardId)!
     }));
+  }
+
+  async getCharacters(): Promise<Character[]> {
+    return Array.from(this.characters.values()).sort((a, b) => a.rewardNumber - b.rewardNumber);
+  }
+
+  async getCharacter(id: number): Promise<Character | undefined> {
+    return this.characters.get(id);
+  }
+
+  async purchaseCharacter(userId: string, characterId: number): Promise<User> {
+    const user = await this.getUser(userId);
+    const character = this.characters.get(characterId);
+
+    if (!user || !character) {
+      throw new Error("User or character not found");
+    }
+
+    // Check if user already owns this character
+    if (user.currentCharacterId === characterId) {
+      throw new Error("You already own this character");
+    }
+
+    if (user.tokens < character.tokenCost) {
+      throw new Error("Insufficient tokens");
+    }
+
+    if (character.purchasedCount >= character.maxAvailable) {
+      throw new Error("This character is no longer available");
+    }
+
+    // Update user tokens and set current character
+    user.tokens -= character.tokenCost;
+    user.currentCharacterId = character.id;
+    user.updatedAt = new Date();
+    this.users.set(userId, user);
+
+    // Increment character purchased count
+    character.purchasedCount += 1;
+    this.characters.set(characterId, character);
+
+    return user;
   }
 
   async recordProductShare(userId: string, productId: string, platform: string): Promise<{ awarded: number; sharesLeftToday: number }> {

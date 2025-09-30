@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { updatePasswordSchema, updateProfileFormSchema } from "@shared/schema";
+import { updatePasswordSchema, updateProfileFormSchema, Character } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,7 @@ import { Copy, ArrowLeft, LogOut } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import ProfileCompletion from "@/components/profile-completion";
 import SocialMediaVerification from "@/components/social-media-verification";
 import { EvmWalletVerification } from "@/components/evm-wallet-verification";
@@ -93,6 +93,12 @@ export default function ProfilePage() {
       gender: user?.gender as any || undefined,
     },
   });
+
+  const { data: characters } = useQuery<Character[]>({
+    queryKey: ["/api/characters"],
+  });
+
+  const currentCharacter = characters?.find(c => c.id === user?.currentCharacterId);
 
   const copyReferralCode = () => {
     if (user?.referralCode) {
@@ -186,6 +192,42 @@ export default function ProfilePage() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid gap-6 lg:grid-cols-2">
+          {/* Character Display Card */}
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Your Character</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {currentCharacter ? (
+                <div className="flex flex-col md:flex-row items-center gap-6">
+                  <div className="flex-shrink-0">
+                    <img
+                      src={currentCharacter.ipfsLink}
+                      alt={currentCharacter.title}
+                      className="w-40 h-40 rounded-full object-cover border-4 border-green-500"
+                      data-testid="img-current-character"
+                    />
+                  </div>
+                  <div className="flex-1 text-center md:text-left">
+                    <h3 className="text-2xl font-bold text-green-600 mb-2" data-testid="text-character-title">
+                      {currentCharacter.title}
+                    </h3>
+                    <p className="text-gray-600" data-testid="text-character-description">
+                      {currentCharacter.description}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500 mb-4">You haven't purchased a character yet.</p>
+                  <Link href="/rewards">
+                    <Button>Browse Characters</Button>
+                  </Link>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle>User Information</CardTitle>
