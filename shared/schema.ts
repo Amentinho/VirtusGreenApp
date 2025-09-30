@@ -193,7 +193,18 @@ export const updatePasswordSchema = z.object({
 export const updateProfileSchema = z.object({
   firstName: z.string().min(1, "First name is required").optional(),
   lastName: z.string().min(1, "Last name is required").optional(),
-  dateOfBirth: z.string().optional(),
+  dateOfBirth: z.string()
+    .refine((date) => {
+      if (!date || date === "") return true; // Allow empty
+      return /^\d{2}\/\d{2}\/\d{4}$/.test(date);
+    }, "Date must be in dd/mm/yyyy format")
+    .refine((date) => {
+      if (!date || date === "") return true; // Allow empty
+      const [day, month, year] = date.split('/').map(Number);
+      const dateObj = new Date(year, month - 1, day);
+      return dateObj.getDate() === day && dateObj.getMonth() === month - 1 && dateObj.getFullYear() === year;
+    }, "Invalid date")
+    .optional(),
   country: z.string().min(1, "Country is required").optional(),
   city: z.string().min(1, "City is required").optional(),
   gender: z.enum(["Male", "Female", "Non-binary", "Prefer not to say"]).optional(),
