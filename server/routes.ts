@@ -6,7 +6,7 @@ import { setupGoogleAuth } from "./googleAuth";
 import { storage } from "./storage";
 import { insertProductSchema, insertRewardSchema, updatePasswordSchema, updateProfileSchema } from "@shared/schema";
 import { comparePasswords, hashPassword } from "./auth";
-import { sendEmail, generatePasswordResetEmail, generateEmailVerificationToken, generateVerificationEmail } from "./emailService";
+import { sendEmail, generatePasswordResetEmail, generateEmailVerificationToken, generateVerificationEmail, generateProductRequestEmail } from "./emailService";
 
 // Helper functions to calculate environmental metrics from Open Food Facts data
 function calculateEcoScore(product: any): number | string {
@@ -290,11 +290,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const userId = req.isAuthenticated() ? (req.user.claims?.sub || req.user.id) : null;
       
+      // Store the request in database
       await storage.createProductRequest({
         userId,
         barcode,
         message: message || null
       });
+      
+      // Get user email if authenticated
+      let userEmail: string | null = null;
+      if (userId) {
+        const user = await storage.getUser(userId);
+        userEmail = user?.email || null;
+      }
+      
+      // Send email notification
+      const emailData = generateProductRequestEmail(barcode, message || "", userEmail);
+      await sendEmail(emailData);
       
       res.json({ success: true, message: "Product request received successfully" });
     } catch (error) {

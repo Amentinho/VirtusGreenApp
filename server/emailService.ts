@@ -225,3 +225,57 @@ function getBaseUrl(): string {
   }
   return 'http://localhost:5000';
 }
+
+export function generateProductRequestEmail(barcode: string, message: string, userEmail: string | null) {
+  return {
+    to: 'andrea.amenta87@gmail.com',
+    from: 'support@virtusgreen.com',
+    subject: `New Product Request - Barcode: ${barcode}`,
+    text: `
+New Product Request Received
+
+Barcode: ${barcode}
+User Email: ${userEmail || 'Anonymous'}
+Message: ${message || 'No additional information provided'}
+
+Please add this product to the VirtusGreen database.
+
+---
+VirtusGreen Admin Notification
+    `,
+    html: `
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="text-align: center; margin-bottom: 30px;">
+    <h1 style="color: #16a34a; font-size: 24px;">🌿 VirtusGreen</h1>
+  </div>
+  
+  <h2 style="color: #333; font-size: 20px; margin-bottom: 20px;">New Product Request</h2>
+  
+  <div style="background-color: #f9fafb; border-left: 4px solid #16a34a; padding: 15px; margin-bottom: 20px;">
+    <p style="color: #333; font-size: 16px; margin: 0 0 10px 0;">
+      <strong>Barcode:</strong> ${barcode}
+    </p>
+    <p style="color: #333; font-size: 16px; margin: 0 0 10px 0;">
+      <strong>User Email:</strong> ${userEmail || 'Anonymous'}
+    </p>
+    <p style="color: #333; font-size: 16px; margin: 0;">
+      <strong>Additional Information:</strong>
+    </p>
+    <p style="color: #666; font-size: 14px; margin: 10px 0 0 0; white-space: pre-wrap;">
+      ${message || 'No additional information provided'}
+    </p>
+  </div>
+  
+  <p style="color: #666; font-size: 14px; line-height: 1.5;">
+    A user has requested that this product be added to the VirtusGreen database. Please review and add it when possible.
+  </p>
+  
+  <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+  
+  <p style="color: #999; font-size: 12px; text-align: center;">
+    VirtusGreen Admin Notification System
+  </p>
+</div>
+    `
+  };
+}
