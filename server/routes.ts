@@ -374,6 +374,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/users/characters", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    try {
+      const userId = req.user!.id;
+      const characters = await storage.getUserCharacters(userId);
+      res.json(characters);
+    } catch (error) {
+      console.error("Error fetching user characters:", error);
+      res.status(500).json({ message: "Failed to fetch characters" });
+    }
+  });
+
+  app.post("/api/characters/:id/equip", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    try {
+      const characterId = parseInt(req.params.id);
+      
+      // Validate id parameter
+      if (isNaN(characterId)) {
+        return res.status(400).json({ message: "Invalid character ID" });
+      }
+
+      const userId = req.user!.id;
+      
+      const updatedUser = await storage.equipCharacter(userId, characterId);
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error equipping character:", error);
+      
+      if (error instanceof Error) {
+        if (error.message === "You don't own this character") {
+          return res.status(400).json({ message: "You don't own this character" });
+        }
+        if (error.message === "User not found") {
+          return res.status(404).json({ message: "User not found" });
+        }
+      }
+      
+      res.status(500).json({ message: "Failed to equip character" });
+    }
+  });
+
   app.post("/api/user/password", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
