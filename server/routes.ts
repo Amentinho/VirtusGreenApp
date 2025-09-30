@@ -7,6 +7,7 @@ import { storage } from "./storage";
 import { insertProductSchema, insertRewardSchema, updatePasswordSchema, updateProfileSchema } from "@shared/schema";
 import { comparePasswords, hashPassword } from "./auth";
 import { sendEmail, generatePasswordResetEmail, generateEmailVerificationToken, generateVerificationEmail, generateProductRequestEmail } from "./emailService";
+import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./paypal";
 
 // Helper functions to calculate environmental metrics from Open Food Facts data
 function calculateEcoScore(product: any): number | string {
@@ -861,6 +862,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error sending contact message:", error);
       res.status(500).json({ error: "Failed to send message. Please try again later." });
     }
+  });
+
+  // PayPal donation routes - referenced from javascript_paypal blueprint integration
+  app.get("/setup", async (req, res) => {
+    await loadPaypalDefault(req, res);
+  });
+
+  app.post("/order", async (req, res) => {
+    await createPaypalOrder(req, res);
+  });
+
+  app.post("/order/:orderID/capture", async (req, res) => {
+    await capturePaypalOrder(req, res);
   });
 
   const httpServer = createServer(app);
