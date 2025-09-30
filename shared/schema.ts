@@ -101,6 +101,15 @@ export const characters = pgTable("characters", {
   purchasedCount: integer("purchased_count").notNull().default(0),
 });
 
+export const userCharacters = pgTable("user_characters", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull(),
+  characterId: integer("character_id").notNull(),
+  purchasedAt: timestamp("purchased_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("idx_user_characters_unique").on(table.userId, table.characterId),
+]);
+
 export const userPurchases = pgTable("user_purchases", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").notNull(),
@@ -295,6 +304,7 @@ export type User = typeof users.$inferSelect;
 export type Product = typeof products.$inferSelect;
 export type Reward = typeof rewards.$inferSelect;
 export type Character = typeof characters.$inferSelect;
+export type UserCharacter = typeof userCharacters.$inferSelect;
 export type UserPurchase = typeof userPurchases.$inferSelect;
 export type ProductShare = typeof productShares.$inferSelect;
 export type AppShare = typeof appShares.$inferSelect;
