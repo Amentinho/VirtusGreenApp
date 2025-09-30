@@ -5,14 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Scan, Camera, X } from "lucide-react";
 import { Product } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
-import { BrowserMultiFormatReader } from '@zxing/browser';
+import { Html5Qrcode } from "html5-qrcode";
 import { useLocation } from "wouter";
 
 export default function BarcodeScanner() {
   const [barcode, setBarcode] = useState("");
   const [isScanning, setIsScanning] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
@@ -81,28 +80,37 @@ export default function BarcodeScanner() {
     try {
       setIsScanning(true);
 
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' }
-      });
+      // Initialize Html5Qrcode scanner
+      const scanner = new Html5Qrcode("barcode-reader");
+      scannerRef.current = scanner;
 
-      if (!videoRef.current) return;
-      videoRef.current.srcObject = stream;
+      // Configure scanner with better settings
+      const config = {
+        fps: 10,
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0,
+        formatsToSupport: [
+          0,  // EAN_13
+          1,  // EAN_8
+          2,  // UPC_A
+          3,  // UPC_E
+          4,  // CODE_39
+          5,  // CODE_93
+          6,  // CODE_128
+          7,  // ITF
+          11, // QR_CODE
+        ]
+      };
 
-      // Initialize code reader
-      codeReaderRef.current = new BrowserMultiFormatReader();
-
-      // Start continuous scanning
-      const controls = await codeReaderRef.current.decodeFromVideoDevice(
-        undefined, // Let browser pick the camera
-        videoRef.current,
-        (result, err) => {
-          if (result) {
-            const scannedBarcode = result.getText();
-            setBarcode(scannedBarcode);
-            stopScanning();
-            refetch();
-          }
-        }
+      await scanner.start(
+        { facingMode: "environment" },
+        config,
+        (decodedText) => {
+          setBarcode(decodedText);
+          stopScanning();
+          refetch();
+        },
+        undefined
       );
 
     } catch (error) {
@@ -116,17 +124,17 @@ export default function BarcodeScanner() {
     }
   };
 
-  const stopScanning = () => {
+  const stopScanning = async () => {
+    if (scannerRef.current) {
+      try {
+        await scannerRef.current.stop();
+        scannerRef.current.clear();
+        scannerRef.current = null;
+      } catch (error) {
+        console.error('Error stopping scanner:', error);
+      }
+    }
     setIsScanning(false);
-    if (codeReaderRef.current) {
-      // Clean up the code reader
-      codeReaderRef.current = null;
-    }
-    if (videoRef.current?.srcObject) {
-      const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
-      tracks.forEach(track => track.stop());
-      videoRef.current.srcObject = null;
-    }
   };
 
   useEffect(() => {
@@ -153,16 +161,14 @@ export default function BarcodeScanner() {
       <div className="relative">
         {isScanning ? (
           <>
-            <video
-              ref={videoRef}
-              className="w-full aspect-video rounded-lg bg-black"
-              autoPlay
-              playsInline
+            <div 
+              id="barcode-reader" 
+              className="w-full rounded-lg overflow-hidden"
             />
             <Button
               variant="destructive"
               size="icon"
-              className="absolute top-2 right-2"
+              className="absolute top-2 right-2 z-10"
               onClick={stopScanning}
             >
               <X className="h-4 w-4" />
