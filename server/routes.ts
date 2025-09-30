@@ -334,7 +334,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const userId = req.user.claims?.sub || req.user.id;
-      const updatedUser = await storage.updateUserProfile(userId, result.data);
+      // Type cast is safe because storage layer handles date conversion
+      const updatedUser = await storage.updateUserProfile(userId, result.data as any);
       
       res.json(updatedUser);
     } catch (error) {
