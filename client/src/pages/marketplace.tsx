@@ -22,6 +22,11 @@ export default function RewardsPage() {
     queryKey: ["/api/characters"],
   });
 
+  const { data: ownedCharacters } = useQuery<Character[]>({
+    queryKey: ["/api/users/characters"],
+    enabled: !!user,
+  });
+
   const purchaseRewardMutation = useMutation({
     mutationFn: async (rewardId: number) => {
       return await apiRequest("POST", `/api/rewards/${rewardId}/purchase`);
@@ -50,6 +55,7 @@ export default function RewardsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       queryClient.invalidateQueries({ queryKey: ["/api/characters"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users/characters"] });
       toast({
         title: "Character Purchased!",
         description: "Your profile has been updated with your new character.",
@@ -114,57 +120,76 @@ export default function RewardsPage() {
               {isLoadingCharacters ? (
                 <div className="col-span-full text-center">Loading characters...</div>
               ) : (
-                characters?.map((character) => (
-                  <Card key={character.id} data-testid={`card-character-${character.id}`}>
-                    <CardHeader>
-                      <div className="flex justify-center mb-4">
-                        <img
-                          src={character.ipfsLink}
-                          alt={character.title}
-                          className="w-32 h-32 rounded-full object-cover"
-                          data-testid={`img-character-${character.id}`}
-                        />
-                      </div>
-                      <CardTitle className="text-center">{character.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-gray-600 mb-4 text-sm">{character.description}</p>
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium text-green-600" data-testid={`text-character-cost-${character.id}`}>
-                            {character.tokenCost} tokens
-                          </span>
-                          <Badge variant="outline" data-testid={`text-character-available-${character.id}`}>
-                            {character.maxAvailable - character.purchasedCount} left
+                characters?.map((character) => {
+                  const isOwned = ownedCharacters?.some(c => c.id === character.id) || false;
+                  const isEquipped = user?.currentCharacterId === character.id;
+
+                  return (
+                    <Card key={character.id} data-testid={`card-character-${character.id}`} className="relative">
+                      {isEquipped && (
+                        <div className="absolute top-2 right-2 z-10">
+                          <Badge className="bg-green-600" data-testid={`badge-equipped-${character.id}`}>
+                            Equipped
                           </Badge>
                         </div>
-                        <Button
-                          onClick={() => purchaseCharacterMutation.mutate(character.id)}
-                          disabled={
-                            (user?.tokens || 0) < character.tokenCost ||
-                            character.purchasedCount >= character.maxAvailable ||
-                            purchaseCharacterMutation.isPending ||
-                            user?.currentCharacterId === character.id
-                          }
-                          className="w-full"
-                          data-testid={`button-purchase-character-${character.id}`}
-                        >
-                          {purchaseCharacterMutation.isPending ? (
-                            "Purchasing..."
-                          ) : user?.currentCharacterId === character.id ? (
-                            "Current Character"
-                          ) : (user?.tokens || 0) < character.tokenCost ? (
-                            "Insufficient tokens"
-                          ) : character.purchasedCount >= character.maxAvailable ? (
-                            "Sold out"
-                          ) : (
-                            "Purchase"
-                          )}
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
+                      )}
+                      {isOwned && !isEquipped && (
+                        <div className="absolute top-2 right-2 z-10">
+                          <Badge variant="secondary" data-testid={`badge-owned-${character.id}`}>
+                            Owned
+                          </Badge>
+                        </div>
+                      )}
+                      <CardHeader>
+                        <div className="flex justify-center mb-4">
+                          <img
+                            src={character.ipfsLink}
+                            alt={character.title}
+                            className="w-32 h-32 rounded-full object-cover"
+                            data-testid={`img-character-${character.id}`}
+                          />
+                        </div>
+                        <CardTitle className="text-center">{character.title}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-gray-600 mb-4 text-sm">{character.description}</p>
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium text-green-600" data-testid={`text-character-cost-${character.id}`}>
+                              {character.tokenCost} tokens
+                            </span>
+                            <Badge variant="outline" data-testid={`text-character-available-${character.id}`}>
+                              {character.maxAvailable - character.purchasedCount} left
+                            </Badge>
+                          </div>
+                          <Button
+                            onClick={() => purchaseCharacterMutation.mutate(character.id)}
+                            disabled={
+                              isOwned ||
+                              (user?.tokens || 0) < character.tokenCost ||
+                              character.purchasedCount >= character.maxAvailable ||
+                              purchaseCharacterMutation.isPending
+                            }
+                            className="w-full"
+                            data-testid={`button-purchase-character-${character.id}`}
+                          >
+                            {purchaseCharacterMutation.isPending ? (
+                              "Purchasing..."
+                            ) : isOwned ? (
+                              "Already Owned"
+                            ) : (user?.tokens || 0) < character.tokenCost ? (
+                              "Insufficient tokens"
+                            ) : character.purchasedCount >= character.maxAvailable ? (
+                              "Sold out"
+                            ) : (
+                              "Purchase"
+                            )}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })
               )}
             </div>
           </TabsContent>
