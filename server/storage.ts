@@ -4,7 +4,7 @@ import { Product, User, Reward, Character, UserPurchase, InsertUser, CreateUser,
 import { customAlphabet } from "nanoid";
 import connectPg from "connect-pg-simple";
 import { db } from "./db";
-import { users, products, rewards, characters, userPurchases, productShares, appShares, referralEvents, userActions, socialFollowVerifications, tokenEarnings } from "@shared/schema";
+import { users, products, rewards, characters, userCharacters, userPurchases, productShares, appShares, referralEvents, userActions, socialFollowVerifications, tokenEarnings } from "@shared/schema";
 import { eq, sql, and } from "drizzle-orm";
 
 const MemoryStore = createMemoryStore(session);
@@ -60,7 +60,9 @@ export interface IStorage {
   // Character operations
   getCharacters(): Promise<Character[]>;
   getCharacter(id: number): Promise<Character | undefined>;
+  getUserCharacters(userId: string): Promise<Character[]>;
   purchaseCharacter(userId: string, characterId: number): Promise<User>;
+  equipCharacter(userId: string, characterId: number): Promise<User>;
   
   // Sharing and gamification methods
   recordProductShare(userId: string, productId: string, platform: string): Promise<{ awarded: number; sharesLeftToday: number }>;
@@ -455,6 +457,19 @@ export class DatabaseStorage implements IStorage {
     return character;
   }
 
+  async getUserCharacters(userId: string): Promise<Character[]> {
+    // Get all character IDs owned by the user
+    const ownedCharacters = await db
+      .select({
+        character: characters,
+      })
+      .from(userCharacters)
+      .innerJoin(characters, eq(userCharacters.characterId, characters.id))
+      .where(eq(userCharacters.userId, userId));
+
+    return ownedCharacters.map(row => row.character);
+  }
+
   async purchaseCharacter(userId: string, characterId: number): Promise<User> {
     const user = await this.getUser(userId);
     const character = await this.getCharacter(characterId);
@@ -463,8 +478,17 @@ export class DatabaseStorage implements IStorage {
       throw new Error("User or character not found");
     }
 
-    // Check if user already owns this character
-    if (user.currentCharacterId === characterId) {
+    // Check if user already owns this character by querying userCharacters
+    const existingOwnership = await db
+      .select()
+      .from(userCharacters)
+      .where(and(
+        eq(userCharacters.userId, userId),
+        eq(userCharacters.characterId, characterId)
+      ))
+      .limit(1);
+
+    if (existingOwnership.length > 0) {
       throw new Error("You already own this character");
     }
 
@@ -478,7 +502,7 @@ export class DatabaseStorage implements IStorage {
 
     // Use transaction to ensure atomic operations
     try {
-      // Atomically update user tokens and character - ensure user has enough tokens
+      // Atomically update user tokens and set current character - ensure user has enough tokens
       const userUpdateResult = await db
         .update(users)
         .set({ 
@@ -520,6 +544,14 @@ export class DatabaseStorage implements IStorage {
         throw new Error("This character is no longer available");
       }
 
+      // Insert into userCharacters to track ownership
+      await db
+        .insert(userCharacters)
+        .values({
+          userId,
+          characterId,
+        });
+
       // Record token spending
       await this.recordTokenEarning(
         userId,
@@ -534,6 +566,40 @@ export class DatabaseStorage implements IStorage {
       // Re-throw the error for proper handling
       throw error;
     }
+  }
+
+  async equipCharacter(userId: string, characterId: number): Promise<User> {
+    const user = await this.getUser(userId);
+    
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    // Check if user owns this character
+    const ownership = await db
+      .select()
+      .from(userCharacters)
+      .where(and(
+        eq(userCharacters.userId, userId),
+        eq(userCharacters.characterId, characterId)
+      ))
+      .limit(1);
+
+    if (ownership.length === 0) {
+      throw new Error("You don't own this character");
+    }
+
+    // Update user's current character
+    const [updatedUser] = await db
+      .update(users)
+      .set({
+        currentCharacterId: characterId,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId))
+      .returning();
+
+    return updatedUser;
   }
 
   async getReferralStats(userId: string): Promise<{ referralCount: number; tokensEarned: number }> {
@@ -968,6 +1034,7 @@ export class MemStorage implements IStorage {
   private products: Map<number, Product>;
   private rewards: Map<number, Reward>;
   private characters: Map<number, Character>;
+  private userCharacters: Map<string, { userId: string; characterId: number; purchasedAt: Date }>;
   private userPurchases: Map<number, UserPurchase>;
   private productShares: Array<{ userId: string; productId: string; platform: string; sharedAt: Date }>;
   private appShares: Array<{ userId: string; platform: string; sharedAt: Date; shareUrl: string; referralCode: string }>;
@@ -982,6 +1049,7 @@ export class MemStorage implements IStorage {
     this.products = new Map();
     this.rewards = new Map();
     this.characters = new Map();
+    this.userCharacters = new Map();
     this.userPurchases = new Map();
     this.productShares = [];
     this.appShares = [];
@@ -1369,6 +1437,18 @@ export class MemStorage implements IStorage {
     return this.characters.get(id);
   }
 
+  async getUserCharacters(userId: string): Promise<Character[]> {
+    // Get all owned character IDs for this user
+    const ownedCharacterIds = Array.from(this.userCharacters.entries())
+      .filter(([key]) => key.startsWith(`${userId}:`))
+      .map(([key]) => parseInt(key.split(':')[1]));
+
+    // Return the character objects
+    return ownedCharacterIds
+      .map(id => this.characters.get(id))
+      .filter((char): char is Character => char !== undefined);
+  }
+
   async purchaseCharacter(userId: string, characterId: number): Promise<User> {
     const user = await this.getUser(userId);
     const character = this.characters.get(characterId);
@@ -1378,7 +1458,8 @@ export class MemStorage implements IStorage {
     }
 
     // Check if user already owns this character
-    if (user.currentCharacterId === characterId) {
+    const ownershipKey = `${userId}:${characterId}`;
+    if (this.userCharacters.has(ownershipKey)) {
       throw new Error("You already own this character");
     }
 
@@ -1399,6 +1480,34 @@ export class MemStorage implements IStorage {
     // Increment character purchased count
     character.purchasedCount += 1;
     this.characters.set(characterId, character);
+
+    // Track ownership
+    this.userCharacters.set(ownershipKey, {
+      userId,
+      characterId,
+      purchasedAt: new Date()
+    });
+
+    return user;
+  }
+
+  async equipCharacter(userId: string, characterId: number): Promise<User> {
+    const user = await this.getUser(userId);
+    
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    // Check if user owns this character
+    const ownershipKey = `${userId}:${characterId}`;
+    if (!this.userCharacters.has(ownershipKey)) {
+      throw new Error("You don't own this character");
+    }
+
+    // Update user's current character
+    user.currentCharacterId = characterId;
+    user.updatedAt = new Date();
+    this.users.set(userId, user);
 
     return user;
   }
