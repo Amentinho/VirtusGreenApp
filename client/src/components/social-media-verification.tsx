@@ -23,7 +23,6 @@ export default function SocialMediaVerification() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [verificationCodes, setVerificationCodes] = useState<Record<string, string>>({});
-  const [inputCodes, setInputCodes] = useState<Record<string, string>>({});
 
   const initiateVerificationMutation = useMutation({
     mutationFn: async ({ platform, handle }: { platform: string; handle?: string }): Promise<VerificationResponse> => {
@@ -96,15 +95,10 @@ export default function SocialMediaVerification() {
           delete newCodes[variables.platform];
           return newCodes;
         });
-        setInputCodes(prev => {
-          const newCodes = { ...prev };
-          delete newCodes[variables.platform];
-          return newCodes;
-        });
       } else {
         toast({
           title: "Verification Failed",
-          description: "We couldn't verify your follow. Please make sure you've posted the verification code and try again.",
+          description: "We couldn't verify your follow. Please make sure you've followed us and try again.",
           variant: "destructive",
         });
       }
@@ -123,11 +117,11 @@ export default function SocialMediaVerification() {
   };
 
   const handleVerifyFollow = (platform: string) => {
-    const code = inputCodes[platform];
+    const code = verificationCodes[platform];
     if (!code) {
       toast({
-        title: "Verification Code Required",
-        description: "Please enter the verification code from your post.",
+        title: "Error",
+        description: "Please start verification first.",
         variant: "destructive",
       });
       return;
@@ -143,7 +137,7 @@ export default function SocialMediaVerification() {
       icon: <SiInstagram className="h-5 w-5" />,
       color: "text-pink-600",
       url: "https://instagram.com/virtusgreen",
-      instructions: "Follow us and post a story mentioning @virtusgreen with your code"
+      instructions: "Follow our Instagram account to earn 10 tokens"
     },
     {
       id: "linkedin",
@@ -151,7 +145,7 @@ export default function SocialMediaVerification() {
       icon: <SiLinkedin className="h-5 w-5" />,
       color: "text-blue-600",
       url: "https://linkedin.com/company/virtusgreen",
-      instructions: "Follow our company page and post about us with your code"
+      instructions: "Follow our LinkedIn company page to earn 10 tokens"
     },
     {
       id: "twitter",
@@ -159,7 +153,7 @@ export default function SocialMediaVerification() {
       icon: <SiX className="h-5 w-5" />,
       color: "text-blue-400",
       url: "https://twitter.com/virtusgreen",
-      instructions: "Follow us and tweet your verification code mentioning @virtusgreen"
+      instructions: "Follow our Twitter account to earn 10 tokens"
     }
   ];
 
@@ -209,27 +203,10 @@ export default function SocialMediaVerification() {
                 </Button>
               ) : (
                 <div className="space-y-3">
-                  <div className="p-3 bg-blue-50 rounded border">
-                    <Label className="text-sm font-medium">Your Verification Code:</Label>
-                    <code className="block mt-1 text-lg font-mono font-bold text-blue-700">
-                      {verificationCodes[platform.id]}
-                    </code>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor={`code-${platform.id}`}>
-                      Enter the code you posted:
-                    </Label>
-                    <Input
-                      id={`code-${platform.id}`}
-                      value={inputCodes[platform.id] || ""}
-                      onChange={(e) => setInputCodes(prev => ({
-                        ...prev,
-                        [platform.id]: e.target.value
-                      }))}
-                      placeholder="Enter verification code"
-                      data-testid={`input-code-${platform.id}`}
-                    />
+                  <div className="p-3 bg-green-50 rounded border border-green-200">
+                    <p className="text-sm text-green-800">
+                      ✓ Verification ready! Click the button below after following us.
+                    </p>
                   </div>
                   
                   <Button
@@ -248,7 +225,7 @@ export default function SocialMediaVerification() {
         })}
 
         <div className="text-xs text-gray-500 text-center">
-          Note: Each platform can only be verified once. Make sure to follow us and post the verification code before clicking verify.
+          Note: Each platform can only be verified once. Follow us first, then click verify to claim your tokens.
         </div>
       </CardContent>
     </Card>

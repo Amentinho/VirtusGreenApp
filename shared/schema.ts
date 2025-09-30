@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, json, varchar, timestamp, index } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, json, varchar, timestamp, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { sql } from 'drizzle-orm';
@@ -135,7 +135,7 @@ export const userActions = pgTable("user_actions", {
 export const socialFollowVerifications = pgTable("social_follow_verifications", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").notNull(),
-  platform: text("platform").notNull(), // instagram, linkedin
+  platform: text("platform").notNull(), // instagram, linkedin, twitter
   handle: text("handle"),
   status: text("status").notNull().default("pending"), // pending, verified, failed
   verificationCode: text("verification_code"),
@@ -143,7 +143,7 @@ export const socialFollowVerifications = pgTable("social_follow_verifications", 
   verifiedAt: timestamp("verified_at"),
   tokensAwarded: integer("tokens_awarded").notNull().default(0),
 }, (table) => [
-  index("idx_social_follow_user_platform").on(table.userId, table.platform),
+  uniqueIndex("unique_social_follow_user_platform").on(table.userId, table.platform),
 ]);
 
 export const tokenEarnings = pgTable("token_earnings", {
