@@ -1,16 +1,29 @@
 import { useState, useRef, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Scan, Camera, X } from "lucide-react";
+import { Scan, Camera, X, Send } from "lucide-react";
 import { Product } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { Html5Qrcode } from "html5-qrcode";
 import { useLocation } from "wouter";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function BarcodeScanner() {
   const [barcode, setBarcode] = useState("");
   const [isScanning, setIsScanning] = useState(false);
+  const [showRequestDialog, setShowRequestDialog] = useState(false);
+  const [missingBarcode, setMissingBarcode] = useState("");
+  const [requestMessage, setRequestMessage] = useState("");
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -18,6 +31,28 @@ export default function BarcodeScanner() {
   const { refetch, data: product, error, isLoading } = useQuery<Product>({
     queryKey: [`/api/products?barcode=${barcode}`],
     enabled: false,
+  });
+
+  const requestProductMutation = useMutation({
+    mutationFn: async (data: { barcode: string; message: string }) => {
+      return await apiRequest("POST", "/api/product-requests", data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Request Sent",
+        description: "Thank you! We'll add this product to our database soon.",
+      });
+      setShowRequestDialog(false);
+      setRequestMessage("");
+      setMissingBarcode("");
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to send request. Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   // Handle successful product fetch
@@ -37,31 +72,11 @@ export default function BarcodeScanner() {
     if (error) {
       console.log("Product search error:", error);
       
-      // Check if it's our custom "not found" error
-      let errorMessage = "The product is not available in our database, can you please send us a message and we will add it?";
-      
-      try {
-        // Parse error response if it's JSON
-        const errorData = JSON.parse((error as any).message);
-        if (errorData.errorType === "product_not_found") {
-          errorMessage = "The product is not available in our database, can you please send us a message and we will add it?";
-        } else {
-          errorMessage = errorData.message || "No product found with this barcode";
-        }
-      } catch {
-        // If not JSON, check the raw message
-        if ((error as any).message && (error as any).message.includes("Product not found")) {
-          errorMessage = "The product is not available in our database, can you please send us a message and we will add it?";
-        }
-      }
-      
-      toast({
-        title: "Product Not Found",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      // Show request dialog for missing products
+      setMissingBarcode(barcode);
+      setShowRequestDialog(true);
     }
-  }, [error, toast]);
+  }, [error, barcode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,22 +112,19 @@ export default function BarcodeScanner() {
       const scanner = new Html5Qrcode("barcode-reader");
       scannerRef.current = scanner;
 
-      // Configure scanner with better settings
+      // Configure scanner with optimized settings for faster detection
       const config = {
-        fps: 10,
-        qrbox: { width: 250, height: 250 },
-        aspectRatio: 1.0,
+        fps: 30, // Increased from 10 for faster scanning
+        qrbox: { width: 300, height: 200 }, // Larger, wider box for easier barcode capture
+        aspectRatio: 1.777778, // 16:9 aspect ratio for better camera compatibility
         formatsToSupport: [
-          0,  // EAN_13
+          0,  // EAN_13 (most common for products)
           1,  // EAN_8
           2,  // UPC_A
           3,  // UPC_E
-          4,  // CODE_39
-          5,  // CODE_93
           6,  // CODE_128
-          7,  // ITF
-          11, // QR_CODE
-        ]
+        ],
+        disableFlip: false, // Allow scanning upside-down barcodes
       };
 
       await scanner.start(
@@ -214,6 +226,51 @@ export default function BarcodeScanner() {
           </Button>
         )}
       </div>
+
+      <Dialog open={showRequestDialog} onOpenChange={setShowRequestDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Product Not Found</DialogTitle>
+            <DialogDescription>
+              We don't have this product in our database yet. Please help us by providing some information about it, and we'll add it soon!
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Barcode</label>
+              <Input value={missingBarcode} disabled className="mt-1" />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Additional Information (Optional)</label>
+              <Textarea
+                value={requestMessage}
+                onChange={(e) => setRequestMessage(e.target.value)}
+                placeholder="Product name, brand, or any other details..."
+                className="mt-1 min-h-[100px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowRequestDialog(false);
+                setRequestMessage("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => requestProductMutation.mutate({ barcode: missingBarcode, message: requestMessage })}
+              disabled={requestProductMutation.isPending}
+              data-testid="button-send-request"
+            >
+              <Send className="h-4 w-4 mr-2" />
+              {requestProductMutation.isPending ? "Sending..." : "Send Request"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

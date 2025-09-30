@@ -180,6 +180,18 @@ export const tokenEarnings = pgTable("token_earnings", {
   index("idx_token_earnings_user_date").on(table.userId, table.earnedAt),
 ]);
 
+export const productRequests = pgTable("product_requests", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id"),
+  barcode: text("barcode").notNull(),
+  message: text("message"),
+  status: text("status").notNull().default("pending"), // pending, added, rejected
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_product_requests_barcode").on(table.barcode),
+  index("idx_product_requests_status").on(table.status),
+]);
+
 // Base schema for user credentials
 const userCredentialsSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -351,9 +363,17 @@ export const insertTokenEarningSchema = createInsertSchema(tokenEarnings).omit({
   earnedAt: true
 });
 
+export const insertProductRequestSchema = createInsertSchema(productRequests).omit({
+  id: true,
+  createdAt: true,
+  status: true
+});
+
 export type InsertProductShare = z.infer<typeof insertProductShareSchema>;
 export type InsertAppShare = z.infer<typeof insertAppShareSchema>;
 export type InsertReferralEvent = z.infer<typeof insertReferralEventSchema>;
 export type InsertUserAction = z.infer<typeof insertUserActionSchema>;
 export type InsertSocialFollowVerification = z.infer<typeof insertSocialFollowVerificationSchema>;
 export type InsertTokenEarning = z.infer<typeof insertTokenEarningSchema>;
+export type ProductRequest = typeof productRequests.$inferSelect;
+export type InsertProductRequest = z.infer<typeof insertProductRequestSchema>;

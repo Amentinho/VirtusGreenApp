@@ -280,6 +280,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(product);
   });
 
+  app.post("/api/product-requests", async (req: any, res) => {
+    try {
+      const { barcode, message } = req.body;
+      
+      if (!barcode) {
+        return res.status(400).json({ error: "Barcode is required" });
+      }
+      
+      const userId = req.isAuthenticated() ? (req.user.claims?.sub || req.user.id) : null;
+      
+      await storage.createProductRequest({
+        userId,
+        barcode,
+        message: message || null
+      });
+      
+      res.json({ success: true, message: "Product request received successfully" });
+    } catch (error) {
+      console.error("Error creating product request:", error);
+      res.status(500).json({ error: "Failed to create product request" });
+    }
+  });
+
   app.get("/api/rewards", async (_req, res) => {
     const rewards = await storage.getRewards();
     res.json(rewards);

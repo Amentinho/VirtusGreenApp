@@ -4,7 +4,7 @@ import { Product, User, Reward, Character, UserPurchase, InsertUser, CreateUser,
 import { customAlphabet } from "nanoid";
 import connectPg from "connect-pg-simple";
 import { db } from "./db";
-import { users, products, rewards, characters, userCharacters, userPurchases, productShares, appShares, referralEvents, userActions, socialFollowVerifications, tokenEarnings } from "@shared/schema";
+import { users, products, rewards, characters, userCharacters, userPurchases, productShares, appShares, referralEvents, userActions, socialFollowVerifications, tokenEarnings, productRequests } from "@shared/schema";
 import { eq, sql, and } from "drizzle-orm";
 
 const MemoryStore = createMemoryStore(session);
@@ -50,6 +50,7 @@ export interface IStorage {
   // Product operations
   searchProducts(search: string): Promise<Product[]>;
   getProductByBarcode(barcode: string): Promise<Product | undefined>;
+  createProductRequest(request: { userId: string | null; barcode: string; message: string | null }): Promise<void>;
   
   // Reward operations
   getRewards(): Promise<Reward[]>;
@@ -387,6 +388,10 @@ export class DatabaseStorage implements IStorage {
   async getProductByBarcode(barcode: string): Promise<Product | undefined> {
     const [product] = await db.select().from(products).where(eq(products.barcode, barcode));
     return product;
+  }
+
+  async createProductRequest(request: { userId: string | null; barcode: string; message: string | null }): Promise<void> {
+    await db.insert(productRequests).values(request);
   }
 
   async getRewards(): Promise<Reward[]> {
@@ -1328,6 +1333,11 @@ export class MemStorage implements IStorage {
     return Array.from(this.products.values()).find(
       (product) => product.barcode === barcode
     );
+  }
+
+  async createProductRequest(request: { userId: string | null; barcode: string; message: string | null }): Promise<void> {
+    // In-memory storage doesn't persist product requests
+    console.log("Product request received:", request);
   }
 
   async getReferralStats(userId: string): Promise<{ referralCount: number; tokensEarned: number }> {
