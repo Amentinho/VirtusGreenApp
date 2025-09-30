@@ -567,8 +567,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...result,
         tokens: user?.tokens || 0,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error recording product share:", error);
+      
+      // Check if it's a duplicate share error
+      if (error.message && (error.message.includes("already been shared") || error.message.includes("already shared"))) {
+        return res.status(400).json({ error: "The product was already shared. Please try with a new one" });
+      }
+      
+      // Check if it's a daily limit error
+      if (error.message && error.message.includes("reached the limit")) {
+        return res.status(400).json({ error: error.message });
+      }
+      
       res.status(500).json({ error: "Failed to record product share" });
     }
   });
