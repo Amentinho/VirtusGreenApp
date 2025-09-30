@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { updatePasswordSchema, updateProfileSchema } from "@shared/schema";
+import { updatePasswordSchema, updateProfileFormSchema } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,7 +26,7 @@ type UpdatePasswordForm = {
   confirmNewPassword: string;
 };
 
-type UpdateProfileForm = z.infer<typeof updateProfileSchema>;
+type UpdateProfileForm = z.infer<typeof updateProfileFormSchema>;
 
 const COUNTRIES = [
   "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Argentina", "Armenia", "Australia",
@@ -83,7 +83,7 @@ export default function ProfilePage() {
   });
 
   const profileForm = useForm<UpdateProfileForm>({
-    resolver: zodResolver(updateProfileSchema),
+    resolver: zodResolver(updateProfileFormSchema),
     defaultValues: {
       firstName: user?.firstName || "",
       lastName: user?.lastName || "",

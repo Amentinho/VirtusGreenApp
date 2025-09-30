@@ -190,7 +190,8 @@ export const updatePasswordSchema = z.object({
   path: ["confirmNewPassword"],
 });
 
-export const updateProfileSchema = z.object({
+// Frontend schema for form validation (dd/mm/yyyy)
+export const updateProfileFormSchema = z.object({
   firstName: z.string().min(1, "First name is required").optional(),
   lastName: z.string().min(1, "Last name is required").optional(),
   dateOfBirth: z.string()
@@ -203,6 +204,26 @@ export const updateProfileSchema = z.object({
       const [day, month, year] = date.split('/').map(Number);
       const dateObj = new Date(year, month - 1, day);
       return dateObj.getDate() === day && dateObj.getMonth() === month - 1 && dateObj.getFullYear() === year;
+    }, "Invalid date")
+    .optional(),
+  country: z.string().min(1, "Country is required").optional(),
+  city: z.string().min(1, "City is required").optional(),
+  gender: z.enum(["Male", "Female", "Non-binary", "Prefer not to say"]).optional(),
+});
+
+// Backend schema for API validation (yyyy-mm-dd)
+export const updateProfileSchema = z.object({
+  firstName: z.string().min(1, "First name is required").optional(),
+  lastName: z.string().min(1, "Last name is required").optional(),
+  dateOfBirth: z.string()
+    .refine((date) => {
+      if (!date || date === "") return true; // Allow empty
+      return /^\d{4}-\d{2}-\d{2}$/.test(date);
+    }, "Date must be in yyyy-mm-dd format")
+    .refine((date) => {
+      if (!date || date === "") return true; // Allow empty
+      const dateObj = new Date(date);
+      return !isNaN(dateObj.getTime());
     }, "Invalid date")
     .optional(),
   country: z.string().min(1, "Country is required").optional(),
