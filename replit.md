@@ -52,7 +52,41 @@ Preferred communication style: Simple, everyday language.
 - **Charting**: Victory charts for environmental impact data visualization
 - **Development**: Replit-specific plugins for theme management and development tools
 
+# Mobile Deployment
+
+## Capacitor Integration (September 30, 2025)
+- **Platform**: Capacitor 7.4.3 for iOS and Android deployment
+- **App ID**: com.virtusgreen.app
+- **Native Plugins**: 6 plugins installed
+  - Camera (barcode scanning)
+  - Preferences (local storage)
+  - Push Notifications (with APNs/FCM setup guide)
+  - Splash Screen
+  - Status Bar
+  - Share (native share functionality)
+- **Documentation**: Complete deployment guides for App Store and Google Play submission
+- **Assets**: Mobile app icon and splash screen generation guide provided
+- **Status**: Production-ready for app store submission
+
+## Build Commands
+```bash
+npm run build              # Build web app
+npx cap sync              # Sync to mobile platforms
+npx cap open ios          # Open Xcode (Mac only)
+npx cap open android      # Open Android Studio
+```
+
+## Documentation Files
+- `MOBILE_DEPLOYMENT_GUIDE.md` - Complete App Store and Google Play submission guide
+- `resources/MOBILE_ASSETS_GUIDE.md` - Icon and splash screen creation guide
+- `capacitor.config.ts` - Main Capacitor configuration
+
 # Recent Changes
+
+## September 30, 2025
+- **Mobile app deployment ready**: Integrated Capacitor 7.4.3 for iOS and Android with complete deployment documentation
+- **Native features configured**: 6 plugins installed including camera, push notifications, and native sharing
+- **App store preparation**: Created comprehensive guides for App Store and Google Play submission
 
 ## September 29, 2025
 - **Fixed referral tracking system**: Resolved critical issue where local auth users (email/password registration) were getting referral tokens but referral events weren't being recorded in the database
