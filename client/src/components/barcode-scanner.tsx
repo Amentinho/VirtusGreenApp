@@ -80,6 +80,19 @@ export default function BarcodeScanner() {
     try {
       setIsScanning(true);
 
+      // Check if camera permissions are available
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        try {
+          // Request camera permission first
+          await navigator.mediaDevices.getUserMedia({ video: true });
+        } catch (permError) {
+          console.error('Permission error:', permError);
+          throw new Error("Camera permission denied. Please allow camera access in your browser settings and try again.");
+        }
+      } else {
+        throw new Error("Camera API not supported in this browser. Please use a modern browser like Chrome, Firefox, or Safari.");
+      }
+
       // Initialize Html5Qrcode scanner
       const scanner = new Html5Qrcode("barcode-reader");
       scannerRef.current = scanner;
@@ -115,9 +128,29 @@ export default function BarcodeScanner() {
 
     } catch (error) {
       console.error('Camera error:', error);
+      
+      let errorMessage = "Failed to access camera";
+      
+      // Provide more helpful error messages
+      if (error instanceof Error) {
+        if (error.message.includes("Permission") || error.message.includes("NotAllowedError")) {
+          errorMessage = "Camera permission denied. Please allow camera access in your browser settings and try again.";
+        } else if (error.message.includes("NotFoundError")) {
+          errorMessage = "No camera found on this device. Please make sure your device has a camera.";
+        } else if (error.message.includes("NotReadableError")) {
+          errorMessage = "Camera is already in use by another application. Please close other apps using the camera and try again.";
+        } else if (error.message.includes("OverconstrainedError")) {
+          errorMessage = "Camera constraints not supported. Try using a different camera.";
+        } else if (error.message.includes("SecurityError") || error.message.includes("secure")) {
+          errorMessage = "Camera access requires HTTPS. Please make sure you're accessing the app via HTTPS.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
         title: "Camera Error",
-        description: error instanceof Error ? error.message : "Failed to access camera",
+        description: errorMessage,
         variant: "destructive",
       });
       setIsScanning(false);
