@@ -510,6 +510,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/user/display-picture", async (req: any, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const { displayPreference, customProfileImage } = req.body;
+      
+      if (!displayPreference || !["avatar", "character", "custom"].includes(displayPreference)) {
+        return res.status(400).json({ error: "Invalid display preference" });
+      }
+
+      const userId = req.user.claims?.sub || req.user.id;
+      const updatedUser = await storage.updateUserProfile(userId, {
+        displayPreference,
+        customProfileImage: displayPreference === "custom" ? customProfileImage : null,
+      } as any);
+      
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating display picture:", error);
+      res.status(500).json({ message: "Failed to update display picture" });
+    }
+  });
+
   app.get("/api/user/referral-stats", async (req: any, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });

@@ -1,9 +1,12 @@
 import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
-import { Upload, Image as ImageIcon } from "lucide-react";
+import { Upload, Image as ImageIcon, Save } from "lucide-react";
 import { Character } from "@shared/schema";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProfileDisplaySelectorProps {
   currentAvatar: string;
@@ -23,6 +26,33 @@ export default function ProfileDisplaySelector({
   onCustomImageChange,
 }: ProfileDisplaySelectorProps) {
   const [imagePreview, setImagePreview] = useState<string | null>(customProfileImage);
+  const [localDisplayPreference, setLocalDisplayPreference] = useState<"avatar" | "character" | "custom">(
+    currentDisplayPreference as any
+  );
+  const { toast } = useToast();
+
+  const saveDisplayMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("POST", "/api/user/display-picture", {
+        displayPreference: localDisplayPreference,
+        customProfileImage: imagePreview,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      toast({
+        title: "Success",
+        description: "Display picture saved successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to save display picture",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -51,7 +81,7 @@ export default function ProfileDisplaySelector({
   };
 
   const getPreviewContent = () => {
-    switch (currentDisplayPreference) {
+    switch (localDisplayPreference) {
       case "avatar":
         return (
           <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center text-4xl">
@@ -91,13 +121,30 @@ export default function ProfileDisplaySelector({
     }
   };
 
+  const handleDisplayChange = (value: "avatar" | "character" | "custom") => {
+    setLocalDisplayPreference(value);
+    onDisplayPreferenceChange(value);
+  };
+
   return (
     <div className="space-y-4">
-      <div>
-        <Label className="text-base font-semibold">Profile Display</Label>
-        <p className="text-sm text-gray-500 mt-1">
-          Choose what to show as your profile picture
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <Label className="text-base font-semibold">Profile Display</Label>
+          <p className="text-sm text-gray-500 mt-1">
+            Choose what to show as your profile picture
+          </p>
+        </div>
+        <Button
+          type="button"
+          onClick={() => saveDisplayMutation.mutate()}
+          disabled={saveDisplayMutation.isPending}
+          className="bg-gradient-to-br from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600"
+          data-testid="button-save-display-picture"
+        >
+          <Save className="h-4 w-4 mr-2" />
+          {saveDisplayMutation.isPending ? "Saving..." : "Save"}
+        </Button>
       </div>
 
       <div className="flex items-center gap-4">
@@ -106,8 +153,8 @@ export default function ProfileDisplaySelector({
         </div>
         <div className="flex-1">
           <RadioGroup
-            value={currentDisplayPreference}
-            onValueChange={(value) => onDisplayPreferenceChange(value as any)}
+            value={localDisplayPreference}
+            onValueChange={handleDisplayChange}
             className="space-y-3"
           >
             <div className="flex items-center space-x-2">
@@ -141,7 +188,7 @@ export default function ProfileDisplaySelector({
         </div>
       </div>
 
-      {currentDisplayPreference === "custom" && (
+      {localDisplayPreference === "custom" && (
         <div className="space-y-2">
           <Label htmlFor="custom-image-upload" className="text-sm">
             Upload Profile Picture
