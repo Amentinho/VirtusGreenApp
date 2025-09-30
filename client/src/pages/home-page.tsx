@@ -53,7 +53,9 @@ export default function HomePage() {
         ? `/api/products?search=${encodeURIComponent(activeSearch)}`
         : "/api/products";
       return fetch(url, { credentials: "include" }).then(res => res.json());
-    }
+    },
+    staleTime: 5 * 60 * 1000, // Keep data fresh for 5 minutes to avoid re-fetching
+    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
   });
 
   const handleSearch = () => {
