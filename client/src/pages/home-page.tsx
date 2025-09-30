@@ -66,16 +66,26 @@ export default function HomePage() {
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="space-y-8">
           {/* Primary Action: Scan Barcode */}
-          <div className="text-center space-y-4">
-            <Button 
-              size="lg"
-              onClick={() => setShowScanner(true)}
-              className="w-full h-auto py-6 text-lg font-semibold"
-              data-testid="button-scan-barcode"
-            >
-              <Camera className="mr-3 h-6 w-6" />
-              Scan Barcode
-            </Button>
+          <div className="text-center space-y-3">
+            <div className="relative inline-block w-full">
+              <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,hsla(142,76%,36%,.18),transparent_60%)]" />
+              <Button 
+                size="lg"
+                onClick={() => setShowScanner(true)}
+                className="w-full h-auto py-6 px-8 text-xl font-bold rounded-full bg-gradient-to-br from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 shadow-[0_10px_20px_-5px_hsla(142,76%,36%,.4),0_4px_8px_-2px_hsla(0,0%,0%,.2)] hover:shadow-[0_14px_28px_-8px_hsla(142,76%,36%,.5),0_8px_12px_-4px_hsla(0,0%,0%,.25)] transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 border-0"
+                data-testid="button-scan-barcode"
+              >
+                <div className="flex items-center justify-center gap-3">
+                  <div className="bg-white/20 backdrop-blur-sm rounded-full p-2">
+                    <Camera className="h-6 w-6" />
+                  </div>
+                  <span>Scan Barcode</span>
+                </div>
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Check eco impact & earn tokens
+            </p>
           </div>
 
           {/* Separator */}
