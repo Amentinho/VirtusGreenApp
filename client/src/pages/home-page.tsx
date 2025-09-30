@@ -70,11 +70,11 @@ export default function HomePage() {
             <Button 
               size="lg"
               onClick={() => setShowScanner(true)}
-              className="w-full h-auto py-8 text-lg"
+              className="w-full h-auto py-6 text-lg font-semibold"
               data-testid="button-scan-barcode"
             >
               <Camera className="mr-3 h-6 w-6" />
-              Scan a barcode to check the environmental impact of your product
+              Scan Barcode to Check Environmental Impact
             </Button>
           </div>
 
