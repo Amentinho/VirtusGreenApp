@@ -9,7 +9,7 @@ import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { ArrowLeft, Coins } from "lucide-react";
+import { ArrowLeft, Coins, User } from "lucide-react";
 
 export default function RewardsPage() {
   const { toast } = useToast();
@@ -83,8 +83,13 @@ export default function RewardsPage() {
               </Link>
               <h1 className="text-xl font-bold text-green-600">Rewards</h1>
             </div>
-            <div className="flex items-center">
+            <div className="flex items-center gap-2">
               <TokenDisplay />
+              <Link href="/profile">
+                <Button variant="ghost" size="icon" data-testid="button-profile-nav">
+                  <User className="h-5 w-5" />
+                </Button>
+              </Link>
             </div>
           </div>
         </div>

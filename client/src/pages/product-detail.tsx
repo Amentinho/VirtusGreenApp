@@ -7,7 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Leaf, Droplets, Factory, Recycle, Zap, Mountain, Mail } from "lucide-react";
+import { ArrowLeft, Leaf, Droplets, Factory, Recycle, Zap, Mountain, Mail, User } from "lucide-react";
 import { Link } from "wouter";
 import EnvImpactChart from "@/components/env-impact-chart";
 import ShareButton from "@/components/share-button";
@@ -89,19 +89,26 @@ export default function ProductDetailPage() {
       <div className="min-h-screen bg-gray-50">
         <nav className="bg-white border-b">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center h-16">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                data-testid="button-back"
-                onClick={() => {
-                  sessionStorage.setItem('virtusgreen_from_product', 'true');
-                  window.location.href = '/';
-                }}
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <h1 className="ml-4 text-xl font-bold text-green-600">Loading Product...</h1>
+            <div className="flex justify-between items-center h-16">
+              <div className="flex items-center">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  data-testid="button-back"
+                  onClick={() => {
+                    sessionStorage.setItem('virtusgreen_from_product', 'true');
+                    window.location.href = '/';
+                  }}
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+                <h1 className="ml-4 text-xl font-bold text-green-600">Loading Product...</h1>
+              </div>
+              <Link href="/profile">
+                <Button variant="ghost" size="icon" data-testid="button-profile-nav">
+                  <User className="h-5 w-5" />
+                </Button>
+              </Link>
             </div>
           </div>
         </nav>
@@ -122,19 +129,26 @@ export default function ProductDetailPage() {
       <div className="min-h-screen bg-gray-50">
         <nav className="bg-white border-b">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center h-16">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                data-testid="button-back"
-                onClick={() => {
-                  sessionStorage.setItem('virtusgreen_from_product', 'true');
-                  window.location.href = '/';
-                }}
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <h1 className="ml-4 text-xl font-bold text-green-600">Product Not Found</h1>
+            <div className="flex justify-between items-center h-16">
+              <div className="flex items-center">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  data-testid="button-back"
+                  onClick={() => {
+                    sessionStorage.setItem('virtusgreen_from_product', 'true');
+                    window.location.href = '/';
+                  }}
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+                <h1 className="ml-4 text-xl font-bold text-green-600">Product Not Found</h1>
+              </div>
+              <Link href="/profile">
+                <Button variant="ghost" size="icon" data-testid="button-profile-nav">
+                  <User className="h-5 w-5" />
+                </Button>
+              </Link>
             </div>
           </div>
         </nav>
@@ -201,19 +215,26 @@ export default function ProductDetailPage() {
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center h-16">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              data-testid="button-back"
-              onClick={() => {
-                sessionStorage.setItem('virtusgreen_from_product', 'true');
-                window.location.href = '/';
-              }}
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <h1 className="ml-4 text-xl font-bold text-green-600">Product Details</h1>
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                data-testid="button-back"
+                onClick={() => {
+                  sessionStorage.setItem('virtusgreen_from_product', 'true');
+                  window.location.href = '/';
+                }}
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <h1 className="ml-4 text-xl font-bold text-green-600">Product Details</h1>
+            </div>
+            <Link href="/profile">
+              <Button variant="ghost" size="icon" data-testid="button-profile-nav">
+                <User className="h-5 w-5" />
+              </Button>
+            </Link>
           </div>
         </div>
       </nav>
