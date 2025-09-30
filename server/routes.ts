@@ -4,7 +4,7 @@ import { setupAuth } from "./auth";
 import { setupReplitAuth } from "./replitAuth";
 import { setupGoogleAuth } from "./googleAuth";
 import { storage } from "./storage";
-import { insertProductSchema, insertRewardSchema, updatePasswordSchema } from "@shared/schema";
+import { insertProductSchema, insertRewardSchema, updatePasswordSchema, updateProfileSchema } from "@shared/schema";
 import { comparePasswords, hashPassword } from "./auth";
 import { sendEmail, generatePasswordResetEmail, generateEmailVerificationToken, generateVerificationEmail } from "./emailService";
 
@@ -320,6 +320,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     await storage.updateUserPassword(user.id, await hashPassword(newPassword));
     res.sendStatus(200);
+  });
+
+  app.post("/api/user/profile", async (req: any, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const result = updateProfileSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: result.error });
+      }
+
+      const userId = req.user.claims?.sub || req.user.id;
+      const updatedUser = await storage.updateUserProfile(userId, result.data);
+      
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      res.status(500).json({ message: "Failed to update profile" });
+    }
   });
 
   app.get("/api/user/referral-stats", async (req: any, res) => {

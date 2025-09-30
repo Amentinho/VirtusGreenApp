@@ -190,6 +190,15 @@ export const updatePasswordSchema = z.object({
   path: ["confirmNewPassword"],
 });
 
+export const updateProfileSchema = z.object({
+  firstName: z.string().min(1, "First name is required").optional(),
+  lastName: z.string().min(1, "Last name is required").optional(),
+  dateOfBirth: z.string().optional(),
+  country: z.string().min(1, "Country is required").optional(),
+  city: z.string().min(1, "City is required").optional(),
+  gender: z.enum(["Male", "Female", "Non-binary", "Prefer not to say"]).optional(),
+});
+
 export const insertProductSchema = createInsertSchema(products).omit({ 
   id: true 
 });

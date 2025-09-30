@@ -2,20 +2,23 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { updatePasswordSchema } from "@shared/schema";
+import { updatePasswordSchema, updateProfileSchema } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Copy, ArrowLeft, LogOut } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useMutation } from "@tanstack/react-query";
 import ProfileCompletion from "@/components/profile-completion";
 import SocialMediaVerification from "@/components/social-media-verification";
 import { EvmWalletVerification } from "@/components/evm-wallet-verification";
 import { TelegramVerification } from "@/components/telegram-verification";
+import { z } from "zod";
 
 type UpdatePasswordForm = {
   currentPassword: string;
@@ -23,13 +26,27 @@ type UpdatePasswordForm = {
   confirmNewPassword: string;
 };
 
+type UpdateProfileForm = z.infer<typeof updateProfileSchema>;
+
 export default function ProfilePage() {
   const { user, logoutMutation } = useAuth();
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
 
-  const form = useForm<UpdatePasswordForm>({
+  const passwordForm = useForm<UpdatePasswordForm>({
     resolver: zodResolver(updatePasswordSchema),
+  });
+
+  const profileForm = useForm<UpdateProfileForm>({
+    resolver: zodResolver(updateProfileSchema),
+    defaultValues: {
+      firstName: user?.firstName || "",
+      lastName: user?.lastName || "",
+      dateOfBirth: user?.dateOfBirth ? new Date(user.dateOfBirth).toISOString().split('T')[0] : "",
+      country: user?.country || "",
+      city: user?.city || "",
+      gender: user?.gender as any || undefined,
+    },
   });
 
   const copyReferralCode = () => {
@@ -44,10 +61,31 @@ export default function ProfilePage() {
     }
   };
 
-  const onSubmit = async (data: UpdatePasswordForm) => {
+  const profileMutation = useMutation({
+    mutationFn: async (data: UpdateProfileForm) => {
+      return apiRequest("POST", "/api/user/profile", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/profile/completion-status"] });
+      toast({
+        title: "Success",
+        description: "Profile updated successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to update profile",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onPasswordSubmit = async (data: UpdatePasswordForm) => {
     try {
       await apiRequest("POST", "/api/user/password", data);
-      form.reset();
+      passwordForm.reset();
       toast({
         title: "Success",
         description: "Password updated successfully",
@@ -59,6 +97,10 @@ export default function ProfilePage() {
         variant: "destructive",
       });
     }
+  };
+
+  const onProfileSubmit = (data: UpdateProfileForm) => {
+    profileMutation.mutate(data);
   };
 
   const handleLogout = () => {
@@ -130,17 +172,17 @@ export default function ProfilePage() {
               <CardTitle>Change Password</CardTitle>
             </CardHeader>
             <CardContent>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="currentPassword">Current Password</Label>
                   <Input
                     id="currentPassword"
                     type="password"
-                    {...form.register("currentPassword")}
+                    {...passwordForm.register("currentPassword")}
                   />
-                  {form.formState.errors.currentPassword && (
+                  {passwordForm.formState.errors.currentPassword && (
                     <p className="text-sm text-red-600">
-                      {form.formState.errors.currentPassword.message}
+                      {passwordForm.formState.errors.currentPassword.message}
                     </p>
                   )}
                 </div>
@@ -149,11 +191,11 @@ export default function ProfilePage() {
                   <Input
                     id="newPassword"
                     type="password"
-                    {...form.register("newPassword")}
+                    {...passwordForm.register("newPassword")}
                   />
-                  {form.formState.errors.newPassword && (
+                  {passwordForm.formState.errors.newPassword && (
                     <p className="text-sm text-red-600">
-                      {form.formState.errors.newPassword.message}
+                      {passwordForm.formState.errors.newPassword.message}
                     </p>
                   )}
                 </div>
@@ -162,16 +204,124 @@ export default function ProfilePage() {
                   <Input
                     id="confirmNewPassword"
                     type="password"
-                    {...form.register("confirmNewPassword")}
+                    {...passwordForm.register("confirmNewPassword")}
                   />
-                  {form.formState.errors.confirmNewPassword && (
+                  {passwordForm.formState.errors.confirmNewPassword && (
                     <p className="text-sm text-red-600">
-                      {form.formState.errors.confirmNewPassword.message}
+                      {passwordForm.formState.errors.confirmNewPassword.message}
                     </p>
                   )}
                 </div>
                 <Button type="submit" className="w-full">
                   Update Password
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Edit Profile Information</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name</Label>
+                    <Input
+                      id="firstName"
+                      data-testid="input-first-name"
+                      {...profileForm.register("firstName")}
+                    />
+                    {profileForm.formState.errors.firstName && (
+                      <p className="text-sm text-red-600">
+                        {profileForm.formState.errors.firstName.message}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Input
+                      id="lastName"
+                      data-testid="input-last-name"
+                      {...profileForm.register("lastName")}
+                    />
+                    {profileForm.formState.errors.lastName && (
+                      <p className="text-sm text-red-600">
+                        {profileForm.formState.errors.lastName.message}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                    <Input
+                      id="dateOfBirth"
+                      type="date"
+                      data-testid="input-date-of-birth"
+                      {...profileForm.register("dateOfBirth")}
+                    />
+                    {profileForm.formState.errors.dateOfBirth && (
+                      <p className="text-sm text-red-600">
+                        {profileForm.formState.errors.dateOfBirth.message}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="gender">Gender</Label>
+                    <Select 
+                      onValueChange={(value) => profileForm.setValue("gender", value as any)}
+                      defaultValue={profileForm.getValues("gender")}
+                    >
+                      <SelectTrigger data-testid="select-gender">
+                        <SelectValue placeholder="Select gender" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Male">Male</SelectItem>
+                        <SelectItem value="Female">Female</SelectItem>
+                        <SelectItem value="Non-binary">Non-binary</SelectItem>
+                        <SelectItem value="Prefer not to say">Prefer not to say</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {profileForm.formState.errors.gender && (
+                      <p className="text-sm text-red-600">
+                        {profileForm.formState.errors.gender.message}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="country">Country</Label>
+                    <Input
+                      id="country"
+                      data-testid="input-country"
+                      {...profileForm.register("country")}
+                    />
+                    {profileForm.formState.errors.country && (
+                      <p className="text-sm text-red-600">
+                        {profileForm.formState.errors.country.message}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="city">City</Label>
+                    <Input
+                      id="city"
+                      data-testid="input-city"
+                      {...profileForm.register("city")}
+                    />
+                    {profileForm.formState.errors.city && (
+                      <p className="text-sm text-red-600">
+                        {profileForm.formState.errors.city.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={profileMutation.isPending}
+                  data-testid="button-save-profile"
+                >
+                  {profileMutation.isPending ? "Saving..." : "Save Profile"}
                 </Button>
               </form>
             </CardContent>

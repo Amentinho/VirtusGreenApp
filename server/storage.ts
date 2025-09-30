@@ -29,6 +29,7 @@ export interface IStorage {
   getUserByReferralCode(code: string): Promise<User | undefined>;
   createUser(user: CreateUser): Promise<User>;
   updateUserPassword(userId: string, newPassword: string): Promise<void>;
+  updateUserProfile(userId: string, profileData: Partial<User>): Promise<User>;
   
   // Password recovery operations
   setPasswordResetToken(email: string, token: string, expiry: Date): Promise<boolean>;
@@ -259,6 +260,26 @@ export class DatabaseStorage implements IStorage {
       .update(users)
       .set({ password: newPassword, updatedAt: new Date() })
       .where(eq(users.id, userId));
+  }
+
+  async updateUserProfile(userId: string, profileData: Partial<User>): Promise<User> {
+    const updateData: any = {
+      ...profileData,
+      updatedAt: new Date()
+    };
+
+    // Convert dateOfBirth string to Date if provided
+    if (profileData.dateOfBirth && typeof profileData.dateOfBirth === 'string') {
+      updateData.dateOfBirth = new Date(profileData.dateOfBirth);
+    }
+
+    await db
+      .update(users)
+      .set(updateData)
+      .where(eq(users.id, userId));
+
+    const updatedUser = await this.getUser(userId);
+    return updatedUser!;
   }
 
   async setPasswordResetToken(email: string, token: string, expiry: Date): Promise<boolean> {
@@ -1076,6 +1097,25 @@ export class MemStorage implements IStorage {
 
     user.password = newPassword;
     this.users.set(userId, user);
+  }
+
+  async updateUserProfile(userId: string, profileData: Partial<User>): Promise<User> {
+    const user = await this.getUser(userId);
+    if (!user) throw new Error("User not found");
+
+    const updatedUser = {
+      ...user,
+      ...profileData,
+      updatedAt: new Date()
+    };
+
+    // Convert dateOfBirth string to Date if provided
+    if (profileData.dateOfBirth && typeof profileData.dateOfBirth === 'string') {
+      updatedUser.dateOfBirth = new Date(profileData.dateOfBirth);
+    }
+
+    this.users.set(userId, updatedUser);
+    return updatedUser;
   }
 
   async setPasswordResetToken(email: string, token: string, expiry: Date): Promise<boolean> {
