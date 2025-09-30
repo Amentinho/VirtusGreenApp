@@ -1,7 +1,7 @@
 import * as client from "openid-client";
 import { Strategy, type VerifyFunction } from "openid-client/passport";
 import passport from "passport";
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import memoize from "memoizee";
 import { storage } from "./storage";
 
@@ -40,16 +40,21 @@ export async function setupGoogleAuth(app: Express) {
       tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers,
       verified: passport.AuthenticateCallback
     ) => {
-      const claims = tokens.claims();
-      const userData = await upsertUserFromGoogle(claims);
-      const user = { 
-        ...userData,
-        claims,
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
-        expires_at: claims?.exp
-      };
-      verified(null, user);
+      try {
+        const claims = tokens.claims();
+        const userData = await upsertUserFromGoogle(claims);
+        const user = { 
+          ...userData,
+          claims,
+          access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token,
+          expires_at: claims?.exp
+        };
+        verified(null, user);
+      } catch (error) {
+        console.error("Error during Google OAuth verification:", error);
+        verified(error as Error);
+      }
     };
 
     // Determine callback URL based on environment
@@ -77,12 +82,18 @@ export async function setupGoogleAuth(app: Express) {
       })(req, res, next);
     });
 
-    app.get("/api/oauth/google/callback", (req, res, next) => {
-      passport.authenticate("google", {
-        successReturnToOrRedirect: "/",
-        failureRedirect: "/auth?error=google_auth_failed",
-      })(req, res, next);
-    });
+    app.get("/api/oauth/google/callback", 
+      (req: Request, res: Response, next: NextFunction) => {
+        passport.authenticate("google", {
+          successReturnToOrRedirect: "/",
+          failureRedirect: "/auth?error=google_auth_failed",
+        })(req, res, next);
+      },
+      (error: Error, req: Request, res: Response, next: NextFunction) => {
+        console.error("Error in Google OAuth callback:", error);
+        res.redirect("/auth?error=google_auth_failed");
+      }
+    );
 
   } catch (error) {
     console.error("Failed to setup Google Auth:", error);
