@@ -216,7 +216,23 @@ export default function WatchAdsPage() {
           {isWatchingAd && (
             <div className="space-y-4">
               <div className="aspect-video bg-black rounded-lg flex items-center justify-center relative overflow-hidden">
-                {/* Simulated ad content */}
+                {/* 
+                  TODO: Replace with real ad integration
+                  
+                  For web apps, use Google AdSense:
+                  1. Create account at https://adsense.google.com
+                  2. Get your publisher ID (ca-pub-XXXXXXXXX)
+                  3. Add AdSense script to index.html
+                  4. Replace this div with AdSense ad unit
+                  
+                  For mobile apps (Capacitor), use Google AdMob:
+                  1. Create account at https://admob.google.com
+                  2. Add AdMob SDK via Capacitor plugin
+                  3. Implement rewarded video ads
+                  4. Track ad completion events
+                  
+                  Current implementation: Simulated 30-second ad
+                */}
                 <div className="text-center space-y-4 p-8">
                   <div className="text-white text-2xl font-bold">
                     VirtusGreen Partner Advertisement
