@@ -12,32 +12,11 @@ import { Product } from "@shared/schema";
 import { Link } from "wouter";
 
 export default function HomePage() {
-  // Use sessionStorage to preserve search only when viewing product details
-  const [search, setSearch] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const savedSearch = sessionStorage.getItem('virtusgreen_search') || "";
-      // Clear it immediately after reading so it doesn't persist on next visit
-      sessionStorage.removeItem('virtusgreen_search');
-      sessionStorage.removeItem('virtusgreen_activeSearch');
-      return savedSearch;
-    }
-    return "";
-  });
-  const [activeSearch, setActiveSearch] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return sessionStorage.getItem('virtusgreen_activeSearch') || "";
-    }
-    return "";
-  });
+  // No sessionStorage needed - state naturally persists when opening product dialog
+  // and naturally clears when navigating to other pages
+  const [search, setSearch] = useState("");
+  const [activeSearch, setActiveSearch] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-
-  // Only save search when a product is selected (viewing details)
-  useEffect(() => {
-    if (selectedProduct) {
-      sessionStorage.setItem('virtusgreen_search', search);
-      sessionStorage.setItem('virtusgreen_activeSearch', activeSearch);
-    }
-  }, [selectedProduct, search, activeSearch]);
 
   const { data: products, isLoading } = useQuery<Product[]>({
     queryKey: activeSearch ? ["/api/products", "search", activeSearch] : ["/api/products"],
