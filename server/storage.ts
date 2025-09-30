@@ -4,7 +4,7 @@ import { Product, User, Reward, Character, UserPurchase, InsertUser, CreateUser,
 import { customAlphabet } from "nanoid";
 import connectPg from "connect-pg-simple";
 import { db } from "./db";
-import { users, products, rewards, characters, userCharacters, userPurchases, productShares, appShares, referralEvents, userActions, socialFollowVerifications, tokenEarnings, productRequests } from "@shared/schema";
+import { users, products, rewards, characters, userCharacters, userPurchases, productShares, appShares, referralEvents, userActions, socialFollowVerifications, tokenEarnings, productRequests, adViews } from "@shared/schema";
 import { eq, sql, and } from "drizzle-orm";
 
 const MemoryStore = createMemoryStore(session);
@@ -13,6 +13,8 @@ const PRODUCT_SHARE_BONUS = 5; // Tokens for sharing products
 const PRODUCT_SHARE_DAILY_CAP = 5; // Maximum product shares per day
 const PROFILE_COMPLETION_BONUS = 5; // Tokens for completing profile fields
 const SOCIAL_FOLLOW_BONUS = 10; // Tokens for following on social media
+const AD_VIEW_BONUS = 100; // Tokens for watching an ad
+const AD_VIEW_DAILY_LIMIT = 5; // Maximum ads per day
 
 const generateReferralCode = customAlphabet(
   "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",
@@ -87,6 +89,8 @@ export interface IStorage {
   recordTokenEarning(userId: string, source: string, amount: number, description: string): Promise<void>;
   verifyEvmWallet(userId: string, walletAddress: string): Promise<{ verified: boolean; tokensAwarded: number }>;
   verifyTelegram(userId: string, telegramUsername: string): Promise<{ verified: boolean; tokensAwarded: number }>;
+  recordAdView(userId: string): Promise<{ success: boolean; tokensAwarded: number; adsWatchedToday: number; dailyLimit: number }>;
+  getAdStats(userId: string): Promise<{ adsWatchedToday: number; dailyLimit: number; tokensEarnedToday: number }>;
 
   // Session store
   sessionStore: session.Store;
@@ -1082,6 +1086,97 @@ export class DatabaseStorage implements IStorage {
 
     return { verified: true, tokensAwarded: 10 };
   }
+
+  async recordAdView(userId: string): Promise<{ success: boolean; tokensAwarded: number; adsWatchedToday: number; dailyLimit: number }> {
+    // Get today's date range (start and end of day in UTC)
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+
+    // Count ads watched today
+    const adsWatchedToday = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(adViews)
+      .where(
+        and(
+          eq(adViews.userId, userId),
+          sql`${adViews.viewedAt} >= ${startOfDay}`,
+          sql`${adViews.viewedAt} < ${endOfDay}`
+        )
+      );
+
+    const count = adsWatchedToday[0]?.count || 0;
+
+    // Check if user has reached the daily limit
+    if (count >= AD_VIEW_DAILY_LIMIT) {
+      return { 
+        success: false, 
+        tokensAwarded: 0, 
+        adsWatchedToday: count,
+        dailyLimit: AD_VIEW_DAILY_LIMIT
+      };
+    }
+
+    // Record the ad view
+    await db
+      .insert(adViews)
+      .values({
+        userId,
+        tokensAwarded: AD_VIEW_BONUS,
+      });
+
+    // Award tokens
+    await db
+      .update(users)
+      .set({
+        tokens: sql`${users.tokens} + ${AD_VIEW_BONUS}`,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId));
+
+    // Record token earning
+    await this.recordTokenEarning(
+      userId,
+      "ad_view",
+      AD_VIEW_BONUS,
+      `Watched advertisement (${count + 1}/${AD_VIEW_DAILY_LIMIT} today)`
+    );
+
+    return { 
+      success: true, 
+      tokensAwarded: AD_VIEW_BONUS, 
+      adsWatchedToday: count + 1,
+      dailyLimit: AD_VIEW_DAILY_LIMIT
+    };
+  }
+
+  async getAdStats(userId: string): Promise<{ adsWatchedToday: number; dailyLimit: number; tokensEarnedToday: number }> {
+    // Get today's date range (start and end of day in UTC)
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+
+    // Count ads watched today and total tokens earned
+    const adsToday = await db
+      .select({ 
+        count: sql<number>`count(*)::int`,
+        totalTokens: sql<number>`COALESCE(SUM(${adViews.tokensAwarded}), 0)::int`
+      })
+      .from(adViews)
+      .where(
+        and(
+          eq(adViews.userId, userId),
+          sql`${adViews.viewedAt} >= ${startOfDay}`,
+          sql`${adViews.viewedAt} < ${endOfDay}`
+        )
+      );
+
+    return {
+      adsWatchedToday: adsToday[0]?.count || 0,
+      dailyLimit: AD_VIEW_DAILY_LIMIT,
+      tokensEarnedToday: adsToday[0]?.totalTokens || 0
+    };
+  }
 }
 
 export class MemStorage implements IStorage {
@@ -1096,6 +1191,7 @@ export class MemStorage implements IStorage {
   private userActions: Array<{ userId: string; action: string; completedAt: Date; tokensAwarded: number }>;
   private socialVerifications: Array<{ userId: string; platform: string; verificationCode: string; status: string; createdAt: Date; tokensAwarded?: number }>;
   private tokenEarnings: Array<{ userId: string; source: string; amount: number; description: string; earnedAt: Date }>;
+  private adViews: Array<{ userId: string; tokensAwarded: number; viewedAt: Date }>;
   sessionStore: session.Store;
   currentId: { products: number; rewards: number; characters: number; userPurchases: number };
 
@@ -1111,6 +1207,7 @@ export class MemStorage implements IStorage {
     this.userActions = [];
     this.socialVerifications = [];
     this.tokenEarnings = [];
+    this.adViews = [];
     this.currentId = { products: 1, rewards: 1, characters: 1, userPurchases: 1 };
     this.sessionStore = new MemoryStore({ checkPeriod: 86400000 });
 
@@ -1950,6 +2047,80 @@ export class MemStorage implements IStorage {
     );
 
     return { verified: true, tokensAwarded: 10 };
+  }
+
+  async recordAdView(userId: string): Promise<{ success: boolean; tokensAwarded: number; adsWatchedToday: number; dailyLimit: number }> {
+    // Get today's date range (start and end of day)
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+
+    // Count ads watched today
+    const adsWatchedToday = this.adViews.filter(
+      ad => ad.userId === userId && ad.viewedAt >= startOfDay && ad.viewedAt < endOfDay
+    );
+    
+    const count = adsWatchedToday.length;
+
+    // Check if user has reached the daily limit
+    if (count >= AD_VIEW_DAILY_LIMIT) {
+      return { 
+        success: false, 
+        tokensAwarded: 0, 
+        adsWatchedToday: count,
+        dailyLimit: AD_VIEW_DAILY_LIMIT
+      };
+    }
+
+    // Record the ad view
+    this.adViews.push({
+      userId,
+      tokensAwarded: AD_VIEW_BONUS,
+      viewedAt: now
+    });
+
+    // Award tokens
+    const user = await this.getUser(userId);
+    if (user) {
+      user.tokens += AD_VIEW_BONUS;
+      user.updatedAt = new Date();
+      this.users.set(userId, user);
+    }
+
+    // Record token earning
+    await this.recordTokenEarning(
+      userId,
+      "ad_view",
+      AD_VIEW_BONUS,
+      `Watched advertisement (${count + 1}/${AD_VIEW_DAILY_LIMIT} today)`
+    );
+
+    return { 
+      success: true, 
+      tokensAwarded: AD_VIEW_BONUS, 
+      adsWatchedToday: count + 1,
+      dailyLimit: AD_VIEW_DAILY_LIMIT
+    };
+  }
+
+  async getAdStats(userId: string): Promise<{ adsWatchedToday: number; dailyLimit: number; tokensEarnedToday: number }> {
+    // Get today's date range (start and end of day)
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+
+    // Count ads watched today and total tokens earned
+    const adsToday = this.adViews.filter(
+      ad => ad.userId === userId && ad.viewedAt >= startOfDay && ad.viewedAt < endOfDay
+    );
+
+    const tokensEarnedToday = adsToday.reduce((sum, ad) => sum + ad.tokensAwarded, 0);
+
+    return {
+      adsWatchedToday: adsToday.length,
+      dailyLimit: AD_VIEW_DAILY_LIMIT,
+      tokensEarnedToday
+    };
   }
 }
 
