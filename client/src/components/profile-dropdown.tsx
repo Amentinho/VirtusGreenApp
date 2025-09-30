@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { User, LogOut, Copy, Gift, Coins } from "lucide-react";
+import { User, LogOut, Copy, Gift, Coins, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -70,6 +70,13 @@ export default function ProfileDropdown() {
           <Link href="/my-rewards" className="w-full">
             <Gift className="mr-2 h-4 w-4" />
             <span data-testid="text-my-rewards">My Rewards</span>
+          </Link>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem asChild>
+          <Link href="/leaderboard" className="w-full">
+            <Trophy className="mr-2 h-4 w-4" />
+            <span data-testid="text-leaderboard">Leaderboard</span>
           </Link>
         </DropdownMenuItem>
 
