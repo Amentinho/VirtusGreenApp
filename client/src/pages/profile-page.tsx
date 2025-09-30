@@ -18,6 +18,7 @@ import ProfileCompletion from "@/components/profile-completion";
 import SocialMediaVerification from "@/components/social-media-verification";
 import { EvmWalletVerification } from "@/components/evm-wallet-verification";
 import { TelegramVerification } from "@/components/telegram-verification";
+import AvatarSelector from "@/components/avatar-selector";
 import { z } from "zod";
 
 type UpdatePasswordForm = {
@@ -77,6 +78,7 @@ export default function ProfilePage() {
   const { user, logoutMutation } = useAuth();
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
+  const [selectedAvatar, setSelectedAvatar] = useState(user?.avatar || "🐶");
 
   const passwordForm = useForm<UpdatePasswordForm>({
     resolver: zodResolver(updatePasswordSchema),
@@ -180,8 +182,9 @@ export default function ProfilePage() {
     const formattedData = {
       ...data,
       dateOfBirth: data.dateOfBirth ? parseDDMMYYYY(data.dateOfBirth) : undefined,
+      avatar: selectedAvatar,
     };
-    profileMutation.mutate(formattedData);
+    profileMutation.mutate(formattedData as any);
   };
 
   const handleLogout = () => {
@@ -383,6 +386,11 @@ export default function ProfilePage() {
             </CardHeader>
             <CardContent>
               <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4">
+                <AvatarSelector
+                  currentAvatar={selectedAvatar}
+                  onSelect={setSelectedAvatar}
+                />
+                <Separator />
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="firstName">First Name</Label>
