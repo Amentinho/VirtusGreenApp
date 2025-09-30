@@ -10,12 +10,55 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/use-auth";
+import { useQuery } from "@tanstack/react-query";
+import { Character } from "@shared/schema";
 
 export default function ProfileDropdown() {
   const { user, logoutMutation } = useAuth();
 
+  const { data: characters } = useQuery<Character[]>({
+    queryKey: ["/api/characters"],
+  });
+
+  const currentCharacter = characters?.find(c => c.id === user?.currentCharacterId);
+
   const handleLogout = () => {
     logoutMutation.mutate();
+  };
+
+  const renderProfileIcon = () => {
+    const displayPref = user?.displayPreference || "avatar";
+    
+    switch (displayPref) {
+      case "avatar":
+        return (
+          <div className="text-xl">
+            {user?.avatar || "🐶"}
+          </div>
+        );
+      case "character":
+        return currentCharacter ? (
+          <img
+            src={currentCharacter.ipfsLink}
+            alt="Character"
+            className="w-full h-full object-cover rounded-full"
+          />
+        ) : (
+          <User className="h-4 w-4" />
+        );
+      case "custom":
+        return user?.customProfileImage ? (
+          <img
+            src={user.customProfileImage}
+            alt="Profile"
+            className="w-full h-full object-cover rounded-full"
+          />
+        ) : (
+          <User className="h-4 w-4" />
+        );
+      default:
+        return <User className="h-4 w-4" />;
+    }
   };
 
   return (
@@ -25,9 +68,9 @@ export default function ProfileDropdown() {
           variant="ghost" 
           size="icon"
           data-testid="button-profile-dropdown"
-          className="relative h-8 w-8 rounded-full"
+          className="relative h-8 w-8 rounded-full overflow-hidden bg-green-50"
         >
-          <User className="h-4 w-4" />
+          {renderProfileIcon()}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-80" align="end" forceMount>
