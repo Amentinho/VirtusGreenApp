@@ -13,6 +13,7 @@ import MyRewardsPage from "@/pages/my-rewards-page";
 import MyTokensPage from "@/pages/my-tokens-page";
 import ResetPasswordPage from "@/pages/reset-password-page";
 import ProductDetailPage from "@/pages/product-detail";
+import LeaderboardPage from "@/pages/leaderboard-page";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -24,6 +25,7 @@ function Router() {
       <ProtectedRoute path="/product/:barcode" component={ProductDetailPage} />
       <ProtectedRoute path="/rewards" component={RewardsPage} />
       <ProtectedRoute path="/profile" component={ProfilePage} />
+      <ProtectedRoute path="/leaderboard" component={LeaderboardPage} />
       <ProtectedRoute path="/referral" component={ReferralPage} />
       <ProtectedRoute path="/my-tokens" component={MyTokensPage} />
       <ProtectedRoute path="/my-rewards" component={MyRewardsPage} />
