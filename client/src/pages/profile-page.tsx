@@ -19,6 +19,7 @@ import SocialMediaVerification from "@/components/social-media-verification";
 import { EvmWalletVerification } from "@/components/evm-wallet-verification";
 import { TelegramVerification } from "@/components/telegram-verification";
 import AvatarSelector from "@/components/avatar-selector";
+import ProfileDisplaySelector from "@/components/profile-display-selector";
 import { z } from "zod";
 
 type UpdatePasswordForm = {
@@ -79,6 +80,12 @@ export default function ProfilePage() {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState(user?.avatar || "🐶");
+  const [displayPreference, setDisplayPreference] = useState<"avatar" | "character" | "custom">(
+    (user?.displayPreference as any) || "avatar"
+  );
+  const [customProfileImage, setCustomProfileImage] = useState<string | null>(
+    user?.customProfileImage || null
+  );
 
   const passwordForm = useForm<UpdatePasswordForm>({
     resolver: zodResolver(updatePasswordSchema),
@@ -183,6 +190,8 @@ export default function ProfilePage() {
       ...data,
       dateOfBirth: data.dateOfBirth ? parseDDMMYYYY(data.dateOfBirth) : undefined,
       avatar: selectedAvatar,
+      displayPreference,
+      customProfileImage,
     };
     profileMutation.mutate(formattedData as any);
   };
@@ -386,6 +395,15 @@ export default function ProfilePage() {
             </CardHeader>
             <CardContent>
               <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4">
+                <ProfileDisplaySelector
+                  currentAvatar={selectedAvatar}
+                  currentCharacter={currentCharacter}
+                  currentDisplayPreference={displayPreference}
+                  customProfileImage={customProfileImage}
+                  onDisplayPreferenceChange={setDisplayPreference}
+                  onCustomImageChange={setCustomProfileImage}
+                />
+                <Separator />
                 <AvatarSelector
                   currentAvatar={selectedAvatar}
                   onSelect={setSelectedAvatar}
