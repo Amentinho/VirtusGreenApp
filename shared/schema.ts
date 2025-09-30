@@ -199,6 +199,15 @@ export const productRequests = pgTable("product_requests", {
   index("idx_product_requests_status").on(table.status),
 ]);
 
+export const adViews = pgTable("ad_views", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull(),
+  tokensAwarded: integer("tokens_awarded").notNull().default(100),
+  viewedAt: timestamp("viewed_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_ad_views_user_date").on(table.userId, table.viewedAt),
+]);
+
 // Base schema for user credentials
 const userCredentialsSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -382,6 +391,12 @@ export const insertProductRequestSchema = createInsertSchema(productRequests).om
   status: true
 });
 
+export const insertAdViewSchema = createInsertSchema(adViews).omit({
+  id: true,
+  viewedAt: true,
+  tokensAwarded: true
+});
+
 export type InsertProductShare = z.infer<typeof insertProductShareSchema>;
 export type InsertAppShare = z.infer<typeof insertAppShareSchema>;
 export type InsertReferralEvent = z.infer<typeof insertReferralEventSchema>;
@@ -390,3 +405,5 @@ export type InsertSocialFollowVerification = z.infer<typeof insertSocialFollowVe
 export type InsertTokenEarning = z.infer<typeof insertTokenEarningSchema>;
 export type ProductRequest = typeof productRequests.$inferSelect;
 export type InsertProductRequest = z.infer<typeof insertProductRequestSchema>;
+export type AdView = typeof adViews.$inferSelect;
+export type InsertAdView = z.infer<typeof insertAdViewSchema>;

@@ -762,6 +762,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Watch ad endpoint
+  app.post("/api/watch-ad", async (req: any, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      
+      const result = await storage.recordAdView(userId);
+      
+      // Get updated user tokens
+      const user = await storage.getUser(userId);
+      
+      res.json({
+        ...result,
+        tokens: user?.tokens || 0,
+      });
+    } catch (error) {
+      console.error("Error recording ad view:", error);
+      res.status(500).json({ error: error instanceof Error ? error.message : "Failed to record ad view" });
+    }
+  });
+
+  // Get ad stats endpoint
+  app.get("/api/ad-stats", async (req: any, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      
+      const stats = await storage.getAdStats(userId);
+      
+      res.json(stats);
+    } catch (error) {
+      console.error("Error getting ad stats:", error);
+      res.status(500).json({ error: "Failed to get ad stats" });
+    }
+  });
+
   // Email verification endpoint
   app.get("/verify-email", async (req, res) => {
     try {
