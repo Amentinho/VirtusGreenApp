@@ -74,7 +74,7 @@ export default function HomePage() {
               data-testid="button-scan-barcode"
             >
               <Camera className="mr-3 h-6 w-6" />
-              Scan Barcode to Check Environmental Impact
+              Scan Barcode
             </Button>
           </div>
 
