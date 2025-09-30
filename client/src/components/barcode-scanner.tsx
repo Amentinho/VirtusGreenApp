@@ -114,8 +114,8 @@ export default function BarcodeScanner() {
 
       // Configure scanner with optimized settings for faster detection
       const config = {
-        fps: 30, // Increased from 10 for faster scanning
-        qrbox: { width: 300, height: 200 }, // Larger, wider box for easier barcode capture
+        fps: 10, // Balance between speed and accuracy
+        qrbox: { width: 250, height: 250 }, // Square box for better barcode detection
         aspectRatio: 1.777778, // 16:9 aspect ratio for better camera compatibility
         formatsToSupport: [
           0,  // EAN_13 (most common for products)
@@ -125,17 +125,29 @@ export default function BarcodeScanner() {
           6,  // CODE_128
         ],
         disableFlip: false, // Allow scanning upside-down barcodes
+        experimentalFeatures: {
+          useBarCodeDetectorIfSupported: true // Use native barcode detector if available
+        }
       };
 
       await scanner.start(
-        { facingMode: "environment" },
+        { 
+          facingMode: "environment"
+        },
         config,
         (decodedText) => {
+          console.log('Barcode detected:', decodedText);
           setBarcode(decodedText);
           stopScanning();
-          refetch();
+          // Trigger search immediately
+          setTimeout(() => refetch(), 100);
         },
-        undefined
+        (errorMessage) => {
+          // Silently handle scanning errors (too verbose otherwise)
+          if (!errorMessage.includes('NotFoundException')) {
+            console.warn('Scan error:', errorMessage);
+          }
+        }
       );
 
     } catch (error) {
