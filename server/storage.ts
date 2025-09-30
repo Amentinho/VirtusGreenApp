@@ -14,7 +14,7 @@ const PRODUCT_SHARE_DAILY_CAP = 5; // Maximum product shares per day
 const PROFILE_COMPLETION_BONUS = 5; // Tokens for completing profile fields
 const SOCIAL_FOLLOW_BONUS = 10; // Tokens for following on social media
 const AD_VIEW_BONUS = 100; // Tokens for watching an ad
-const AD_VIEW_DAILY_LIMIT = 5; // Maximum ads per day
+const AD_VIEW_DAILY_LIMIT = 1; // Maximum ads per day
 
 const generateReferralCode = customAlphabet(
   "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",

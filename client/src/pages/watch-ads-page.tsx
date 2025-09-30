@@ -134,7 +134,7 @@ export default function WatchAdsPage() {
       <div className="text-center space-y-2">
         <h1 className="text-4xl font-bold">Watch Ads & Earn Tokens</h1>
         <p className="text-muted-foreground">
-          Watch advertisements to earn 100 tokens per ad. Up to 5 ads per day!
+          Watch an advertisement to earn 100 tokens. 1 ad per day!
         </p>
       </div>
 
@@ -276,7 +276,7 @@ export default function WatchAdsPage() {
           </div>
           <div className="flex items-start gap-2">
             <span className="font-bold">4.</span>
-            <p>You can watch up to 5 ads per day for a total of 500 tokens</p>
+            <p>You can watch 1 ad per day to earn 100 tokens</p>
           </div>
         </CardContent>
       </Card>

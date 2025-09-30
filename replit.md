@@ -37,7 +37,7 @@ Preferred communication style: Simple, everyday language.
 - **Token System**: Reward mechanism for user engagement, referrals, and rewarded advertisements
 - **Coupon Marketplace**: Token redemption system for partner discounts
 - **Product Search**: Full-text search across product database
-- **Rewarded Ads**: Users can watch 30-second advertisements to earn 100 tokens, up to 5 ads per day
+- **Rewarded Ads**: Users can watch 30-second advertisements to earn 100 tokens, up to 1 ad per day
 
 ## Authentication & Security
 - **Session Management**: Secure session handling with configurable storage
@@ -85,7 +85,7 @@ npx cap open android      # Open Android Studio
 # Recent Changes
 
 ## September 30, 2025
-- **Rewarded advertisements feature**: Users can now watch 30-second ads to earn 100 tokens each, with a daily limit of 5 ads (500 tokens/day max)
+- **Rewarded advertisements feature**: Users can now watch 30-second ads to earn 100 tokens each, with a daily limit of 1 ad (100 tokens/day max)
   - New database table: `adViews` to track ad viewing history
   - Backend API endpoints: POST /api/watch-ad and GET /api/ad-stats
   - Watch Ads page with real-time progress tracking and stats display
