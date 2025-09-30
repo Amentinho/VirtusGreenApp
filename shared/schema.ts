@@ -125,11 +125,11 @@ export const referralEvents = pgTable("referral_events", {
 export const userActions = pgTable("user_actions", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").notNull(),
-  action: text("action").notNull(), // email_shared, telegram_shared, instagram_shared, wallet_shared
+  action: text("action").notNull(), // email_shared, telegram_shared, instagram_shared, wallet_shared, profile_completion
   awardedTokens: integer("awarded_tokens").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => [
-  index("idx_user_actions_unique").on(table.userId, table.action),
+  uniqueIndex("unique_user_action").on(table.userId, table.action),
 ]);
 
 export const socialFollowVerifications = pgTable("social_follow_verifications", {

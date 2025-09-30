@@ -554,7 +554,23 @@ export class DatabaseStorage implements IStorage {
       return { awarded: false, tokensEarned: 0 };
     }
 
-    // Check if already awarded profile completion bonus
+    // Check if already claimed
+    const existingAction = await db
+      .select()
+      .from(userActions)
+      .where(
+        and(
+          eq(userActions.userId, userId),
+          eq(userActions.action, "profile_completion")
+        )
+      )
+      .limit(1);
+
+    if (existingAction.length > 0) {
+      return { awarded: false, tokensEarned: 0 };
+    }
+
+    // Try to mark as completed (this will also fail if duplicate due to unique constraint)
     const alreadyAwarded = await this.markOneTimeAction(userId, "profile_completion", PROFILE_COMPLETION_BONUS);
     
     if (!alreadyAwarded) {
@@ -598,6 +614,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   async initiateSocialFollowVerification(userId: string, platform: string, handle?: string): Promise<{ verificationCode: string; message: string }> {
+    // Check if already verified for this platform
+    const existing = await db
+      .select()
+      .from(socialFollowVerifications)
+      .where(
+        and(
+          eq(socialFollowVerifications.userId, userId),
+          eq(socialFollowVerifications.platform, platform)
+        )
+      )
+      .limit(1);
+
+    if (existing.length > 0 && existing[0].status === "verified") {
+      throw new Error(`You have already verified your ${platform} account`);
+    }
+
     const verificationCode = Math.random().toString(36).substring(2, 10).toUpperCase();
     
     await db
@@ -620,9 +652,11 @@ export class DatabaseStorage implements IStorage {
 
     let message = "";
     if (platform === "instagram") {
-      message = `Follow @virtusgreen on Instagram and post a story mentioning us with code ${verificationCode}`;
+      message = `Follow @virtusgreen on Instagram to earn 10 tokens`;
     } else if (platform === "linkedin") {
-      message = `Follow VirtusGreen on LinkedIn and post about us with code ${verificationCode}`;
+      message = `Follow VirtusGreen on LinkedIn to earn 10 tokens`;
+    } else if (platform === "twitter") {
+      message = `Follow @virtusgreen on Twitter to earn 10 tokens`;
     }
 
     return { verificationCode, message };
