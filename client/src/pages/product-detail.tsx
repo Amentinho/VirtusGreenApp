@@ -293,13 +293,47 @@ export default function ProductDetailPage() {
             </CardHeader>
           </Card>
 
-          {/* Environmental Impact Chart */}
+          {/* CO2 Impact Circle */}
           <Card>
             <CardHeader>
-              <CardTitle>Environmental Impact Overview</CardTitle>
+              <CardTitle>CO₂ Impact</CardTitle>
             </CardHeader>
             <CardContent>
-              <EnvImpactChart impact={impact} />
+              {impact.co2Emissions === "NA" ? (
+                <div className="text-center py-12 text-gray-500">
+                  <p className="text-lg">No CO₂ emissions data available</p>
+                  <p className="text-sm mt-2">Data not found in OpenFoodFacts</p>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center py-8">
+                  <div 
+                    className={`relative w-48 h-48 rounded-full flex items-center justify-center shadow-2xl ring-8 ring-opacity-20 transition-all duration-300 hover:scale-105 ${
+                      typeof impact.co2Emissions === 'number' && impact.co2Emissions < 100
+                        ? "bg-gradient-to-br from-emerald-400 to-green-500 ring-emerald-200"
+                        : typeof impact.co2Emissions === 'number' && impact.co2Emissions < 300
+                        ? "bg-gradient-to-br from-amber-400 to-orange-500 ring-amber-200"
+                        : "bg-gradient-to-br from-red-400 to-rose-500 ring-red-200"
+                    }`}
+                    data-testid="co2-impact-circle"
+                  >
+                    <div className="text-center text-white">
+                      <div className="text-5xl font-bold mb-2">
+                        {impact.co2Emissions}
+                      </div>
+                      <div className="text-lg font-medium opacity-90">
+                        g/100g
+                      </div>
+                      <div className="text-xs mt-2 opacity-80">
+                        {typeof impact.co2Emissions === 'number' && impact.co2Emissions < 100
+                          ? "Low Impact"
+                          : typeof impact.co2Emissions === 'number' && impact.co2Emissions < 300
+                          ? "Medium Impact"
+                          : "High Impact"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
