@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Play, Gift, TrendingUp, CheckCircle2 } from "lucide-react";
+import { Play, Gift, TrendingUp, CheckCircle2, ArrowLeft } from "lucide-react";
 
 interface AdStats {
   adsWatchedToday: number;
@@ -131,6 +132,18 @@ export default function WatchAdsPage() {
 
   return (
     <div className="container mx-auto p-4 max-w-4xl space-y-6">
+      <Button
+        variant="ghost"
+        asChild
+        className="mb-2"
+        data-testid="button-back-to-menu"
+      >
+        <Link href="/">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Main Menu
+        </Link>
+      </Button>
+
       <div className="text-center space-y-2">
         <h1 className="text-4xl font-bold">Watch Ads & Earn Tokens</h1>
         <p className="text-muted-foreground">
