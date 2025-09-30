@@ -48,21 +48,7 @@ export default function ProductCard({ product, searchState }: ProductCardProps) 
       data-testid={`product-card-${product.barcode}`}
     >
       <Link href={`/product/${product.barcode}`} className="block" onClick={handleProductClick}>
-        {/* Eco Score Badge */}
-        <div className="absolute top-4 right-4 z-10">
-          <div className={`relative w-20 h-20 rounded-full bg-gradient-to-br ${ecoScoreColors.bg} shadow-lg ${ecoScoreColors.ring} ring-4 flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
-            <div className="text-center">
-              <div className={`text-2xl font-bold ${ecoScoreColors.text}`}>
-                {impact.ecoScore === "NA" ? "NA" : impact.ecoScore}
-              </div>
-              {impact.ecoScore !== "NA" && (
-                <div className={`text-[10px] ${ecoScoreColors.text} opacity-90`}>/ 100</div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <CardHeader className="pr-28">
+        <CardHeader>
           <CardTitle className="text-lg group-hover:text-emerald-600 transition-colors">
             {name}
           </CardTitle>
