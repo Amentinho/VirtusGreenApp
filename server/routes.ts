@@ -153,7 +153,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Use v1 API for full text search since v2 doesn't support search_terms
       const offSearchResponse = await fetch(
-        `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(search)}&search_simple=1&action=process&json=1`,
+        `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(search)}&search_simple=1&action=process&json=1&fields=code,product_name,brands,ecoscore_score,ecoscore_data,carbon-footprint-from-known-ingredients_100g`,
         {
           headers: {
             'User-Agent': 'VirtusGreen - Web App - Version 1.0 - https://virtusgreen.com'
@@ -166,24 +166,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // The v1 API returns results differently than v2
         if (offData.products && offData.products.length > 0) {
-          // Transform Open Food Facts search results to our Product schema
-          const transformedProducts = offData.products.slice(0, 20).map((offProduct: any) => ({
-            id: Date.now() + Math.random(), // Temporary ID for display
-            name: offProduct.product_name || "Unknown Product",
-            brand: offProduct.brands || "Unknown Brand",
-            barcode: offProduct.code || "",
-            environmentalImpact: {
-              ecoScore: calculateEcoScore(offProduct),
-              co2Emissions: calculateCarbonFootprint(offProduct),
-              renewableEnergy: calculateRenewableEnergy(offProduct),
-              recyclableMaterials: calculateRecyclableMaterials(offProduct),
-              recycledContent: calculateRecycledContent(offProduct),
-              waterUsage: calculateWaterUsage(offProduct),
-              landUsage: calculateLandUsage(offProduct)
-            }
-          }));
+          // Fetch detailed v2 data for each product to ensure consistency
+          const detailedProducts = await Promise.all(
+            offData.products.slice(0, 20).map(async (offProduct: any) => {
+              try {
+                const detailResponse = await fetch(
+                  `https://world.openfoodfacts.net/api/v2/product/${offProduct.code}?fields=product_name,brands,ecoscore_score,ecoscore_grade,ecoscore_data,carbon-footprint-from-known-ingredients_100g`
+                );
+                
+                if (detailResponse.ok) {
+                  const detailData = await detailResponse.json();
+                  if (detailData.status === 1 && detailData.product) {
+                    return {
+                      id: Date.now() + Math.random(),
+                      name: detailData.product.product_name || "Unknown Product",
+                      brand: detailData.product.brands || "Unknown Brand",
+                      barcode: offProduct.code || "",
+                      environmentalImpact: {
+                        ecoScore: calculateEcoScore(detailData.product),
+                        co2Emissions: calculateCarbonFootprint(detailData.product),
+                        renewableEnergy: calculateRenewableEnergy(detailData.product),
+                        recyclableMaterials: calculateRecyclableMaterials(detailData.product),
+                        recycledContent: calculateRecycledContent(detailData.product),
+                        waterUsage: calculateWaterUsage(detailData.product),
+                        landUsage: calculateLandUsage(detailData.product)
+                      }
+                    };
+                  }
+                }
+              } catch (err) {
+                console.error(`Error fetching detail for ${offProduct.code}:`, err);
+              }
+              
+              // Fallback to v1 data if v2 fails
+              return {
+                id: Date.now() + Math.random(),
+                name: offProduct.product_name || "Unknown Product",
+                brand: offProduct.brands || "Unknown Brand",
+                barcode: offProduct.code || "",
+                environmentalImpact: {
+                  ecoScore: calculateEcoScore(offProduct),
+                  co2Emissions: calculateCarbonFootprint(offProduct),
+                  renewableEnergy: calculateRenewableEnergy(offProduct),
+                  recyclableMaterials: calculateRecyclableMaterials(offProduct),
+                  recycledContent: calculateRecycledContent(offProduct),
+                  waterUsage: calculateWaterUsage(offProduct),
+                  landUsage: calculateLandUsage(offProduct)
+                }
+              };
+            })
+          );
           
-          return res.json(transformedProducts);
+          return res.json(detailedProducts.filter(Boolean));
         }
       }
     } catch (error) {
