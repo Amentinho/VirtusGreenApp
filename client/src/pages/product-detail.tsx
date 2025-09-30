@@ -174,42 +174,57 @@ export default function ProductDetailPage() {
 
   const impactMetrics = [
     { 
-      icon: <Leaf className="h-5 w-5 text-green-600" />, 
+      icon: <Leaf className="h-5 w-5" />, 
       label: "Eco Score", 
       value: impact.ecoScore === "NA" ? "NA" : `${impact.ecoScore}/100`,
-      description: "Overall environmental friendliness"
+      description: "Overall environmental friendliness",
+      isNA: impact.ecoScore === "NA"
     },
     { 
-      icon: <Factory className="h-5 w-5 text-gray-600" />, 
+      icon: <Factory className="h-5 w-5" />, 
       label: "CO₂ Emissions", 
       value: impact.co2Emissions === "NA" ? "NA" : `${impact.co2Emissions}g/100g`,
-      description: "Carbon footprint from OpenFoodFacts"
+      description: "Carbon footprint from OpenFoodFacts",
+      isNA: impact.co2Emissions === "NA"
     },
     { 
-      icon: <Zap className="h-5 w-5 text-yellow-600" />, 
+      icon: <Zap className="h-5 w-5" />, 
       label: "Renewable Energy", 
-      value: impact.renewableEnergy,
-      description: "Use of clean energy in production"
+      value: impact.renewableEnergy === "NA" ? "NA" : `${impact.renewableEnergy}%`,
+      description: "Use of clean energy in production",
+      isNA: impact.renewableEnergy === "NA"
     },
     { 
-      icon: <Recycle className="h-5 w-5 text-blue-600" />, 
+      icon: <Recycle className="h-5 w-5" />, 
       label: "Recyclable Materials", 
-      value: impact.recyclableMaterials,
-      description: "Packaging recyclability"
+      value: impact.recyclableMaterials === "NA" ? "NA" : `${impact.recyclableMaterials}%`,
+      description: "Packaging recyclability",
+      isNA: impact.recyclableMaterials === "NA"
     },
     { 
-      icon: <Droplets className="h-5 w-5 text-blue-400" />, 
+      icon: <Droplets className="h-5 w-5" />, 
       label: "Water Usage", 
-      value: impact.waterUsage,
-      description: "Water efficiency in production"
+      value: impact.waterUsage === "NA" ? "NA" : `${impact.waterUsage}%`,
+      description: "Water efficiency in production",
+      isNA: impact.waterUsage === "NA"
     },
     { 
-      icon: <Mountain className="h-5 w-5 text-green-700" />, 
+      icon: <Mountain className="h-5 w-5" />, 
       label: "Land Usage", 
-      value: impact.landUsage,
-      description: "Sustainable land management"
+      value: impact.landUsage === "NA" ? "NA" : `${impact.landUsage}%`,
+      description: "Sustainable land management",
+      isNA: impact.landUsage === "NA"
     },
   ];
+
+  const getEcoScoreColor = (score: number | string) => {
+    if (typeof score === 'number') {
+      if (score >= 70) return "from-emerald-500 to-green-600";
+      if (score >= 40) return "from-amber-500 to-orange-600";
+      return "from-red-500 to-rose-600";
+    }
+    return "from-gray-400 to-gray-500";
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -241,31 +256,39 @@ export default function ProductDetailPage() {
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-6">
-          {/* Product Header */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="text-2xl mb-2" data-testid="product-name">{name}</CardTitle>
-                  <p className="text-lg text-gray-600" data-testid="product-brand">{brand}</p>
-                  <p className="text-sm text-gray-500 mt-1">Barcode: {barcode}</p>
-                </div>
-                <div className="flex flex-col items-end gap-2">
-                  <div className={`text-3xl font-bold ${
-                    typeof impact.ecoScore === 'number' && impact.ecoScore >= 70
-                      ? "text-green-600"
-                      : typeof impact.ecoScore === 'number' && impact.ecoScore >= 40
-                      ? "text-yellow-600"
-                      : "text-red-600"
-                  }`}>
-                    {impact.ecoScore === "NA" ? "NA" : `${impact.ecoScore}/100`}
+          {/* Product Hero Header */}
+          <Card className="overflow-hidden bg-gradient-to-br from-emerald-50 via-lime-50 to-green-50 dark:from-emerald-900/30 dark:via-lime-900/20 dark:to-green-900/30 ring-1 ring-emerald-100/50">
+            <CardHeader className="relative pb-8">
+              <div className="absolute top-4 right-4">
+                <div className={`relative w-24 h-24 rounded-full bg-gradient-to-br ${getEcoScoreColor(impact.ecoScore)} shadow-2xl ring-4 ring-white/50 flex items-center justify-center`}>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-white">
+                      {impact.ecoScore === "NA" ? "NA" : impact.ecoScore}
+                    </div>
+                    {impact.ecoScore !== "NA" && (
+                      <div className="text-xs text-white/90">/ 100</div>
+                    )}
                   </div>
-                  <ShareButton
-                    productId={product.barcode}
-                    productName={product.name}
-                    variant="product"
-                  />
                 </div>
+              </div>
+              
+              <div className="pr-32">
+                <CardTitle className="text-3xl mb-3 bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent" data-testid="product-name">
+                  {name}
+                </CardTitle>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="px-3 py-1 bg-white/60 backdrop-blur-sm rounded-full text-sm font-medium text-gray-700 ring-1 ring-emerald-200/50" data-testid="product-brand">
+                    {brand}
+                  </span>
+                  <span className="px-3 py-1 bg-white/40 backdrop-blur-sm rounded-full text-xs text-gray-600">
+                    {barcode}
+                  </span>
+                </div>
+                <ShareButton
+                  productId={product.barcode}
+                  productName={product.name}
+                  variant="product"
+                />
               </div>
             </CardHeader>
           </Card>
@@ -290,16 +313,35 @@ export default function ProductDetailPage() {
                 {impactMetrics.map((metric, index) => (
                   <div 
                     key={index}
-                    className="flex items-start gap-3 p-4 border rounded-lg"
+                    className={`flex items-start gap-3 p-4 rounded-lg transition-all duration-200 ${
+                      metric.isNA 
+                        ? "border border-dashed border-gray-300 bg-gray-50/50" 
+                        : "border border-emerald-100 bg-gradient-to-br from-white to-emerald-50/30 hover:shadow-md hover:border-emerald-200"
+                    }`}
                     data-testid={`metric-${metric.label.toLowerCase().replace(/\s+/g, '-')}`}
                   >
-                    <div className="mt-1">{metric.icon}</div>
+                    <div className={`mt-1 p-2 rounded-lg ${
+                      metric.isNA 
+                        ? "bg-gray-200 text-gray-400" 
+                        : "bg-gradient-to-br from-emerald-100 to-green-100 text-emerald-600"
+                    }`}>
+                      {metric.icon}
+                    </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="font-medium">{metric.label}</span>
-                        <span className="font-bold text-green-600">{metric.value}</span>
+                        <span className="font-medium text-gray-900">{metric.label}</span>
+                        <span className={`font-bold ${
+                          metric.isNA 
+                            ? "text-gray-400" 
+                            : "text-transparent bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text"
+                        }`}>
+                          {metric.value}
+                        </span>
                       </div>
                       <p className="text-sm text-gray-600">{metric.description}</p>
+                      {metric.isNA && (
+                        <p className="text-xs text-gray-400 mt-1 italic">No data from OpenFoodFacts</p>
+                      )}
                     </div>
                   </div>
                 ))}
