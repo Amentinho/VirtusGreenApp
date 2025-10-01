@@ -33,8 +33,7 @@ export default function LeaderboardPage() {
               </Button>
             </Link>
             <div className="ml-4 flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-yellow-500" />
-              <h1 className="text-xl font-bold text-green-600">Community Leaderboard</h1>
+              <img src="/virtusgreen-logo.png" alt="VirtusGreen" className="h-10 w-auto" />
             </div>
           </div>
         </div>

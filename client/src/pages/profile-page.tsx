@@ -211,7 +211,7 @@ export default function ProfilePage() {
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
               </Link>
-              <h1 className="text-xl font-bold text-green-600">Profile</h1>
+              <img src="/virtusgreen-logo.png" alt="VirtusGreen" className="h-10 w-auto" />
             </div>
             <div className="flex items-center">
               <Button 

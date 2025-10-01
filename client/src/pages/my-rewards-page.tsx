@@ -30,7 +30,7 @@ export default function MyRewardsPage() {
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
               </Link>
-              <h1 className="text-xl font-bold text-green-600">My Rewards</h1>
+              <img src="/virtusgreen-logo.png" alt="VirtusGreen" className="h-10 w-auto" />
             </div>
           </div>
         </div>

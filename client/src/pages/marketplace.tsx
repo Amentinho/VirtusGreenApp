@@ -83,7 +83,7 @@ export default function RewardsPage() {
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
               </Link>
-              <h1 className="text-xl font-bold text-green-600">{t('rewards.title')}</h1>
+              <img src="/virtusgreen-logo.png" alt="VirtusGreen" className="h-10 w-auto" />
             </div>
             <div className="flex items-center gap-2">
               <TokenDisplay />

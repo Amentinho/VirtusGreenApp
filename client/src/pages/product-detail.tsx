@@ -110,7 +110,7 @@ export default function ProductDetailPage() {
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
-                <h1 className="ml-4 text-xl font-bold text-green-600">Loading Product...</h1>
+                <img src="/virtusgreen-logo.png" alt="VirtusGreen" className="ml-4 h-10 w-auto" />
               </div>
               <Link href="/profile">
                 <Button variant="ghost" size="icon" data-testid="button-profile-nav">
@@ -150,7 +150,7 @@ export default function ProductDetailPage() {
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
-                <h1 className="ml-4 text-xl font-bold text-green-600">Product Not Found</h1>
+                <img src="/virtusgreen-logo.png" alt="VirtusGreen" className="ml-4 h-10 w-auto" />
               </div>
               <Link href="/profile">
                 <Button variant="ghost" size="icon" data-testid="button-profile-nav">
@@ -251,7 +251,7 @@ export default function ProductDetailPage() {
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
-              <h1 className="ml-4 text-xl font-bold text-green-600">Product Details</h1>
+              <img src="/virtusgreen-logo.png" alt="VirtusGreen" className="ml-4 h-10 w-auto" />
             </div>
             <Link href="/profile">
               <Button variant="ghost" size="icon" data-testid="button-profile-nav">

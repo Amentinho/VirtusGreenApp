@@ -15,9 +15,7 @@ export default function MyTokensPage() {
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
               </Link>
-              <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                My Tokens
-              </h1>
+              <img src="/virtusgreen-logo.png" alt="VirtusGreen" className="h-10 w-auto" />
             </div>
           </div>
         </div>
