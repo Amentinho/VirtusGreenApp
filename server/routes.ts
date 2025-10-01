@@ -388,9 +388,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/characters", async (_req, res) => {
-    const characters = await storage.getCharacters();
-    res.json(characters);
+  app.get("/api/characters", async (req: any, res) => {
+    try {
+      const characters = await storage.getCharacters();
+      
+      // If user is authenticated, check which characters they own
+      if (req.isAuthenticated()) {
+        const userId = req.user.claims?.sub || req.user.id;
+        const ownedCharacters = await storage.getUserCharacters(userId);
+        const ownedIds = new Set(ownedCharacters.map(c => c.id));
+        
+        // Redact description and ipfsLink for unowned characters
+        const redactedCharacters = characters.map(char => {
+          if (ownedIds.has(char.id)) {
+            return char; // Show full data for owned characters
+          }
+          // Hide sensitive data for unowned characters
+          return {
+            ...char,
+            description: null,
+            ipfsLink: null,
+          };
+        });
+        
+        return res.json(redactedCharacters);
+      }
+      
+      // For unauthenticated users, redact all characters
+      const redactedCharacters = characters.map(char => ({
+        ...char,
+        description: null,
+        ipfsLink: null,
+      }));
+      
+      res.json(redactedCharacters);
+    } catch (error) {
+      console.error("Error fetching characters:", error);
+      res.status(500).json({ message: "Failed to fetch characters" });
+    }
   });
 
   app.post("/api/characters/:id/purchase", async (req, res) => {

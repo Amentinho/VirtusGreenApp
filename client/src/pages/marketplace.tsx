@@ -9,7 +9,7 @@ import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { ArrowLeft, Coins, User } from "lucide-react";
+import { ArrowLeft, Coins, User, Lock } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 export default function RewardsPage() {
@@ -149,17 +149,35 @@ export default function RewardsPage() {
                       )}
                       <CardHeader>
                         <div className="flex justify-center mb-4">
-                          <img
-                            src={character.ipfsLink}
-                            alt={character.title}
-                            className="w-32 h-32 rounded-full object-cover"
-                            data-testid={`img-character-${character.id}`}
-                          />
+                          {isOwned ? (
+                            <img
+                              src={character.ipfsLink}
+                              alt={character.title}
+                              className="w-32 h-32 rounded-full object-cover"
+                              data-testid={`img-character-${character.id}`}
+                            />
+                          ) : (
+                            <div 
+                              className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center"
+                              data-testid={`locked-character-${character.id}`}
+                            >
+                              <Lock className="h-16 w-16 text-gray-400" />
+                            </div>
+                          )}
                         </div>
                         <CardTitle className="text-center">{character.title}</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <p className="text-gray-600 mb-4 text-sm">{character.description}</p>
+                        {isOwned ? (
+                          <p className="text-gray-600 mb-4 text-sm">{character.description}</p>
+                        ) : (
+                          <p 
+                            className="text-gray-400 mb-4 text-sm italic"
+                            data-testid={`placeholder-description-${character.id}`}
+                          >
+                            {t('rewards.purchaseToReveal')}
+                          </p>
+                        )}
                         <div className="space-y-3">
                           <div className="flex items-center justify-between">
                             <span className="font-medium text-green-600" data-testid={`text-character-cost-${character.id}`}>

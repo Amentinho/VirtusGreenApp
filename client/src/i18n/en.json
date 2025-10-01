@@ -94,6 +94,7 @@
     "redeemFailed": "Failed to redeem reward",
     "characterPurchased": "Character Purchased!",
     "characterUpdated": "Your profile has been updated with your new character.",
-    "purchaseFailed": "Failed to purchase character"
+    "purchaseFailed": "Failed to purchase character",
+    "purchaseToReveal": "Purchase to reveal description"
   }
 }

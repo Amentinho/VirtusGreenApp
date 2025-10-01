@@ -94,6 +94,7 @@
     "redeemFailed": "Error al canjear la recompensa",
     "characterPurchased": "¡Personaje comprado!",
     "characterUpdated": "Tu perfil ha sido actualizado con tu nuevo personaje.",
-    "purchaseFailed": "Error al comprar el personaje"
+    "purchaseFailed": "Error al comprar el personaje",
+    "purchaseToReveal": "Compra para revelar la descripción"
   }
 }

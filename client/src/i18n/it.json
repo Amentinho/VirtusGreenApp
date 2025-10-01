@@ -94,6 +94,7 @@
     "redeemFailed": "Impossibile riscattare il premio",
     "characterPurchased": "Personaggio acquistato!",
     "characterUpdated": "Il tuo profilo è stato aggiornato con il nuovo personaggio.",
-    "purchaseFailed": "Impossibile acquistare il personaggio"
+    "purchaseFailed": "Impossibile acquistare il personaggio",
+    "purchaseToReveal": "Acquista per rivelare la descrizione"
   }
 }
