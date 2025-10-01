@@ -90,7 +90,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         setTodayReward(loginData);
         setStreakData(streakInfo);
-        setShowStreakDialog(true);
+        // Only show dialog automatically on first login of the day
+        if (loginData.isNewLogin) {
+          setShowStreakDialog(true);
+        }
       } catch (err) {
         console.error("Failed to fetch login streak:", err);
       }

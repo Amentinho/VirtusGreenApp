@@ -2,12 +2,12 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Camera } from "lucide-react";
+import { Search, Camera, Flame } from "lucide-react";
 import ProductCard from "@/components/product-card";
 import TokenDisplay from "@/components/token-display";
 import BarcodeScanner from "@/components/barcode-scanner";
 import ProfileDropdown from "@/components/profile-dropdown";
-import LanguageSelector from "@/components/language-selector";
+import { LoginStreakDialog } from "@/components/login-streak-dialog";
 import { Product } from "@shared/schema";
 import { Link } from "wouter";
 import {
@@ -17,12 +17,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useTranslation } from "react-i18next";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function HomePage() {
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [activeSearch, setActiveSearch] = useState("");
   const [showScanner, setShowScanner] = useState(false);
+  const [showStreakDialog, setShowStreakDialog] = useState(false);
+  const [streakData, setStreakData] = useState<any>(null);
+  const [todayReward, setTodayReward] = useState<any>(null);
 
   useEffect(() => {
     const fromProduct = sessionStorage.getItem('virtusgreen_from_product');
@@ -58,6 +62,27 @@ export default function HomePage() {
     }
   };
 
+  const handleStreakClick = async () => {
+    try {
+      const streakRes = await apiRequest("GET", "/api/login-streak/current");
+      const streakInfo = await streakRes.json();
+      
+      // Convert date strings back to Date objects
+      if (streakInfo.weekDays) {
+        streakInfo.weekDays = streakInfo.weekDays.map((day: any) => ({
+          ...day,
+          date: new Date(day.date)
+        }));
+      }
+      
+      setStreakData(streakInfo);
+      setTodayReward({ tokensAwarded: 0, isNewLogin: false, consecutiveDays: streakInfo.currentStreak });
+      setShowStreakDialog(true);
+    } catch (err) {
+      console.error("Failed to fetch login streak:", err);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b">
@@ -67,7 +92,15 @@ export default function HomePage() {
               <h1 className="text-xl font-bold text-green-600">{t('home.title')}</h1>
             </div>
             <div className="flex items-center gap-4">
-              <LanguageSelector />
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleStreakClick}
+                data-testid="button-daily-streak"
+              >
+                <Flame className="h-4 w-4 mr-2 text-orange-500" />
+                {t('loginStreak.title')}
+              </Button>
               <TokenDisplay />
               <Link href="/rewards">
                 <Button variant="outline">{t('nav.rewards')}</Button>
@@ -167,6 +200,16 @@ export default function HomePage() {
           <BarcodeScanner />
         </DialogContent>
       </Dialog>
+
+      {/* Login Streak Dialog */}
+      {streakData && todayReward && (
+        <LoginStreakDialog
+          open={showStreakDialog}
+          onOpenChange={setShowStreakDialog}
+          streakData={streakData}
+          todayReward={todayReward}
+        />
+      )}
     </div>
   );
 }
