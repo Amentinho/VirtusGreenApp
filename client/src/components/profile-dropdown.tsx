@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { User, LogOut, Copy, Gift, Coins, Trophy, Coffee, Play } from "lucide-react";
+import { User, LogOut, Copy, Gift, Coins, Trophy, Coffee, Play, Languages, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -8,13 +8,20 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/use-auth";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Character } from "@shared/schema";
+import { useTranslation } from "react-i18next";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export default function ProfileDropdown() {
   const { user, logoutMutation } = useAuth();
+  const { i18n } = useTranslation();
 
   const { data: characters } = useQuery<Character[]>({
     queryKey: ["/api/characters"],
@@ -22,9 +29,29 @@ export default function ProfileDropdown() {
 
   const currentCharacter = characters?.find(c => c.id === user?.currentCharacterId);
 
+  const languageMutation = useMutation({
+    mutationFn: async (language: "en" | "es" | "it") => {
+      return await apiRequest("POST", "/api/user/profile", { language });
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+    },
+  });
+
+  const handleLanguageChange = (language: "en" | "es" | "it") => {
+    i18n.changeLanguage(language);
+    languageMutation.mutate(language);
+  };
+
   const handleLogout = () => {
     logoutMutation.mutate();
   };
+
+  const languages = [
+    { code: "en", name: "English", nativeName: "English" },
+    { code: "es", name: "Spanish", nativeName: "Español" },
+    { code: "it", name: "Italian", nativeName: "Italiano" },
+  ] as const;
 
   const renderProfileIcon = () => {
     const displayPref = user?.displayPreference || "avatar";
@@ -139,6 +166,29 @@ export default function ProfileDropdown() {
           </Link>
         </DropdownMenuItem>
 
+        <DropdownMenuSeparator />
+
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <Languages className="mr-2 h-4 w-4" />
+            <span>Language</span>
+          </DropdownMenuSubTrigger>
+          <DropdownMenuPortal>
+            <DropdownMenuSubContent>
+              {languages.map((lang) => (
+                <DropdownMenuItem
+                  key={lang.code}
+                  onClick={() => handleLanguageChange(lang.code)}
+                  className="cursor-pointer"
+                >
+                  <Check className={`mr-2 h-4 w-4 ${i18n.language === lang.code ? 'opacity-100' : 'opacity-0'}`} />
+                  <span>{lang.nativeName}</span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuSubContent>
+          </DropdownMenuPortal>
+        </DropdownMenuSub>
+        
         <DropdownMenuSeparator />
         
         <DropdownMenuItem 
