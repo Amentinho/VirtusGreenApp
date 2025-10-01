@@ -18,7 +18,6 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import LanguageSelector from "@/components/language-selector";
 import { useTranslation } from "react-i18next";
-
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
   const { toast } = useToast();
@@ -114,7 +113,7 @@ export default function AuthPage() {
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <CardTitle className="flex items-center justify-center">
-              <img src="/attached_assets/aaa_1759351925198.jpg" alt="VirtusGreen" className="h-16 w-auto" />
+              <img src="/logo.jpg" alt="VirtusGreen" className="h-16 w-auto" />
             </CardTitle>
           </CardHeader>
           <CardContent>

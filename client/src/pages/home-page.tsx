@@ -18,7 +18,6 @@ import {
 } from "@/components/ui/dialog";
 import { useTranslation } from "react-i18next";
 import { apiRequest } from "@/lib/queryClient";
-
 export default function HomePage() {
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
@@ -89,7 +88,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <img src="/attached_assets/aaa_1759351925198.jpg" alt="VirtusGreen" className="h-12 w-auto" />
+              <img src="/logo.jpg" alt="VirtusGreen" className="h-12 w-auto" />
             </div>
             <div className="flex items-center gap-4">
               <Button 
