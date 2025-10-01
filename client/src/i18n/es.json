@@ -1,0 +1,88 @@
+{
+  "common": {
+    "loading": "Cargando...",
+    "error": "Error",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "search": "Buscar",
+    "back": "Volver"
+  },
+  "nav": {
+    "home": "Inicio",
+    "rewards": "Recompensas",
+    "profile": "Perfil",
+    "logout": "Cerrar sesión",
+    "settings": "Configuración",
+    "buyMeCoffee": "Invítame un café",
+    "watchAds": "Ver anuncios"
+  },
+  "home": {
+    "title": "VirtusGreen",
+    "scanBarcode": "Escanear código de barras",
+    "scanSubtitle": "Verifica el impacto ecológico y gana tokens",
+    "orDivider": "O",
+    "searchPlaceholder": "Buscar productos por nombre, marca o código de barras",
+    "searchResults": "Resultados de búsqueda para",
+    "noProducts": "No se encontraron productos. Prueba con otro término de búsqueda."
+  },
+  "profile": {
+    "title": "Perfil",
+    "editProfile": "Editar perfil",
+    "displayPicture": "Foto de perfil",
+    "avatar": "Avatar",
+    "character": "Personaje",
+    "custom": "Personalizado",
+    "uploadPicture": "Subir foto de perfil",
+    "personalInfo": "Información personal",
+    "fullName": "Nombre completo",
+    "email": "Correo electrónico",
+    "dateOfBirth": "Fecha de nacimiento",
+    "selectDate": "Seleccionar fecha",
+    "gender": "Género",
+    "male": "Masculino",
+    "female": "Femenino",
+    "other": "Otro",
+    "preferNotToSay": "Prefiero no decir",
+    "changePassword": "Cambiar contraseña",
+    "currentPassword": "Contraseña actual",
+    "newPassword": "Nueva contraseña",
+    "language": "Idioma",
+    "selectLanguage": "Seleccionar idioma"
+  },
+  "product": {
+    "details": "Detalles del producto",
+    "notFound": "Producto no encontrado",
+    "ecoScore": "Puntuación ecológica",
+    "co2": "CO₂",
+    "co2Impact": "Impacto de CO₂",
+    "environmentalImpact": "Resumen del impacto ambiental",
+    "environmentalMetrics": "Métricas ambientales",
+    "co2Emissions": "Emisiones de CO₂",
+    "renewableEnergy": "Energía renovable",
+    "recyclableMaterials": "Materiales reciclables",
+    "waterUsage": "Uso del agua",
+    "landUsage": "Uso del suelo",
+    "dataSource": "Fuente de datos y análisis adicional",
+    "viewDetails": "Ver detalles",
+    "share": "Compartir",
+    "lowImpact": "Impacto bajo",
+    "mediumImpact": "Impacto medio",
+    "highImpact": "Impacto alto"
+  },
+  "scanner": {
+    "title": "Escanear código de barras del producto",
+    "initializing": "Iniciando cámara...",
+    "positionBarcode": "Posiciona el código de barras dentro del área de escaneo",
+    "productNotFound": "Producto no encontrado",
+    "requestAnalysis": "Solicitar análisis adicional"
+  },
+  "rewards": {
+    "title": "Recompensas y cupones",
+    "yourTokens": "Tus tokens",
+    "availableCoupons": "Cupones disponibles",
+    "redeemedCoupons": "Cupones canjeados",
+    "redeem": "Canjear",
+    "tokens": "tokens"
+  }
+}

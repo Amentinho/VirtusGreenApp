@@ -1,0 +1,88 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "search": "Search",
+    "back": "Back"
+  },
+  "nav": {
+    "home": "Home",
+    "rewards": "Rewards",
+    "profile": "Profile",
+    "logout": "Logout",
+    "settings": "Settings",
+    "buyMeCoffee": "Buy Me a Coffee",
+    "watchAds": "Watch Ads"
+  },
+  "home": {
+    "title": "VirtusGreen",
+    "scanBarcode": "Scan Barcode",
+    "scanSubtitle": "Check eco impact & earn tokens",
+    "orDivider": "OR",
+    "searchPlaceholder": "Search products by name, brand or barcode",
+    "searchResults": "Search Results for",
+    "noProducts": "No products found. Try a different search term."
+  },
+  "profile": {
+    "title": "Profile",
+    "editProfile": "Edit Profile",
+    "displayPicture": "Display Picture",
+    "avatar": "Avatar",
+    "character": "Character",
+    "custom": "Custom",
+    "uploadPicture": "Upload Profile Picture",
+    "personalInfo": "Personal Information",
+    "fullName": "Full Name",
+    "email": "Email",
+    "dateOfBirth": "Date of Birth",
+    "selectDate": "Select date",
+    "gender": "Gender",
+    "male": "Male",
+    "female": "Female",
+    "other": "Other",
+    "preferNotToSay": "Prefer not to say",
+    "changePassword": "Change Password",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "language": "Language",
+    "selectLanguage": "Select Language"
+  },
+  "product": {
+    "details": "Product Details",
+    "notFound": "Product Not Found",
+    "ecoScore": "Eco Score",
+    "co2": "CO₂",
+    "co2Impact": "CO₂ Impact",
+    "environmentalImpact": "Environmental Impact Overview",
+    "environmentalMetrics": "Environmental Metrics",
+    "co2Emissions": "CO₂ Emissions",
+    "renewableEnergy": "Renewable Energy",
+    "recyclableMaterials": "Recyclable Materials",
+    "waterUsage": "Water Usage",
+    "landUsage": "Land Usage",
+    "dataSource": "Data Source & Additional Analysis",
+    "viewDetails": "View details",
+    "share": "Share",
+    "lowImpact": "Low Impact",
+    "mediumImpact": "Medium Impact",
+    "highImpact": "High Impact"
+  },
+  "scanner": {
+    "title": "Scan Product Barcode",
+    "initializing": "Initializing camera...",
+    "positionBarcode": "Position the barcode within the scanning area",
+    "productNotFound": "Product Not Found",
+    "requestAnalysis": "Request Additional Analysis"
+  },
+  "rewards": {
+    "title": "Rewards & Coupons",
+    "yourTokens": "Your Tokens",
+    "availableCoupons": "Available Coupons",
+    "redeemedCoupons": "Redeemed Coupons",
+    "redeem": "Redeem",
+    "tokens": "tokens"
+  }
+}
