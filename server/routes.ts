@@ -9,6 +9,25 @@ import { comparePasswords, hashPassword } from "./auth";
 import { sendEmail, generatePasswordResetEmail, generateEmailVerificationToken, generateVerificationEmail, generateProductRequestEmail } from "./emailService";
 import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./paypal";
 
+// Helper function to sort products by data availability
+function sortProductsByDataAvailability(products: any[]): any[] {
+  return products.sort((a, b) => {
+    const aData = a.environmentalImpact;
+    const bData = b.environmentalImpact;
+    
+    // Count non-NA values for each product
+    const countNonNA = (impact: any) => {
+      return Object.values(impact).filter(value => value !== "NA").length;
+    };
+    
+    const aScore = countNonNA(aData);
+    const bScore = countNonNA(bData);
+    
+    // Products with more data come first
+    return bScore - aScore;
+  });
+}
+
 // Helper functions to calculate environmental metrics from Open Food Facts data
 function calculateEcoScore(product: any): number | string {
   // Only use real Eco-Score from OpenFoodFacts
@@ -145,9 +164,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // First search our internal database
     const localProducts = await storage.searchProducts(search || "");
     
-    // If we have local results or no search term, return local results
+    // If we have local results or no search term, return sorted local results
     if (localProducts.length > 0 || !search) {
-      return res.json(localProducts);
+      return res.json(sortProductsByDataAvailability(localProducts));
     }
     
     // If no local results and we have a search term, search Open Food Facts
@@ -218,7 +237,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             })
           );
           
-          return res.json(detailedProducts.filter(Boolean));
+          const validProducts = detailedProducts.filter(Boolean);
+          return res.json(sortProductsByDataAvailability(validProducts));
         }
       }
     } catch (error) {
