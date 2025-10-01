@@ -195,6 +195,9 @@ export default function BarcodeScanner() {
   };
 
   useEffect(() => {
+    // Auto-start scanning when component mounts
+    startScanning();
+    
     return () => {
       stopScanning();
     };
@@ -202,19 +205,6 @@ export default function BarcodeScanner() {
 
   return (
     <div className="space-y-4">
-      <form onSubmit={handleSubmit} className="flex gap-2">
-        <Input
-          value={barcode}
-          onChange={(e) => setBarcode(e.target.value)}
-          placeholder="Enter product barcode..."
-          className="flex-1"
-        />
-        <Button type="submit" disabled={isLoading}>
-          <Scan className="h-4 w-4 mr-2" />
-          {isLoading ? "Searching..." : "Search"}
-        </Button>
-      </form>
-
       <div className="relative">
         {isScanning ? (
           <>
@@ -222,20 +212,15 @@ export default function BarcodeScanner() {
               id="barcode-reader" 
               className="w-full rounded-lg overflow-hidden"
             />
-            <Button
-              variant="destructive"
-              size="icon"
-              className="absolute top-2 right-2 z-10"
-              onClick={stopScanning}
-            >
-              <X className="h-4 w-4" />
-            </Button>
+            <div className="mt-3 text-center text-sm text-gray-600">
+              Position the barcode within the scanning area
+            </div>
           </>
         ) : (
-          <Button onClick={startScanning} className="w-full">
-            <Camera className="h-4 w-4 mr-2" />
-            Start Camera Scanning
-          </Button>
+          <div className="text-center py-8">
+            <Camera className="h-12 w-12 mx-auto mb-3 text-gray-400 animate-pulse" />
+            <p className="text-sm text-gray-600">Initializing camera...</p>
+          </div>
         )}
       </div>
 
