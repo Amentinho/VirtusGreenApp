@@ -23,14 +23,14 @@ export default function MyRewardsPage() {
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
+          <div className="flex justify-between h-24">
             <div className="flex items-center gap-4">
               <Link href="/">
                 <Button variant="ghost" size="icon" data-testid="button-back-home">
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
               </Link>
-              <img src="/logo.jpg" alt="VirtusGreen" className="h-16 w-auto" />
+              <img src="/logo.jpg" alt="VirtusGreen" className="h-20 w-auto" />
             </div>
           </div>
         </div>

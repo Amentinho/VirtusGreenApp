@@ -97,7 +97,7 @@ export default function ProductDetailPage() {
       <div className="min-h-screen bg-gray-50">
         <nav className="bg-white border-b">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
+            <div className="flex justify-between items-center h-24">
               <div className="flex items-center">
                 <Button 
                   variant="ghost" 
@@ -110,7 +110,7 @@ export default function ProductDetailPage() {
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
-                <img src="/logo.jpg" alt="VirtusGreen" className="ml-4 h-16 w-auto" />
+                <img src="/logo.jpg" alt="VirtusGreen" className="ml-4 h-20 w-auto" />
               </div>
               <Link href="/profile">
                 <Button variant="ghost" size="icon" data-testid="button-profile-nav">
@@ -137,7 +137,7 @@ export default function ProductDetailPage() {
       <div className="min-h-screen bg-gray-50">
         <nav className="bg-white border-b">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
+            <div className="flex justify-between items-center h-24">
               <div className="flex items-center">
                 <Button 
                   variant="ghost" 
@@ -150,7 +150,7 @@ export default function ProductDetailPage() {
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
-                <img src="/logo.jpg" alt="VirtusGreen" className="ml-4 h-16 w-auto" />
+                <img src="/logo.jpg" alt="VirtusGreen" className="ml-4 h-20 w-auto" />
               </div>
               <Link href="/profile">
                 <Button variant="ghost" size="icon" data-testid="button-profile-nav">

@@ -26,14 +26,14 @@ export default function LeaderboardPage() {
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center h-16">
+          <div className="flex items-center h-24">
             <Link href="/">
               <Button variant="ghost" size="icon" data-testid="button-back">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             </Link>
             <div className="ml-4 flex items-center">
-              <img src="/logo.jpg" alt="VirtusGreen" className="h-16 w-auto" />
+              <img src="/logo.jpg" alt="VirtusGreen" className="h-20 w-auto" />
             </div>
           </div>
         </div>
