@@ -107,10 +107,10 @@ export default function ProductCard({ product, searchState }: ProductCardProps) 
               type="button"
               variant="ghost"
               size="icon"
-              className="absolute top-[9.75rem] right-[1.25rem] h-6 w-6 hover:bg-white/20 z-10 pointer-events-auto"
+              className="absolute top-[9.5rem] right-[0.75rem] h-8 w-8 hover:bg-white/20 z-10 pointer-events-auto"
               data-testid={`button-card-co2-info-${product.barcode}`}
             >
-              <Info className="h-4 w-4 text-white" />
+              <Info className="h-5 w-5 text-white" />
             </Button>
           </DialogTrigger>
           <DialogContent>
