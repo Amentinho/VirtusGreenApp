@@ -135,7 +135,7 @@ export default function RewardsPage() {
                     <Card key={character.id} data-testid={`card-character-${character.id}`} className="relative flex flex-col h-full">
                       {isEquipped && (
                         <div className="absolute top-2 right-2 z-10">
-                          <Badge className="bg-green-600" data-testid={`badge-equipped-${character.id}`}>
+                          <Badge className="bg-primary" data-testid={`badge-equipped-${character.id}`}>
                             Equipped
                           </Badge>
                         </div>

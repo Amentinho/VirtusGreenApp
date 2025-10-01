@@ -451,7 +451,7 @@ export default function ProductDetailPage() {
                   {!showContactForm ? (
                     <Button 
                       onClick={() => setShowContactForm(true)}
-                      className="bg-green-600 hover:bg-green-700"
+                      className="bg-primary hover:bg-primary/90"
                       data-testid="button-contact-analysis"
                     >
                       <Mail className="h-4 w-4 mr-2" />
@@ -495,7 +495,7 @@ export default function ProductDetailPage() {
                         <Button
                           onClick={() => contactMutation.mutate(contactForm)}
                           disabled={!contactForm.name || !contactForm.email || !contactForm.message || contactMutation.isPending}
-                          className="bg-green-600 hover:bg-green-700"
+                          className="bg-primary hover:bg-primary/90"
                           data-testid="button-send-contact"
                         >
                           {contactMutation.isPending ? "Sending..." : "Send Message"}
