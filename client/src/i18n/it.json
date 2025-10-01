@@ -6,7 +6,8 @@
     "cancel": "Annulla",
     "close": "Chiudi",
     "search": "Cerca",
-    "back": "Indietro"
+    "back": "Indietro",
+    "success": "Successo!"
   },
   "nav": {
     "home": "Home",
@@ -15,7 +16,10 @@
     "logout": "Disconnetti",
     "settings": "Impostazioni",
     "buyMeCoffee": "Offrimi un caffè",
-    "watchAds": "Guarda annunci"
+    "watchAds": "Guarda annunci",
+    "myProfile": "Il mio profilo",
+    "myReferralCode": "Il mio codice referral",
+    "myRewards": "I miei premi"
   },
   "home": {
     "title": "VirtusGreen",
@@ -83,6 +87,13 @@
     "availableCoupons": "Coupon disponibili",
     "redeemedCoupons": "Coupon riscattati",
     "redeem": "Riscatta",
-    "tokens": "token"
+    "tokens": "token",
+    "characters": "Personaggi",
+    "coupons": "Coupon",
+    "redeemSuccess": "Premio riscattato con successo!",
+    "redeemFailed": "Impossibile riscattare il premio",
+    "characterPurchased": "Personaggio acquistato!",
+    "characterUpdated": "Il tuo profilo è stato aggiornato con il nuovo personaggio.",
+    "purchaseFailed": "Impossibile acquistare il personaggio"
   }
 }

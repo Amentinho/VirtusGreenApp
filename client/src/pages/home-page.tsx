@@ -15,8 +15,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useTranslation } from "react-i18next";
 
 export default function HomePage() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [activeSearch, setActiveSearch] = useState("");
   const [showScanner, setShowScanner] = useState(false);
@@ -61,12 +63,12 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <h1 className="text-xl font-bold text-green-600">VirtusGreen</h1>
+              <h1 className="text-xl font-bold text-green-600">{t('home.title')}</h1>
             </div>
             <div className="flex items-center gap-4">
               <TokenDisplay />
               <Link href="/rewards">
-                <Button variant="outline">Rewards</Button>
+                <Button variant="outline">{t('nav.rewards')}</Button>
               </Link>
               <ProfileDropdown />
             </div>
@@ -90,12 +92,12 @@ export default function HomePage() {
                   <div className="bg-white/20 backdrop-blur-sm rounded-full p-2">
                     <Camera className="h-6 w-6" />
                   </div>
-                  <span>Scan Barcode</span>
+                  <span>{t('home.scanBarcode')}</span>
                 </div>
               </Button>
             </div>
             <p className="text-sm text-muted-foreground">
-              Check eco impact & earn tokens
+              {t('home.scanSubtitle')}
             </p>
           </div>
 
@@ -105,7 +107,7 @@ export default function HomePage() {
               <div className="w-full border-t border-gray-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-gray-50 text-gray-500 font-medium">OR</span>
+              <span className="px-4 bg-gray-50 text-gray-500 font-medium">{t('home.orDivider')}</span>
             </div>
           </div>
 
@@ -116,7 +118,7 @@ export default function HomePage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Search products by name, brand or barcode"
+                placeholder={t('home.searchPlaceholder')}
                 className="flex-1"
                 data-testid="input-product-search"
               />
@@ -129,11 +131,11 @@ export default function HomePage() {
             {activeSearch && (
               <div className="mt-8">
                 <h2 className="text-lg font-semibold mb-4">
-                  Search Results for "{activeSearch}"
+                  {t('home.searchResults')} "{activeSearch}"
                 </h2>
                 <div className="grid gap-6 md:grid-cols-2">
                   {isLoading ? (
-                    <div className="col-span-full text-center py-8">Loading products...</div>
+                    <div className="col-span-full text-center py-8">{t('common.loading')}</div>
                   ) : products && products.length > 0 ? (
                     products.map((product) => (
                       <ProductCard 
@@ -144,7 +146,7 @@ export default function HomePage() {
                     ))
                   ) : (
                     <div className="col-span-full text-center py-8 text-muted-foreground">
-                      No products found. Try a different search term.
+                      {t('home.noProducts')}
                     </div>
                   )}
                 </div>
@@ -158,7 +160,7 @@ export default function HomePage() {
       <Dialog open={showScanner} onOpenChange={setShowScanner}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Scan Product Barcode</DialogTitle>
+            <DialogTitle>{t('scanner.title')}</DialogTitle>
           </DialogHeader>
           <BarcodeScanner />
         </DialogContent>

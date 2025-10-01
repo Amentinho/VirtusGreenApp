@@ -10,8 +10,10 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { ArrowLeft, Coins, User } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function RewardsPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { user } = useAuth();
   const { data: rewards, isLoading: isLoadingRewards } = useQuery<Reward[]>({
@@ -35,14 +37,14 @@ export default function RewardsPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       queryClient.invalidateQueries({ queryKey: ["/api/rewards"] });
       toast({
-        title: "Success!",
-        description: "Reward redeemed successfully!",
+        title: t('common.success'),
+        description: t('rewards.redeemSuccess'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to redeem reward",
+        title: t('common.error'),
+        description: error.message || t('rewards.redeemFailed'),
         variant: "destructive",
       });
     },
@@ -57,14 +59,14 @@ export default function RewardsPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/characters"] });
       queryClient.invalidateQueries({ queryKey: ["/api/users/characters"] });
       toast({
-        title: "Character Purchased!",
-        description: "Your profile has been updated with your new character.",
+        title: t('rewards.characterPurchased'),
+        description: t('rewards.characterUpdated'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to purchase character",
+        title: t('common.error'),
+        description: error.message || t('rewards.purchaseFailed'),
         variant: "destructive",
       });
     },
@@ -81,7 +83,7 @@ export default function RewardsPage() {
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
               </Link>
-              <h1 className="text-xl font-bold text-green-600">Rewards</h1>
+              <h1 className="text-xl font-bold text-green-600">{t('rewards.title')}</h1>
             </div>
             <div className="flex items-center gap-2">
               <TokenDisplay />
@@ -101,7 +103,7 @@ export default function RewardsPage() {
           <div className="flex justify-center gap-4">
             <div className="inline-flex items-center gap-2 bg-white rounded-lg px-6 py-4 shadow-sm border">
               <Coins className="h-5 w-5 text-yellow-500" />
-              <span className="text-lg font-semibold text-gray-700">Your available tokens:</span>
+              <span className="text-lg font-semibold text-gray-700">{t('rewards.yourTokens')}:</span>
               <span className="text-2xl font-bold text-green-600" data-testid="text-available-tokens">
                 {user?.tokens || 0}
               </span>
@@ -116,8 +118,8 @@ export default function RewardsPage() {
 
         <Tabs defaultValue="characters" className="w-full">
           <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
-            <TabsTrigger value="characters">Characters</TabsTrigger>
-            <TabsTrigger value="coupons">Coupons</TabsTrigger>
+            <TabsTrigger value="characters">{t('rewards.characters')}</TabsTrigger>
+            <TabsTrigger value="coupons">{t('rewards.coupons')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="characters">

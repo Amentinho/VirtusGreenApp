@@ -6,7 +6,8 @@
     "cancel": "Cancel",
     "close": "Close",
     "search": "Search",
-    "back": "Back"
+    "back": "Back",
+    "success": "Success!"
   },
   "nav": {
     "home": "Home",
@@ -15,7 +16,10 @@
     "logout": "Logout",
     "settings": "Settings",
     "buyMeCoffee": "Buy Me a Coffee",
-    "watchAds": "Watch Ads"
+    "watchAds": "Watch Ads",
+    "myProfile": "My Profile",
+    "myReferralCode": "My Referral Code",
+    "myRewards": "My Rewards"
   },
   "home": {
     "title": "VirtusGreen",
@@ -83,6 +87,13 @@
     "availableCoupons": "Available Coupons",
     "redeemedCoupons": "Redeemed Coupons",
     "redeem": "Redeem",
-    "tokens": "tokens"
+    "tokens": "tokens",
+    "characters": "Characters",
+    "coupons": "Coupons",
+    "redeemSuccess": "Reward redeemed successfully!",
+    "redeemFailed": "Failed to redeem reward",
+    "characterPurchased": "Character Purchased!",
+    "characterUpdated": "Your profile has been updated with your new character.",
+    "purchaseFailed": "Failed to purchase character"
   }
 }
