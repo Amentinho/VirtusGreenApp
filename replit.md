@@ -84,7 +84,20 @@ npx cap open android      # Open Android Studio
 
 # Recent Changes
 
-## October 1, 2025
+## October 1, 2025 (Latest)
+- **Language selector on main page**: Added global language selector to home page navigation accessible without login
+  - New LanguageSelector component with dropdown for EN/ES/IT languages
+  - Persists language preference to localStorage for unauthenticated users
+  - Positioned in navbar alongside existing user controls
+- **Secure session expiration configured**: Implemented production-grade session security with best practices
+  - Rolling session expiration: 24-hour maxAge that extends on user activity
+  - httpOnly cookies: Prevents client-side JavaScript access (XSS protection)
+  - Secure flag: Enforced for production HTTPS environments
+  - sameSite: 'lax' for CSRF protection while maintaining usability
+  - Custom session name to prevent fingerprinting
+  - Session settings balance security with user experience for product discovery workflow
+
+## October 1, 2025 (Earlier)
 - **Daily login streak gamification**: Weekly streak system with progressive token rewards
   - Rewards: Day 1 (10 tokens), Day 2 (30), Day 3 (60), Day 4 (90), Day 5 (120), Day 6 (150), Day 7 (250)
   - Week starts on Monday; missing a day resets streak to 10 tokens

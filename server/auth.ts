@@ -30,11 +30,21 @@ export async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
+  const isProduction = process.env.NODE_ENV === "production";
+  
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET!,
     resave: false,
     saveUninitialized: false,
+    rolling: true, // Extends session on activity
     store: storage.sessionStore,
+    cookie: {
+      httpOnly: true, // Prevents client-side JS access (XSS protection)
+      secure: isProduction, // HTTPS only in production
+      sameSite: "lax", // CSRF protection while allowing some cross-site navigation
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours - rolling expiration on activity
+    },
+    name: "virtusgreen.sid", // Custom name to avoid fingerprinting
   };
 
   app.set("trust proxy", 1);
