@@ -83,7 +83,7 @@ export default function RewardsPage() {
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
               </Link>
-              <img src="/logo.jpg" alt="VirtusGreen" className="h-12 w-auto" />
+              <img src="/logo.jpg" alt="VirtusGreen" className="h-16 w-auto" />
             </div>
             <div className="flex items-center gap-2">
               <TokenDisplay />

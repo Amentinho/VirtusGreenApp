@@ -33,7 +33,7 @@ export default function LeaderboardPage() {
               </Button>
             </Link>
             <div className="ml-4 flex items-center">
-              <img src="/logo.jpg" alt="VirtusGreen" className="h-12 w-auto" />
+              <img src="/logo.jpg" alt="VirtusGreen" className="h-16 w-auto" />
             </div>
           </div>
         </div>
