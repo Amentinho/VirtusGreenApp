@@ -211,6 +211,19 @@ export const adViews = pgTable("ad_views", {
   index("idx_ad_views_user_date").on(table.userId, table.viewedAt),
 ]);
 
+export const loginStreaks = pgTable("login_streaks", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull(),
+  loginDate: timestamp("login_date").notNull(), // Date of login (time set to 00:00:00)
+  weekStartDate: timestamp("week_start_date").notNull(), // Monday of that week
+  consecutiveDays: integer("consecutive_days").notNull(), // Current streak count (1-7)
+  tokensAwarded: integer("tokens_awarded").notNull(), // Tokens given for this login
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("idx_login_streaks_user_date").on(table.userId, table.loginDate),
+  index("idx_login_streaks_user").on(table.userId),
+]);
+
 // Base schema for user credentials
 const userCredentialsSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -402,6 +415,11 @@ export const insertAdViewSchema = createInsertSchema(adViews).omit({
   tokensAwarded: true
 });
 
+export const insertLoginStreakSchema = createInsertSchema(loginStreaks).omit({
+  id: true,
+  createdAt: true
+});
+
 export type InsertProductShare = z.infer<typeof insertProductShareSchema>;
 export type InsertAppShare = z.infer<typeof insertAppShareSchema>;
 export type InsertReferralEvent = z.infer<typeof insertReferralEventSchema>;
@@ -412,3 +430,5 @@ export type ProductRequest = typeof productRequests.$inferSelect;
 export type InsertProductRequest = z.infer<typeof insertProductRequestSchema>;
 export type AdView = typeof adViews.$inferSelect;
 export type InsertAdView = z.infer<typeof insertAdViewSchema>;
+export type LoginStreak = typeof loginStreaks.$inferSelect;
+export type InsertLoginStreak = z.infer<typeof insertLoginStreakSchema>;

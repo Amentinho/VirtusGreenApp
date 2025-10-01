@@ -96,5 +96,37 @@
     "characterUpdated": "Tu perfil ha sido actualizado con tu nuevo personaje.",
     "purchaseFailed": "Error al comprar el personaje",
     "purchaseToReveal": "Compra para revelar la descripción"
+  },
+  "days": {
+    "monday": "Lunes",
+    "tuesday": "Martes",
+    "wednesday": "Miércoles",
+    "thursday": "Jueves",
+    "friday": "Viernes",
+    "saturday": "Sábado",
+    "sunday": "Domingo"
+  },
+  "loginStreak": {
+    "title": "Racha de inicio de sesión semanal",
+    "subtitle": "¡Inicia sesión todos los días para ganar más tokens!",
+    "currentStreak": "Racha actual",
+    "consecutiveDays": "{{count}} día seguido",
+    "consecutiveDays_plural": "{{count}} días seguidos",
+    "tokensEarned": "Tokens ganados",
+    "totalThisWeek": "Total esta semana",
+    "rewards": "Recompensas diarias",
+    "day1": "Día 1: 10 tokens",
+    "day2": "Día 2: 30 tokens",
+    "day3": "Día 3: 60 tokens",
+    "day4": "Día 4: 90 tokens",
+    "day5": "Día 5: 120 tokens",
+    "day6": "Día 6: 150 tokens",
+    "day7": "Día 7: 250 tokens",
+    "keepItUp": "¡Sigue así!",
+    "missedDay": "Has perdido un día. Comienza de nuevo con 10 tokens.",
+    "welcomeBack": "¡Bienvenido de nuevo!",
+    "earnedToday": "¡Has ganado {{tokens}} tokens hoy!",
+    "alreadyLoggedIn": "¡Ya has iniciado sesión hoy!",
+    "comeBackTomorrow": "Vuelve mañana para continuar tu racha."
   }
 }

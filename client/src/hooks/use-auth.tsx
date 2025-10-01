@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext, useEffect } from "react";
+import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 import {
   useQuery,
   useMutation,
@@ -8,6 +8,24 @@ import { LoginCredentials, User as SelectUser, InsertUser } from "@shared/schema
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import { LoginStreakDialog } from "@/components/login-streak-dialog";
+
+type StreakData = {
+  weekDays: Array<{
+    day: string;
+    date: Date;
+    loggedIn: boolean;
+    tokens: number;
+  }>;
+  consecutiveDays: number;
+  totalTokensThisWeek: number;
+};
+
+type TodayReward = {
+  tokensAwarded: number;
+  consecutiveDays: number;
+  isNewLogin: boolean;
+};
 
 type AuthContextType = {
   user: SelectUser | null;
@@ -22,6 +40,9 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const { i18n } = useTranslation();
+  const [showStreakDialog, setShowStreakDialog] = useState(false);
+  const [streakData, setStreakData] = useState<StreakData | null>(null);
+  const [todayReward, setTodayReward] = useState<TodayReward | null>(null);
   
   const {
     data: user,
@@ -43,8 +64,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiRequest("POST", "/api/login", credentials);
       return await res.json();
     },
-    onSuccess: (user: SelectUser) => {
+    onSuccess: async (user: SelectUser) => {
       queryClient.setQueryData(["/api/auth/user"], user);
+      
+      // Record daily login and fetch streak data
+      try {
+        const loginRes = await apiRequest("POST", "/api/login-streak");
+        const loginData = await loginRes.json();
+        
+        const streakRes = await apiRequest("GET", "/api/login-streak/current");
+        const streakInfo = await streakRes.json();
+        
+        // Convert date strings back to Date objects
+        if (streakInfo.weekDays) {
+          streakInfo.weekDays = streakInfo.weekDays.map((day: any) => ({
+            ...day,
+            date: new Date(day.date)
+          }));
+        }
+        
+        setTodayReward(loginData);
+        setStreakData(streakInfo);
+        setShowStreakDialog(true);
+      } catch (err) {
+        console.error("Failed to fetch login streak:", err);
+      }
     },
     onError: (error: Error) => {
       // Don't handle errors here - let the component handle them
@@ -122,6 +166,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
+      <LoginStreakDialog
+        open={showStreakDialog}
+        onOpenChange={setShowStreakDialog}
+        streakData={streakData}
+        todayReward={todayReward}
+      />
     </AuthContext.Provider>
   );
 }

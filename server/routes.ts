@@ -884,6 +884,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Login streak endpoints
+  app.post("/api/login-streak", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const result = await storage.recordDailyLogin(userId);
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error recording login streak:", error);
+      res.status(500).json({ error: "Failed to record login streak" });
+    }
+  });
+
+  app.get("/api/login-streak/current", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const streakData = await storage.getCurrentWeekStreak(userId);
+      
+      res.json(streakData);
+    } catch (error) {
+      console.error("Error getting login streak:", error);
+      res.status(500).json({ error: "Failed to get login streak" });
+    }
+  });
+
   // Email verification endpoint
   app.get("/verify-email", async (req, res) => {
     try {

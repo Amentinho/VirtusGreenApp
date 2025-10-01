@@ -96,5 +96,37 @@
     "characterUpdated": "Your profile has been updated with your new character.",
     "purchaseFailed": "Failed to purchase character",
     "purchaseToReveal": "Purchase to reveal description"
+  },
+  "days": {
+    "monday": "Monday",
+    "tuesday": "Tuesday",
+    "wednesday": "Wednesday",
+    "thursday": "Thursday",
+    "friday": "Friday",
+    "saturday": "Saturday",
+    "sunday": "Sunday"
+  },
+  "loginStreak": {
+    "title": "Weekly Login Streak",
+    "subtitle": "Login every day to earn more tokens!",
+    "currentStreak": "Current Streak",
+    "consecutiveDays": "{{count}} day in a row",
+    "consecutiveDays_plural": "{{count}} days in a row",
+    "tokensEarned": "Tokens Earned",
+    "totalThisWeek": "Total This Week",
+    "rewards": "Daily Rewards",
+    "day1": "Day 1: 10 tokens",
+    "day2": "Day 2: 30 tokens",
+    "day3": "Day 3: 60 tokens",
+    "day4": "Day 4: 90 tokens",
+    "day5": "Day 5: 120 tokens",
+    "day6": "Day 6: 150 tokens",
+    "day7": "Day 7: 250 tokens",
+    "keepItUp": "Keep it up!",
+    "missedDay": "You missed a day. Start again from 10 tokens.",
+    "welcomeBack": "Welcome back!",
+    "earnedToday": "You earned {{tokens}} tokens today!",
+    "alreadyLoggedIn": "You've already logged in today!",
+    "comeBackTomorrow": "Come back tomorrow to continue your streak."
   }
 }

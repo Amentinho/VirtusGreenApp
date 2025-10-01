@@ -96,5 +96,37 @@
     "characterUpdated": "Il tuo profilo è stato aggiornato con il nuovo personaggio.",
     "purchaseFailed": "Impossibile acquistare il personaggio",
     "purchaseToReveal": "Acquista per rivelare la descrizione"
+  },
+  "days": {
+    "monday": "Lunedì",
+    "tuesday": "Martedì",
+    "wednesday": "Mercoledì",
+    "thursday": "Giovedì",
+    "friday": "Venerdì",
+    "saturday": "Sabato",
+    "sunday": "Domenica"
+  },
+  "loginStreak": {
+    "title": "Serie di accessi settimanali",
+    "subtitle": "Accedi ogni giorno per guadagnare più token!",
+    "currentStreak": "Serie attuale",
+    "consecutiveDays": "{{count}} giorno consecutivo",
+    "consecutiveDays_plural": "{{count}} giorni consecutivi",
+    "tokensEarned": "Token guadagnati",
+    "totalThisWeek": "Totale questa settimana",
+    "rewards": "Premi giornalieri",
+    "day1": "Giorno 1: 10 token",
+    "day2": "Giorno 2: 30 token",
+    "day3": "Giorno 3: 60 token",
+    "day4": "Giorno 4: 90 token",
+    "day5": "Giorno 5: 120 token",
+    "day6": "Giorno 6: 150 token",
+    "day7": "Giorno 7: 250 token",
+    "keepItUp": "Continua così!",
+    "missedDay": "Hai saltato un giorno. Ricomincia da 10 token.",
+    "welcomeBack": "Bentornato!",
+    "earnedToday": "Hai guadagnato {{tokens}} token oggi!",
+    "alreadyLoggedIn": "Hai già effettuato l'accesso oggi!",
+    "comeBackTomorrow": "Torna domani per continuare la serie."
   }
 }

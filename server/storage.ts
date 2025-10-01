@@ -4,7 +4,7 @@ import { Product, User, Reward, Character, UserPurchase, InsertUser, CreateUser,
 import { customAlphabet } from "nanoid";
 import connectPg from "connect-pg-simple";
 import { db } from "./db";
-import { users, products, rewards, characters, userCharacters, userPurchases, productShares, appShares, referralEvents, userActions, socialFollowVerifications, tokenEarnings, productRequests, adViews } from "@shared/schema";
+import { users, products, rewards, characters, userCharacters, userPurchases, productShares, appShares, referralEvents, userActions, socialFollowVerifications, tokenEarnings, productRequests, adViews, loginStreaks } from "@shared/schema";
 import { eq, sql, and } from "drizzle-orm";
 
 const MemoryStore = createMemoryStore(session);
@@ -91,6 +91,14 @@ export interface IStorage {
   verifyTelegram(userId: string, telegramUsername: string): Promise<{ verified: boolean; tokensAwarded: number }>;
   recordAdView(userId: string): Promise<{ success: boolean; tokensAwarded: number; adsWatchedToday: number; dailyLimit: number }>;
   getAdStats(userId: string): Promise<{ adsWatchedToday: number; dailyLimit: number; tokensEarnedToday: number }>;
+  
+  // Login streak operations
+  recordDailyLogin(userId: string): Promise<{ tokensAwarded: number; consecutiveDays: number; isNewLogin: boolean }>;
+  getCurrentWeekStreak(userId: string): Promise<{ 
+    weekDays: Array<{ day: string; date: Date; loggedIn: boolean; tokens: number }>;
+    consecutiveDays: number;
+    totalTokensThisWeek: number;
+  }>;
 
   // Session store
   sessionStore: session.Store;
@@ -1177,6 +1185,176 @@ export class DatabaseStorage implements IStorage {
       tokensEarnedToday: adsToday[0]?.totalTokens || 0
     };
   }
+
+  async recordDailyLogin(userId: string): Promise<{ tokensAwarded: number; consecutiveDays: number; isNewLogin: boolean }> {
+    // Get today's date (normalized to midnight UTC)
+    const now = new Date();
+    const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    
+    // Get Monday of this week
+    const dayOfWeek = today.getUTCDay();
+    const diff = (dayOfWeek === 0 ? -6 : 1) - dayOfWeek; // Monday is 1
+    const monday = new Date(today);
+    monday.setUTCDate(today.getUTCDate() + diff);
+    
+    // Get yesterday's date
+    const yesterday = new Date(today);
+    yesterday.setUTCDate(today.getUTCDate() - 1);
+    
+    // Check if user logged in yesterday (within this week)
+    const [yesterdayLogin] = await db
+      .select()
+      .from(loginStreaks)
+      .where(
+        and(
+          eq(loginStreaks.userId, userId),
+          eq(loginStreaks.loginDate, yesterday),
+          eq(loginStreaks.weekStartDate, monday)
+        )
+      );
+    
+    // Calculate consecutive days and tokens
+    let consecutiveDays = yesterdayLogin ? yesterdayLogin.consecutiveDays + 1 : 1;
+    
+    // Calculate tokens based on streak
+    const tokenMap: Record<number, number> = {
+      1: 10,
+      2: 30,
+      3: 60,
+      4: 90,
+      5: 120,
+      6: 150,
+      7: 250
+    };
+    const tokensAwarded = tokenMap[consecutiveDays] || 10;
+    
+    // Use INSERT with ON CONFLICT DO NOTHING for idempotency
+    // This ensures only one login record per day per user
+    const insertResult = await db
+      .insert(loginStreaks)
+      .values({
+        userId,
+        loginDate: today,
+        weekStartDate: monday,
+        consecutiveDays,
+        tokensAwarded
+      })
+      .onConflictDoNothing({ target: [loginStreaks.userId, loginStreaks.loginDate] })
+      .returning();
+    
+    // If no row was inserted, user already logged in today
+    if (insertResult.length === 0) {
+      // Get existing login data
+      const [existingLogin] = await db
+        .select()
+        .from(loginStreaks)
+        .where(
+          and(
+            eq(loginStreaks.userId, userId),
+            eq(loginStreaks.loginDate, today)
+          )
+        );
+      
+      return {
+        tokensAwarded: 0,
+        consecutiveDays: existingLogin?.consecutiveDays || 1,
+        isNewLogin: false
+      };
+    }
+    
+    // Award tokens atomically
+    await db
+      .update(users)
+      .set({
+        tokens: sql`${users.tokens} + ${tokensAwarded}`,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId));
+    
+    // Record token earning
+    await this.recordTokenEarning(
+      userId,
+      "login_streak",
+      tokensAwarded,
+      `Day ${consecutiveDays} login streak bonus`
+    );
+    
+    return {
+      tokensAwarded,
+      consecutiveDays,
+      isNewLogin: true
+    };
+  }
+
+  async getCurrentWeekStreak(userId: string): Promise<{ 
+    weekDays: Array<{ day: string; date: Date; loggedIn: boolean; tokens: number }>;
+    consecutiveDays: number;
+    totalTokensThisWeek: number;
+  }> {
+    // Get today's date
+    const now = new Date();
+    const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    
+    // Get Monday of this week
+    const dayOfWeek = today.getUTCDay();
+    const diff = (dayOfWeek === 0 ? -6 : 1) - dayOfWeek; // Monday is 1
+    const monday = new Date(today);
+    monday.setUTCDate(today.getUTCDate() + diff);
+    
+    // Get all logins for this week
+    const weekLogins = await db
+      .select()
+      .from(loginStreaks)
+      .where(
+        and(
+          eq(loginStreaks.userId, userId),
+          eq(loginStreaks.weekStartDate, monday)
+        )
+      );
+    
+    // Create a map of login dates to tokens
+    const loginMap = new Map<string, number>();
+    for (const login of weekLogins) {
+      const dateKey = login.loginDate.toISOString().split('T')[0];
+      loginMap.set(dateKey, login.tokensAwarded);
+    }
+    
+    // Build array of week days
+    const weekDays = [];
+    const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(monday);
+      date.setUTCDate(monday.getUTCDate() + i);
+      const dateKey = date.toISOString().split('T')[0];
+      
+      weekDays.push({
+        day: dayNames[i],
+        date,
+        loggedIn: loginMap.has(dateKey),
+        tokens: loginMap.get(dateKey) || 0
+      });
+    }
+    
+    // Calculate consecutive days (from Monday until first gap)
+    let consecutiveDays = 0;
+    for (const day of weekDays) {
+      if (day.loggedIn) {
+        consecutiveDays++;
+      } else {
+        break;
+      }
+    }
+    
+    // Calculate total tokens this week
+    const totalTokensThisWeek = weekLogins.reduce((sum, login) => sum + login.tokensAwarded, 0);
+    
+    return {
+      weekDays,
+      consecutiveDays,
+      totalTokensThisWeek
+    };
+  }
 }
 
 export class MemStorage implements IStorage {
@@ -1192,6 +1370,7 @@ export class MemStorage implements IStorage {
   private socialVerifications: Array<{ userId: string; platform: string; verificationCode: string; status: string; createdAt: Date; tokensAwarded?: number }>;
   private tokenEarnings: Array<{ userId: string; source: string; amount: number; description: string; earnedAt: Date }>;
   private adViews: Array<{ userId: string; tokensAwarded: number; viewedAt: Date }>;
+  private loginStreaks: Array<{ userId: string; loginDate: Date; weekStartDate: Date; consecutiveDays: number; tokensAwarded: number }>;
   sessionStore: session.Store;
   currentId: { products: number; rewards: number; characters: number; userPurchases: number };
 
@@ -1208,6 +1387,7 @@ export class MemStorage implements IStorage {
     this.socialVerifications = [];
     this.tokenEarnings = [];
     this.adViews = [];
+    this.loginStreaks = [];
     this.currentId = { products: 1, rewards: 1, characters: 1, userPurchases: 1 };
     this.sessionStore = new MemoryStore({ checkPeriod: 86400000 });
 
@@ -2121,6 +2301,113 @@ export class MemStorage implements IStorage {
       dailyLimit: AD_VIEW_DAILY_LIMIT,
       tokensEarnedToday
     };
+  }
+
+  async recordDailyLogin(userId: string): Promise<{ tokensAwarded: number; consecutiveDays: number; isNewLogin: boolean }> {
+    const now = new Date();
+    const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    
+    // Get Monday of this week
+    const dayOfWeek = today.getUTCDay();
+    const diff = (dayOfWeek === 0 ? -6 : 1) - dayOfWeek;
+    const monday = new Date(today);
+    monday.setUTCDate(today.getUTCDate() + diff);
+    
+    // Check if user already logged in today
+    const todayKey = today.toISOString().split('T')[0];
+    const existingLogin = this.loginStreaks.find(
+      s => s.userId === userId && s.loginDate.toISOString().split('T')[0] === todayKey
+    );
+    
+    if (existingLogin) {
+      return {
+        tokensAwarded: 0,
+        consecutiveDays: existingLogin.consecutiveDays,
+        isNewLogin: false
+      };
+    }
+    
+    // Get yesterday's date
+    const yesterday = new Date(today);
+    yesterday.setUTCDate(today.getUTCDate() - 1);
+    const yesterdayKey = yesterday.toISOString().split('T')[0];
+    
+    const yesterdayLogin = this.loginStreaks.find(
+      s => s.userId === userId && s.loginDate.toISOString().split('T')[0] === yesterdayKey
+    );
+    
+    const consecutiveDays = yesterdayLogin ? yesterdayLogin.consecutiveDays + 1 : 1;
+    const tokenMap: Record<number, number> = { 1: 10, 2: 30, 3: 60, 4: 90, 5: 120, 6: 150, 7: 250 };
+    const tokensAwarded = tokenMap[consecutiveDays] || 10;
+    
+    this.loginStreaks.push({
+      userId,
+      loginDate: today,
+      weekStartDate: monday,
+      consecutiveDays,
+      tokensAwarded
+    });
+    
+    const user = await this.getUser(userId);
+    if (user) {
+      user.tokens += tokensAwarded;
+      user.updatedAt = new Date();
+      this.users.set(userId, user);
+    }
+    
+    await this.recordTokenEarning(userId, "login_streak", tokensAwarded, `Day ${consecutiveDays} login streak bonus`);
+    
+    return { tokensAwarded, consecutiveDays, isNewLogin: true };
+  }
+
+  async getCurrentWeekStreak(userId: string): Promise<{ 
+    weekDays: Array<{ day: string; date: Date; loggedIn: boolean; tokens: number }>;
+    consecutiveDays: number;
+    totalTokensThisWeek: number;
+  }> {
+    const now = new Date();
+    const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    
+    const dayOfWeek = today.getUTCDay();
+    const diff = (dayOfWeek === 0 ? -6 : 1) - dayOfWeek;
+    const monday = new Date(today);
+    monday.setUTCDate(today.getUTCDate() + diff);
+    
+    const weekLogins = this.loginStreaks.filter(s => 
+      s.userId === userId && 
+      s.weekStartDate.toISOString().split('T')[0] === monday.toISOString().split('T')[0]
+    );
+    
+    const loginMap = new Map<string, number>();
+    for (const login of weekLogins) {
+      loginMap.set(login.loginDate.toISOString().split('T')[0], login.tokensAwarded);
+    }
+    
+    const weekDays = [];
+    const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(monday);
+      date.setUTCDate(monday.getUTCDate() + i);
+      const dateKey = date.toISOString().split('T')[0];
+      
+      weekDays.push({
+        day: dayNames[i],
+        date,
+        loggedIn: loginMap.has(dateKey),
+        tokens: loginMap.get(dateKey) || 0
+      });
+    }
+    
+    let consecutiveDays = 0;
+    for (const day of weekDays) {
+      if (day.loggedIn) consecutiveDays++;
+      else break;
+    }
+    
+    const totalTokensThisWeek = weekLogins.reduce((sum, login) => sum + login.tokensAwarded, 0);
+    
+    return { weekDays, consecutiveDays, totalTokensThisWeek };
   }
 }
 
