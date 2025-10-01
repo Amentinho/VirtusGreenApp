@@ -85,10 +85,11 @@ npx cap open android      # Open Android Studio
 # Recent Changes
 
 ## October 1, 2025 (Latest)
-- **Language selector on main page**: Added global language selector to home page navigation accessible without login
+- **Language selector on login page**: Added global language selector to authentication page accessible without login
   - New LanguageSelector component with dropdown for EN/ES/IT languages
   - Persists language preference to localStorage for unauthenticated users
-  - Positioned in navbar alongside existing user controls
+  - Positioned in top-right corner of login/registration page
+  - Also available in home page navigation and profile dropdown for authenticated users
 - **Secure session expiration configured**: Implemented production-grade session security with best practices
   - Rolling session expiration: 24-hour maxAge that extends on user activity
   - httpOnly cookies: Prevents client-side JavaScript access (XSS protection)

@@ -16,6 +16,7 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import LanguageSelector from "@/components/language-selector";
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
@@ -104,6 +105,9 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen grid md:grid-cols-2">
+      <div className="absolute top-4 right-4 z-10">
+        <LanguageSelector />
+      </div>
       <div className="flex items-center justify-center p-8">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
