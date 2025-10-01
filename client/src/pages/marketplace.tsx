@@ -132,7 +132,7 @@ export default function RewardsPage() {
                   const isEquipped = user?.currentCharacterId === character.id;
 
                   return (
-                    <Card key={character.id} data-testid={`card-character-${character.id}`} className="relative">
+                    <Card key={character.id} data-testid={`card-character-${character.id}`} className="relative flex flex-col h-full">
                       {isEquipped && (
                         <div className="absolute top-2 right-2 z-10">
                           <Badge className="bg-green-600" data-testid={`badge-equipped-${character.id}`}>
@@ -167,18 +167,18 @@ export default function RewardsPage() {
                         </div>
                         <CardTitle className="text-center">{character.title}</CardTitle>
                       </CardHeader>
-                      <CardContent>
+                      <CardContent className="flex-1 flex flex-col">
                         {isOwned ? (
-                          <p className="text-gray-600 mb-4 text-sm">{character.description}</p>
+                          <p className="text-gray-600 mb-4 text-sm flex-1">{character.description}</p>
                         ) : (
                           <p 
-                            className="text-gray-400 mb-4 text-sm italic"
+                            className="text-gray-400 mb-4 text-sm italic flex-1"
                             data-testid={`placeholder-description-${character.id}`}
                           >
                             {t('rewards.purchaseToReveal')}
                           </p>
                         )}
-                        <div className="space-y-3">
+                        <div className="space-y-3 mt-auto">
                           <div className="flex items-center justify-between">
                             <span className="font-medium text-green-600" data-testid={`text-character-cost-${character.id}`}>
                               {character.tokenCost} tokens
