@@ -113,9 +113,8 @@ export default function AuthPage() {
       <div className="flex items-center justify-center p-8">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <CardTitle className="flex items-center justify-center gap-3">
-              <img src="/virtusgreen-logo.png" alt="VirtusGreen" className="h-12 w-12" />
-              <span className="text-3xl font-bold text-primary">VirtusGreen</span>
+            <CardTitle className="flex items-center justify-center">
+              <img src="/attached_assets/aaa_1759351925198.jpg" alt="VirtusGreen" className="h-16 w-auto" />
             </CardTitle>
           </CardHeader>
           <CardContent>

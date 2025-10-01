@@ -88,9 +88,8 @@ export default function HomePage() {
       <nav className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
-            <div className="flex items-center gap-3">
-              <img src="/virtusgreen-logo.png" alt="VirtusGreen" className="h-8 w-8" />
-              <span className="text-2xl font-bold text-primary">VirtusGreen</span>
+            <div className="flex items-center">
+              <img src="/attached_assets/aaa_1759351925198.jpg" alt="VirtusGreen" className="h-12 w-auto" />
             </div>
             <div className="flex items-center gap-4">
               <Button 

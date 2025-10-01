@@ -110,10 +110,7 @@ export default function ProductDetailPage() {
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
-                <div className="ml-4 flex items-center gap-3">
-                  <img src="/virtusgreen-logo.png" alt="VirtusGreen" className="h-8 w-8" />
-                  <span className="text-2xl font-bold text-primary">VirtusGreen</span>
-                </div>
+                <img src="/attached_assets/aaa_1759351925198.jpg" alt="VirtusGreen" className="ml-4 h-12 w-auto" />
               </div>
               <Link href="/profile">
                 <Button variant="ghost" size="icon" data-testid="button-profile-nav">
@@ -153,10 +150,7 @@ export default function ProductDetailPage() {
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
-                <div className="ml-4 flex items-center gap-3">
-                  <img src="/virtusgreen-logo.png" alt="VirtusGreen" className="h-8 w-8" />
-                  <span className="text-2xl font-bold text-primary">VirtusGreen</span>
-                </div>
+                <img src="/attached_assets/aaa_1759351925198.jpg" alt="VirtusGreen" className="ml-4 h-12 w-auto" />
               </div>
               <Link href="/profile">
                 <Button variant="ghost" size="icon" data-testid="button-profile-nav">
