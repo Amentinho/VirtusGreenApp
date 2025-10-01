@@ -83,17 +83,19 @@ export default function ProductCard({ product, searchState }: ProductCardProps) 
             </div>
 
             {/* CO2 Emissions */}
-            <div className={`relative p-4 rounded-lg bg-gradient-to-br ${co2Colors.bg} shadow-md hover:shadow-lg transition-shadow duration-200`} id={`co2-square-${product.barcode}`}>
-              <div className="flex items-center gap-2 mb-2">
-                <Factory className="h-4 w-4 text-white" />
-                <span className="text-xs font-medium text-white/90">CO₂</span>
+            <div className="relative">
+              <div className={`p-4 rounded-lg bg-gradient-to-br ${co2Colors.bg} shadow-md hover:shadow-lg transition-shadow duration-200`}>
+                <div className="flex items-center gap-2 mb-2">
+                  <Factory className="h-4 w-4 text-white" />
+                  <span className="text-xs font-medium text-white/90">CO₂</span>
+                </div>
+                <div className="text-2xl font-bold text-white">
+                  {impact.co2Emissions === "NA" ? "NA" : impact.co2Emissions}
+                </div>
+                {impact.co2Emissions !== "NA" && (
+                  <div className="text-xs text-white/80">g/100g</div>
+                )}
               </div>
-              <div className="text-2xl font-bold text-white">
-                {impact.co2Emissions === "NA" ? "NA" : impact.co2Emissions}
-              </div>
-              {impact.co2Emissions !== "NA" && (
-                <div className="text-xs text-white/80">g/100g</div>
-              )}
             </div>
           </div>
         </CardContent>
@@ -107,7 +109,7 @@ export default function ProductCard({ product, searchState }: ProductCardProps) 
               type="button"
               variant="ghost"
               size="icon"
-              className="absolute top-[9.5rem] right-[0.75rem] h-8 w-8 hover:bg-white/20 z-10 pointer-events-auto"
+              className="absolute top-[9.25rem] right-[2rem] h-8 w-8 hover:bg-white/20 z-10 pointer-events-auto"
               data-testid={`button-card-co2-info-${product.barcode}`}
             >
               <Info className="h-5 w-5 text-white" />
