@@ -84,6 +84,23 @@ npx cap open android      # Open Android Studio
 
 # Recent Changes
 
+## October 1, 2025
+- **Character system update**: Updated all 10 character titles, descriptions, and images with positive environmental journey progression
+  - Changed from satirical negative descriptions to inspiring progression themes (The Awakened → The EcoGOD)
+  - Updated character images with new IPFS links
+  - Descriptions now reflect a user's environmental journey from awareness to mastery
+- **Enhanced character privacy**: Implemented server-side data protection for character marketplace
+  - Character descriptions and images are now hidden until purchased (server-side redaction)
+  - Backend returns null for description/ipfsLink on unowned characters
+  - Prevents data exposure via network inspection
+  - Added localized placeholder text with data-testids for better testability
+- **Multi-language support**: Completed i18next integration for English, Spanish, and Italian
+  - Created comprehensive translation structure with common, nav, home, profile, product, scanner, and rewards sections
+  - Added language selector to profile dropdown menu with backend persistence
+  - Automatic language sync on user login via useAuth hook
+  - All major UI text replaced with translation hooks (home page, marketplace, toasts)
+  - Optimized i18n config to use language detector with fallback
+
 ## September 30, 2025
 - **Rewarded advertisements feature**: Users can now watch 30-second ads to earn 100 tokens each, with a daily limit of 1 ad (100 tokens/day max)
   - New database table: `adViews` to track ad viewing history
