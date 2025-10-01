@@ -17,10 +17,12 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import LanguageSelector from "@/components/language-selector";
+import { useTranslation } from "react-i18next";
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegPassword, setShowRegPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -45,15 +47,15 @@ export default function AuthPage() {
     },
     onSuccess: (data) => {
       toast({
-        title: "Verification Email Sent",
-        description: data.message || "Please check your email for the verification link.",
+        title: t('auth.verificationEmailSent'),
+        description: data.message || t('auth.checkEmailForVerification'),
       });
       setEmailVerificationDialogOpen(false);
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to send verification email.",
+        title: t('auth.errorSendingEmail'),
+        description: error.message || t('auth.failedToSendEmail'),
         variant: "destructive",
       });
     },
@@ -92,8 +94,8 @@ export default function AuthPage() {
       
       // For other errors, show regular toast
       toast({
-        title: "Login failed",
-        description: error.message || "An error occurred during login.",
+        title: t('auth.loginFailed'),
+        description: error.message || t('auth.loginError'),
         variant: "destructive",
       });
     }
@@ -119,8 +121,8 @@ export default function AuthPage() {
           <CardContent>
             <Tabs defaultValue="login">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="register">Register</TabsTrigger>
+                <TabsTrigger value="login">{t('auth.login')}</TabsTrigger>
+                <TabsTrigger value="register">{t('auth.register')}</TabsTrigger>
               </TabsList>
 
               <TabsContent value="login">
@@ -129,11 +131,11 @@ export default function AuthPage() {
                   className="space-y-4"
                 >
                   <div className="space-y-2">
-                    <Label htmlFor="usernameOrEmail">Username or Email</Label>
+                    <Label htmlFor="usernameOrEmail">{t('auth.usernameOrEmail')}</Label>
                     <Input
                       id="usernameOrEmail"
                       {...loginForm.register("usernameOrEmail")}
-                      placeholder="Enter your username or email"
+                      placeholder={t('auth.enterUsernameOrEmail')}
                       data-testid="input-username-email"
                       required
                     />
@@ -144,7 +146,7 @@ export default function AuthPage() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
+                    <Label htmlFor="password">{t('auth.password')}</Label>
                     <div className="relative">
                       <Input
                         id="password"
@@ -179,7 +181,7 @@ export default function AuthPage() {
                             setEmailVerificationDialogOpen(true);
                           }}
                         >
-                          Verify your email again
+                          {t('auth.verifyEmailAgain')}
                         </button>
                       )}
                       <button
@@ -188,7 +190,7 @@ export default function AuthPage() {
                         data-testid="link-forgot-password"
                         onClick={() => setForgotPasswordOpen(true)}
                       >
-                        Forgot password?
+                        {t('auth.forgotPassword')}
                       </button>
                     </div>
                   </div>
@@ -198,7 +200,7 @@ export default function AuthPage() {
                     disabled={loginMutation.isPending}
                     data-testid="button-login"
                   >
-                    {loginMutation.isPending ? "Logging in..." : "Login"}
+                    {loginMutation.isPending ? t('auth.loggingIn') : t('auth.login')}
                   </Button>
                 </form>
 
@@ -210,7 +212,7 @@ export default function AuthPage() {
                     </div>
                     <div className="relative flex justify-center text-xs uppercase">
                       <span className="bg-background px-2 text-muted-foreground">
-                        Or continue with
+                        {t('auth.orContinueWith')}
                       </span>
                     </div>
                   </div>
@@ -224,7 +226,7 @@ export default function AuthPage() {
                       data-testid="button-google-login"
                     >
                       <FaGoogle className="mr-2 h-4 w-4" />
-                      Continue with Google
+                      {t('auth.continueWithGoogle')}
                     </Button>
                   </div>
                 </div>
@@ -238,7 +240,7 @@ export default function AuthPage() {
                   className="space-y-4"
                 >
                   <div className="space-y-2">
-                    <Label htmlFor="reg-username">Username</Label>
+                    <Label htmlFor="reg-username">{t('auth.username')}</Label>
                     <Input
                       id="reg-username"
                       {...registerForm.register("username")}
@@ -252,7 +254,7 @@ export default function AuthPage() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email">{t('auth.email')}</Label>
                     <Input
                       id="email"
                       type="email"
@@ -267,7 +269,7 @@ export default function AuthPage() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="reg-password">Password</Label>
+                    <Label htmlFor="reg-password">{t('auth.password')}</Label>
                     <div className="relative">
                       <Input
                         id="reg-password"
@@ -293,7 +295,7 @@ export default function AuthPage() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="confirm-password">Confirm Password</Label>
+                    <Label htmlFor="confirm-password">{t('auth.confirmPassword')}</Label>
                     <div className="relative">
                       <Input
                         id="confirm-password"
@@ -319,7 +321,7 @@ export default function AuthPage() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="referral-code">Referral Code (Optional)</Label>
+                    <Label htmlFor="referral-code">{t('auth.referralCode')}</Label>
                     <Input
                       id="referral-code"
                       {...registerForm.register("usedReferralCode")}
@@ -333,7 +335,7 @@ export default function AuthPage() {
                     disabled={registerMutation.isPending}
                     data-testid="button-register"
                   >
-                    {registerMutation.isPending ? "Registering..." : "Register"}
+                    {registerMutation.isPending ? t('auth.registering') : t('auth.register')}
                   </Button>
                 </form>
 
@@ -345,7 +347,7 @@ export default function AuthPage() {
                     </div>
                     <div className="relative flex justify-center text-xs uppercase">
                       <span className="bg-background px-2 text-muted-foreground">
-                        Or sign up with
+                        {t('auth.orContinueWith')}
                       </span>
                     </div>
                   </div>
@@ -359,7 +361,7 @@ export default function AuthPage() {
                       data-testid="button-google-register"
                     >
                       <FaGoogle className="mr-2 h-4 w-4" />
-                      Sign up with Google
+                      {t('auth.continueWithGoogle')}
                     </Button>
                   </div>
                 </div>
