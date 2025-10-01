@@ -51,6 +51,9 @@ export function LoginStreakDialog({ open, onOpenChange, streakData, todayReward 
             <div className={`bg-gradient-to-r ${getStreakColor(todayReward.consecutiveDays)} text-white p-4 rounded-lg shadow-md`}>
               <p className="font-bold text-lg">{t('loginStreak.welcomeBack')}</p>
               <p className="text-white/90">{t('loginStreak.earnedToday', { tokens: todayReward.tokensAwarded })}</p>
+              <p className="text-white/95 mt-2 text-sm italic">
+                {t(`loginStreak.motivation${todayReward.consecutiveDays}`)}
+              </p>
             </div>
           )}
 

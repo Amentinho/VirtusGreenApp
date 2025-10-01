@@ -85,6 +85,15 @@ npx cap open android      # Open Android Studio
 # Recent Changes
 
 ## October 1, 2025
+- **Daily login streak gamification**: Weekly streak system with progressive token rewards
+  - Rewards: Day 1 (10 tokens), Day 2 (30), Day 3 (60), Day 4 (90), Day 5 (120), Day 6 (150), Day 7 (250)
+  - Week starts on Monday; missing a day resets streak to 10 tokens
+  - Database table: `loginStreaks` with unique constraint on (userId, loginDate) for idempotency
+  - Backend API: POST /api/login-streak and GET /api/login-streak/current
+  - Auto-displays LoginStreakDialog after user login with visual weekly calendar
+  - Includes emoticons (🌱🌿🍃🌳🌲🏆💎) and motivational messages for each streak day
+  - Fully translated in English, Spanish, and Italian
+  - Atomic token awarding with race condition protection via ON CONFLICT DO NOTHING
 - **Character system update**: Updated all 10 character titles, descriptions, and images with positive environmental journey progression
   - Changed from satirical negative descriptions to inspiring progression themes (The Awakened → The EcoGOD)
   - Updated character images with new IPFS links

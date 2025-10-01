@@ -83,6 +83,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }));
         }
         
+        // If tokens were awarded, refresh user data to update token balance
+        if (loginData.isNewLogin && loginData.tokensAwarded > 0) {
+          queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+        }
+        
         setTodayReward(loginData);
         setStreakData(streakInfo);
         setShowStreakDialog(true);
