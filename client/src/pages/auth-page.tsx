@@ -374,28 +374,26 @@ export default function AuthPage() {
       <div className="hidden md:flex flex-col justify-center p-8 bg-gradient-to-br from-green-50 to-emerald-100">
         <div className="max-w-md mx-auto">
           <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-            Track Your Environmental Impact
+            {t('auth.trackImpactTitle')}
           </h1>
           <p className="text-gray-600 mb-6">
-            Join VirtusGreen to discover the environmental impact of your everyday
-            products. Earn rewards for making sustainable choices and help build a
-            greener future.
+            {t('auth.trackImpactDescription')}
           </p>
           <div className="grid grid-cols-2 gap-4">
             <div className="p-4 bg-white rounded-lg shadow-sm">
               <h3 className="font-semibold text-green-600 mb-2">
-                Product Scanning
+                {t('auth.productScanningTitle')}
               </h3>
               <p className="text-sm text-gray-500">
-                Scan barcodes to instantly see environmental impact scores
+                {t('auth.productScanningDesc')}
               </p>
             </div>
             <div className="p-4 bg-white rounded-lg shadow-sm">
               <h3 className="font-semibold text-green-600 mb-2">
-                Earn Rewards
+                {t('auth.earnRewardsTitle')}
               </h3>
               <p className="text-sm text-gray-500">
-                Get tokens for using the app and referring friends
+                {t('auth.earnRewardsDesc')}
               </p>
             </div>
           </div>
@@ -412,25 +410,25 @@ export default function AuthPage() {
       <Dialog open={emailVerificationDialogOpen} onOpenChange={setEmailVerificationDialogOpen}>
         <DialogContent data-testid="dialog-email-verification">
           <DialogHeader>
-            <DialogTitle>Email Verification Required</DialogTitle>
+            <DialogTitle>{t('auth.emailVerificationRequired')}</DialogTitle>
             <DialogDescription>
-              User not verified, please verify your email
+              {t('auth.userNotVerified')}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-4">
             <p className="text-sm text-gray-600">
               {userEmailForVerification ? 
-                "We sent a verification email to your address. Please check your email and click the verification link to activate your account." :
-                "Enter your email address to receive a verification email."
+                t('auth.verificationEmailSentMessage') :
+                t('auth.enterEmailForVerification')
               }
             </p>
             {!userEmailForVerification && (
               <div className="space-y-2">
-                <Label htmlFor="verification-email">Email Address</Label>
+                <Label htmlFor="verification-email">{t('auth.emailAddress')}</Label>
                 <Input
                   id="verification-email"
                   type="email"
-                  placeholder="Enter your email address"
+                  placeholder={t('auth.enterEmailAddress')}
                   onChange={(e) => setUserEmailForVerification(e.target.value)}
                   data-testid="input-verification-email"
                 />
@@ -438,8 +436,8 @@ export default function AuthPage() {
             )}
             <p className="text-sm text-gray-600">
               {userEmailForVerification ? 
-                "If you haven't received the email, you can request a new one." :
-                "We'll send you a verification link to activate your account."
+                t('auth.verificationLinkResend') :
+                t('auth.verificationLinkWillSend')
               }
             </p>
           </div>
@@ -452,7 +450,7 @@ export default function AuthPage() {
               }}
               data-testid="button-dialog-close"
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               onClick={() => {
@@ -463,7 +461,7 @@ export default function AuthPage() {
               disabled={resendVerificationMutation.isPending || !userEmailForVerification}
               data-testid="button-resend-verification"
             >
-              {resendVerificationMutation.isPending ? "Sending..." : "Send verification email"}
+              {resendVerificationMutation.isPending ? t('common.loading') : t('auth.resendEmail')}
             </Button>
           </DialogFooter>
         </DialogContent>
