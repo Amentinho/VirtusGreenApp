@@ -7,6 +7,7 @@ import ProductCard from "@/components/product-card";
 import TokenDisplay from "@/components/token-display";
 import BarcodeScanner from "@/components/barcode-scanner";
 import ProfileDropdown from "@/components/profile-dropdown";
+import LanguageSelector from "@/components/language-selector";
 import { Product } from "@shared/schema";
 import { Link } from "wouter";
 import {
@@ -66,6 +67,7 @@ export default function HomePage() {
               <h1 className="text-xl font-bold text-green-600">{t('home.title')}</h1>
             </div>
             <div className="flex items-center gap-4">
+              <LanguageSelector />
               <TokenDisplay />
               <Link href="/rewards">
                 <Button variant="outline">{t('nav.rewards')}</Button>
