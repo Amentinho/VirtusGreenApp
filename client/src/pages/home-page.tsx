@@ -116,11 +116,11 @@ export default function HomePage() {
           {/* Primary Action: Scan Barcode */}
           <div className="text-center space-y-3">
             <div className="relative inline-block w-full">
-              <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,hsla(142,76%,36%,.18),transparent_60%)]" />
+              <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,hsla(142,70%,45%,.18),transparent_60%)]" />
               <Button 
                 size="lg"
                 onClick={() => setShowScanner(true)}
-                className="w-full h-auto py-6 px-8 text-xl font-bold rounded-full bg-gradient-to-br from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 shadow-[0_10px_20px_-5px_hsla(142,76%,36%,.4),0_4px_8px_-2px_hsla(0,0%,0%,.2)] hover:shadow-[0_14px_28px_-8px_hsla(142,76%,36%,.5),0_8px_12px_-4px_hsla(0,0%,0%,.25)] transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 border-0"
+                className="w-full h-auto py-6 px-8 text-xl font-bold rounded-full bg-primary hover:bg-primary/90 shadow-[0_10px_20px_-5px_hsla(142,70%,45%,.4),0_4px_8px_-2px_hsla(0,0%,0%,.2)] hover:shadow-[0_14px_28px_-8px_hsla(142,70%,45%,.5),0_8px_12px_-4px_hsla(0,0%,0%,.25)] transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 border-0"
                 data-testid="button-scan-barcode"
               >
                 <div className="flex items-center justify-center gap-3">
