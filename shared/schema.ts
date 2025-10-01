@@ -64,6 +64,9 @@ export const users = pgTable("users", {
   displayPreference: text("display_preference").default("avatar"),
   customProfileImage: text("custom_profile_image"),
   
+  // Language preference
+  language: text("language").default("en"),
+  
   // Timestamps for both systems
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -263,6 +266,7 @@ export const updateProfileFormSchema = z.object({
   avatar: z.string().optional(),
   displayPreference: z.enum(["avatar", "character", "custom"]).optional(),
   customProfileImage: z.string().optional(),
+  language: z.enum(["en", "es", "it"]).optional(),
 });
 
 // Backend schema for API validation (yyyy-mm-dd)
@@ -286,6 +290,7 @@ export const updateProfileSchema = z.object({
   avatar: z.string().optional(),
   displayPreference: z.enum(["avatar", "character", "custom"]).optional(),
   customProfileImage: z.string().optional(),
+  language: z.enum(["en", "es", "it"]).optional(),
 });
 
 export const insertProductSchema = createInsertSchema(products).omit({ 
