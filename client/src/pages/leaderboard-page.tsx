@@ -32,8 +32,9 @@ export default function LeaderboardPage() {
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             </Link>
-            <div className="ml-4 flex items-center gap-2">
-              <img src="/virtusgreen-logo.png" alt="VirtusGreen" className="h-10 w-auto" />
+            <div className="ml-4 flex items-center gap-3">
+              <img src="/virtusgreen-logo.png" alt="VirtusGreen" className="h-8 w-8" />
+              <span className="text-2xl font-bold text-primary">VirtusGreen</span>
             </div>
           </div>
         </div>
