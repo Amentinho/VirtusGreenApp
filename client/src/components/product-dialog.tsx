@@ -18,7 +18,7 @@ export default function ProductDialog({ product, isOpen, onClose }: ProductDialo
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-[95vw] sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Product Details</DialogTitle>
         </DialogHeader>

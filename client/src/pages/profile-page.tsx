@@ -21,6 +21,7 @@ import { TelegramVerification } from "@/components/telegram-verification";
 import AvatarSelector from "@/components/avatar-selector";
 import ProfileDisplaySelector from "@/components/profile-display-selector";
 import { parseApiError } from "@/lib/errors";
+import MobileNav from "@/components/mobile-nav";
 import { z } from "zod";
 
 type UpdatePasswordForm = {
@@ -205,16 +206,18 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-24">
-            <div className="flex items-center gap-4">
+          <div className="flex justify-between items-center h-20 md:h-24">
+            <div className="flex items-center gap-2 md:gap-4">
               <Link href="/">
                 <Button variant="ghost" size="icon">
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
               </Link>
-              <img src="/logo.jpg" alt="VirtusGreen" className="h-20 w-auto" />
+              <img src="/logo.jpg" alt="VirtusGreen" className="h-14 md:h-20 w-auto" />
             </div>
-            <div className="flex items-center">
+            
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center">
               <Button 
                 variant="ghost" 
                 onClick={handleLogout}
@@ -224,12 +227,17 @@ export default function ProfilePage() {
                 Logout
               </Button>
             </div>
+            
+            {/* Mobile Navigation */}
+            <div className="md:hidden">
+              <MobileNav />
+            </div>
           </div>
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid gap-6 lg:grid-cols-2">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
+        <div className="grid gap-4 md:gap-6 lg:grid-cols-2">
           {/* Character Display Card */}
           <Card className="lg:col-span-2">
             <CardHeader>

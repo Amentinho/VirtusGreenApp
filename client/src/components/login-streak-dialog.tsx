@@ -37,7 +37,7 @@ export function LoginStreakDialog({ open, onOpenChange, streakData, todayReward 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl" data-testid="dialog-login-streak">
+      <DialogContent className="max-w-[95vw] sm:max-w-2xl" data-testid="dialog-login-streak">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-2xl">
             <Calendar className="h-6 w-6 text-emerald-600" />

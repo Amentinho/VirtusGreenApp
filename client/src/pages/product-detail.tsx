@@ -318,7 +318,7 @@ export default function ProductDetailPage() {
                         <Info className="h-5 w-5 text-gray-600" />
                       </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="max-w-[95vw] sm:max-w-lg">
                       <DialogHeader>
                         <DialogTitle>CO₂ Impact Comparison</DialogTitle>
                       </DialogHeader>

@@ -12,6 +12,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { ArrowLeft, Coins, User, Lock } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { parseApiError } from "@/lib/errors";
+import ProfileDropdown from "@/components/profile-dropdown";
+import MobileNav from "@/components/mobile-nav";
 
 export default function RewardsPage() {
   const { t } = useTranslation();
@@ -77,31 +79,34 @@ export default function RewardsPage() {
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-24">
-            <div className="flex items-center gap-4">
+          <div className="flex justify-between items-center h-20 md:h-24">
+            <div className="flex items-center gap-2 md:gap-4">
               <Link href="/">
                 <Button variant="ghost" size="icon">
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
               </Link>
-              <img src="/logo.jpg" alt="VirtusGreen" className="h-20 w-auto" />
+              <img src="/logo.jpg" alt="VirtusGreen" className="h-14 md:h-20 w-auto" />
             </div>
-            <div className="flex items-center gap-2">
+            
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center gap-2">
               <TokenDisplay />
-              <Link href="/profile">
-                <Button variant="ghost" size="icon" data-testid="button-profile-nav">
-                  <User className="h-5 w-5" />
-                </Button>
-              </Link>
+              <ProfileDropdown />
+            </div>
+            
+            {/* Mobile Navigation */}
+            <div className="md:hidden">
+              <MobileNav />
             </div>
           </div>
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
         {/* Available Tokens and My Rewards Display */}
-        <div className="mb-8 text-center">
-          <div className="flex justify-center gap-4">
+        <div className="mb-6 md:mb-8 text-center">
+          <div className="flex flex-col sm:flex-row justify-center gap-3 md:gap-4">
             <div className="inline-flex items-center gap-2 bg-white rounded-lg px-6 py-4 shadow-sm border">
               <Coins className="h-5 w-5 text-yellow-500" />
               <span className="text-lg font-semibold text-gray-700">{t('rewards.yourTokens')}:</span>

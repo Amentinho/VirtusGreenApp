@@ -7,6 +7,7 @@ import ProductCard from "@/components/product-card";
 import TokenDisplay from "@/components/token-display";
 import BarcodeScanner from "@/components/barcode-scanner";
 import ProfileDropdown from "@/components/profile-dropdown";
+import MobileNav from "@/components/mobile-nav";
 import { LoginStreakDialog } from "@/components/login-streak-dialog";
 import { Product } from "@shared/schema";
 import { Link } from "wouter";
@@ -46,7 +47,6 @@ export default function HomePage() {
         : "/api/products";
       return fetch(url, { credentials: "include" }).then(res => res.json());
     },
-    enabled: !!activeSearch,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
@@ -86,11 +86,13 @@ export default function HomePage() {
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-24">
+          <div className="flex justify-between items-center h-20 md:h-24">
             <div className="flex items-center">
-              <img src="/logo.jpg" alt="VirtusGreen" className="h-20 w-auto" />
+              <img src="/logo.jpg" alt="VirtusGreen" className="h-14 md:h-20 w-auto" />
             </div>
-            <div className="flex items-center gap-4">
+            
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center gap-4">
               <Button 
                 variant="outline" 
                 size="sm"
@@ -106,12 +108,25 @@ export default function HomePage() {
               </Link>
               <ProfileDropdown />
             </div>
+            
+            {/* Mobile Navigation */}
+            <div className="flex md:hidden items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={handleStreakClick}
+                data-testid="button-daily-streak-mobile"
+              >
+                <Flame className="h-5 w-5 text-orange-500" />
+              </Button>
+              <MobileNav />
+            </div>
           </div>
         </div>
       </nav>
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="space-y-8">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-12">
+        <div className="space-y-6 md:space-y-8">
           {/* Primary Action: Scan Barcode */}
           <div className="text-center space-y-3">
             <div className="relative inline-block w-full">
@@ -119,7 +134,7 @@ export default function HomePage() {
               <Button 
                 size="lg"
                 onClick={() => setShowScanner(true)}
-                className="w-full h-auto py-6 px-8 text-xl font-bold rounded-full bg-primary hover:bg-primary/90 shadow-[0_10px_20px_-5px_hsla(142,70%,45%,.4),0_4px_8px_-2px_hsla(0,0%,0%,.2)] hover:shadow-[0_14px_28px_-8px_hsla(142,70%,45%,.5),0_8px_12px_-4px_hsla(0,0%,0%,.25)] transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 border-0"
+                className="w-full h-auto py-5 md:py-6 px-6 md:px-8 text-lg md:text-xl font-bold rounded-full bg-primary hover:bg-primary/90 shadow-[0_10px_20px_-5px_hsla(142,70%,45%,.4),0_4px_8px_-2px_hsla(0,0%,0%,.2)] hover:shadow-[0_14px_28px_-8px_hsla(142,70%,45%,.5),0_8px_12px_-4px_hsla(0,0%,0%,.25)] transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 border-0"
                 data-testid="button-scan-barcode"
               >
                 <div className="flex items-center justify-center gap-3">
@@ -147,7 +162,7 @@ export default function HomePage() {
 
           {/* Secondary Action: Search */}
           <div className="space-y-4">
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -156,8 +171,14 @@ export default function HomePage() {
                 className="flex-1"
                 data-testid="input-product-search"
               />
-              <Button variant="outline" onClick={handleSearch} data-testid="button-search">
-                <Search className="h-4 w-4" />
+              <Button 
+                variant="outline" 
+                onClick={handleSearch} 
+                data-testid="button-search"
+                className="w-full sm:w-auto"
+              >
+                <Search className="h-4 w-4 mr-2 sm:mr-0" />
+                <span className="sm:hidden">Search</span>
               </Button>
             </div>
 
@@ -192,7 +213,7 @@ export default function HomePage() {
 
       {/* Barcode Scanner Dialog */}
       <Dialog open={showScanner} onOpenChange={setShowScanner}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{t('scanner.title')}</DialogTitle>
           </DialogHeader>

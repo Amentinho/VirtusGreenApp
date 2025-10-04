@@ -101,14 +101,14 @@ export default function AvatarSelector({ currentAvatar, onSelect }: AvatarSelect
           </DialogTrigger>
         </div>
       </div>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Choose Your Avatar</DialogTitle>
           <DialogDescription>
             Select an animal avatar for your profile
           </DialogDescription>
         </DialogHeader>
-        <div className="grid grid-cols-6 gap-4 py-4">
+        <div className="grid grid-cols-4 sm:grid-cols-6 gap-3 sm:gap-4 py-4">
           {ANIMAL_AVATARS.map((avatar) => (
             <button
               key={avatar.emoji}
