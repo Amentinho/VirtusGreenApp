@@ -549,19 +549,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
+      console.log("Profile update request body:", JSON.stringify(req.body, null, 2));
+      
       const result = updateProfileSchema.safeParse(req.body);
       if (!result.success) {
-        return res.status(400).json({ error: result.error });
+        console.error("Profile validation failed:", JSON.stringify(result.error, null, 2));
+        return res.status(400).json({ 
+          message: "Validation failed",
+          errors: result.error.errors 
+        });
       }
 
       const userId = req.user.claims?.sub || req.user.id;
-      // Type cast is safe because storage layer handles date conversion
+      console.log("Updating profile for user:", userId);
+      
       const updatedUser = await storage.updateUserProfile(userId, result.data as any);
+      console.log("Profile updated successfully for user:", userId);
       
       res.json(updatedUser);
     } catch (error) {
       console.error("Error updating profile:", error);
-      res.status(500).json({ message: "Failed to update profile" });
+      console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
+      res.status(500).json({ 
+        message: "Failed to update profile",
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   });
 
