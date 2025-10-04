@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext, useEffect, useState } from "react";
+import { createContext, ReactNode, useContext, useEffect, useState, useRef } from "react";
 import {
   useQuery,
   useMutation,
@@ -43,6 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [showStreakDialog, setShowStreakDialog] = useState(false);
   const [streakData, setStreakData] = useState<StreakData | null>(null);
   const [todayReward, setTodayReward] = useState<TodayReward | null>(null);
+  const lastProcessedUserIdRef = useRef<string | null>(null);
   
   const {
     data: user,
@@ -59,6 +60,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user, i18n]);
 
+  const recordLoginStreak = async () => {
+    try {
+      const loginRes = await apiRequest("POST", "/api/login-streak");
+      const loginData = await loginRes.json();
+      
+      const streakRes = await apiRequest("GET", "/api/login-streak/current");
+      const streakInfo = await streakRes.json();
+      
+      if (streakInfo.weekDays) {
+        streakInfo.weekDays = streakInfo.weekDays.map((day: any) => ({
+          ...day,
+          date: new Date(day.date)
+        }));
+      }
+      
+      if (loginData.isNewLogin && loginData.tokensAwarded > 0) {
+        queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      }
+      
+      setTodayReward(loginData);
+      setStreakData(streakInfo);
+      
+      if (loginData.isNewLogin) {
+        setShowStreakDialog(true);
+      }
+    } catch (err) {
+      console.error("Failed to fetch login streak:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (user && user.id && lastProcessedUserIdRef.current !== user.id) {
+      lastProcessedUserIdRef.current = user.id;
+      recordLoginStreak();
+    } else if (!user) {
+      lastProcessedUserIdRef.current = null;
+    }
+  }, [user]);
+
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginCredentials) => {
       const res = await apiRequest("POST", "/api/login", credentials);
@@ -66,40 +106,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: async (user: SelectUser) => {
       queryClient.setQueryData(["/api/auth/user"], user);
-      
-      // Record daily login and fetch streak data
-      try {
-        const loginRes = await apiRequest("POST", "/api/login-streak");
-        const loginData = await loginRes.json();
-        
-        const streakRes = await apiRequest("GET", "/api/login-streak/current");
-        const streakInfo = await streakRes.json();
-        
-        // Convert date strings back to Date objects
-        if (streakInfo.weekDays) {
-          streakInfo.weekDays = streakInfo.weekDays.map((day: any) => ({
-            ...day,
-            date: new Date(day.date)
-          }));
-        }
-        
-        // If tokens were awarded, refresh user data to update token balance
-        if (loginData.isNewLogin && loginData.tokensAwarded > 0) {
-          queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-        }
-        
-        setTodayReward(loginData);
-        setStreakData(streakInfo);
-        // Only show dialog automatically on first login of the day
-        if (loginData.isNewLogin) {
-          setShowStreakDialog(true);
-        }
-      } catch (err) {
-        console.error("Failed to fetch login streak:", err);
-      }
+      lastProcessedUserIdRef.current = user.id;
+      await recordLoginStreak();
     },
     onError: (error: Error) => {
-      // Don't handle errors here - let the component handle them
       throw error;
     },
   });
