@@ -84,7 +84,24 @@ npx cap open android      # Open Android Studio
 
 # Recent Changes
 
-## October 1, 2025 (Latest)
+## October 4, 2025 (Latest)
+- **Mobile responsiveness improvements**: Comprehensive mobile-first design updates across all pages
+  - Mobile navigation: Added Sheet drawer with hamburger menu (hidden on desktop), includes daily streak button and token display
+  - Responsive layouts: All grids now stack on mobile (grid-cols-1 md:grid-cols-2 lg:grid-cols-3 pattern)
+  - Dialog optimization: All dialogs now use max-w-[95vw] sm:max-w-{size} for mobile compatibility
+  - Avatar selector: Grid adjusted to 4 columns on mobile (grid-cols-4 sm:grid-cols-6)
+  - Reduced spacing: Mobile uses smaller padding/gaps (py-4 md:py-8, gap-3 md:gap-4)
+  - Search bar: Stacks vertically on small screens (flex-col sm:flex-row)
+  - Desktop nav: Hidden on mobile with `hidden md:flex` classes
+- **Enhanced error handling**: Centralized error parsing for user-friendly messages
+  - Created parseApiError utility (client/src/lib/errors.ts) to transform technical backend errors
+  - Supports internationalization with fallback to English
+  - Maps validation error codes to translated messages (common:errors namespace)
+  - Updated all toast notifications and mutations across 11+ files to use error parser
+  - Gracefully handles JSON parsing errors, network issues, and backend validation errors
+- **Bug fixes**: Fixed home page products not loading on initial render (removed unnecessary query constraint)
+
+## October 1, 2025
 - **Language selector on login page**: Added global language selector to authentication page accessible without login
   - New LanguageSelector component with dropdown for EN/ES/IT languages
   - Persists language preference to localStorage for unauthenticated users
