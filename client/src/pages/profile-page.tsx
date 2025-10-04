@@ -191,7 +191,7 @@ export default function ProfilePage() {
       dateOfBirth: data.dateOfBirth ? parseDDMMYYYY(data.dateOfBirth) : undefined,
       avatar: selectedAvatar,
       displayPreference,
-      customProfileImage,
+      ...(customProfileImage ? { customProfileImage } : {}),
     };
     profileMutation.mutate(formattedData as any);
   };
