@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { CheckCircle, MessageCircle } from "lucide-react";
+import { parseApiError } from "@/lib/errors";
 
 export function TelegramVerification() {
   const [telegramUsername, setTelegramUsername] = useState("");
@@ -36,7 +37,7 @@ export function TelegramVerification() {
     onError: (error: any) => {
       toast({
         title: "Verification Failed",
-        description: error.message || "Failed to verify Telegram account. Please try again.",
+        description: parseApiError(error),
         variant: "destructive",
       });
     },

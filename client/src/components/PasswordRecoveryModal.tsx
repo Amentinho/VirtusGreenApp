@@ -10,6 +10,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { parseApiError } from "@/lib/errors";
 
 type PasswordRecoveryRequest = {
   email: string;
@@ -59,7 +60,7 @@ export function PasswordRecoveryModal({ open, onOpenChange, trigger }: PasswordR
     onError: (error: Error) => {
       toast({
         title: "Error",
-        description: error.message,
+        description: parseApiError(error),
         variant: "destructive",
       });
     },

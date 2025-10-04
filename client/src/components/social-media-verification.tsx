@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { ExternalLink, Check } from "lucide-react";
 import { SiInstagram, SiLinkedin, SiX } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
+import { parseApiError } from "@/lib/errors";
 
 interface VerificationResponse {
   verificationCode: string;
@@ -56,7 +57,7 @@ export default function SocialMediaVerification() {
     onError: (error: any) => {
       toast({
         title: "Verification Failed",
-        description: error.message || "Failed to start verification",
+        description: parseApiError(error),
         variant: "destructive",
       });
     },
@@ -106,7 +107,7 @@ export default function SocialMediaVerification() {
     onError: (error: any) => {
       toast({
         title: "Verification Failed",
-        description: error.message || "Failed to verify follow",
+        description: parseApiError(error),
         variant: "destructive",
       });
     },

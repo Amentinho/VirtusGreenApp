@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { ArrowLeft, Coins, User, Lock } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { parseApiError } from "@/lib/errors";
 
 export default function RewardsPage() {
   const { t } = useTranslation();
@@ -44,7 +45,7 @@ export default function RewardsPage() {
     onError: (error: Error) => {
       toast({
         title: t('common.error'),
-        description: error.message || t('rewards.redeemFailed'),
+        description: parseApiError(error),
         variant: "destructive",
       });
     },
@@ -66,7 +67,7 @@ export default function RewardsPage() {
     onError: (error: Error) => {
       toast({
         title: t('common.error'),
-        description: error.message || t('rewards.purchaseFailed'),
+        description: parseApiError(error),
         variant: "destructive",
       });
     },

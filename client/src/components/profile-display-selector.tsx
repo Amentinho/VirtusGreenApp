@@ -7,6 +7,7 @@ import { Upload, Image as ImageIcon, Save } from "lucide-react";
 import { Character } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { parseApiError } from "@/lib/errors";
 
 interface ProfileDisplaySelectorProps {
   currentAvatar: string;
@@ -48,7 +49,7 @@ export default function ProfileDisplaySelector({
     onError: (error) => {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to save display picture",
+        description: parseApiError(error),
         variant: "destructive",
       });
     },

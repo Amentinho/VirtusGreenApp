@@ -18,6 +18,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import LanguageSelector from "@/components/language-selector";
 import { useTranslation } from "react-i18next";
+import { parseApiError } from "@/lib/errors";
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
   const { toast } = useToast();
@@ -54,7 +55,7 @@ export default function AuthPage() {
     onError: (error: Error) => {
       toast({
         title: t('auth.errorSendingEmail'),
-        description: error.message || t('auth.failedToSendEmail'),
+        description: parseApiError(error),
         variant: "destructive",
       });
     },
@@ -94,7 +95,7 @@ export default function AuthPage() {
       // For other errors, show regular toast
       toast({
         title: t('auth.loginFailed'),
-        description: error.message || t('auth.loginError'),
+        description: parseApiError(error),
         variant: "destructive",
       });
     }

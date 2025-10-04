@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, Circle, Gift } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { parseApiError } from "@/lib/errors";
 
 interface ProfileCompletionStatus {
   complete: boolean;
@@ -58,7 +59,7 @@ export default function ProfileCompletion() {
     onError: (error: any) => {
       toast({
         title: "Claim Failed",
-        description: error.message || "Failed to claim profile completion bonus",
+        description: parseApiError(error),
         variant: "destructive",
       });
     },

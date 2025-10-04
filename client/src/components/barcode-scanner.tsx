@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { apiRequest } from "@/lib/queryClient";
+import { parseApiError } from "@/lib/errors";
 
 export default function BarcodeScanner() {
   const [barcode, setBarcode] = useState("");
@@ -46,10 +47,10 @@ export default function BarcodeScanner() {
       setRequestMessage("");
       setMissingBarcode("");
     },
-    onError: () => {
+    onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to send request. Please try again.",
+        description: parseApiError(error),
         variant: "destructive",
       });
     },

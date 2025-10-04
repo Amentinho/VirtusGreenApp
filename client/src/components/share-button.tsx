@@ -11,6 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { parseApiError } from "@/lib/errors";
 
 interface ShareButtonProps {
   productId?: string;
@@ -66,7 +67,7 @@ export default function ShareButton({
     onError: (error: any) => {
       toast({
         title: "Sharing Failed",
-        description: error.message || "Failed to record share",
+        description: parseApiError(error),
         variant: "destructive",
       });
     },
