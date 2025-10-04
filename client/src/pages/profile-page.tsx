@@ -20,6 +20,7 @@ import { EvmWalletVerification } from "@/components/evm-wallet-verification";
 import { TelegramVerification } from "@/components/telegram-verification";
 import AvatarSelector from "@/components/avatar-selector";
 import ProfileDisplaySelector from "@/components/profile-display-selector";
+import { parseApiError } from "@/lib/errors";
 import { z } from "zod";
 
 type UpdatePasswordForm = {
@@ -128,7 +129,7 @@ export default function ProfilePage() {
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to equip character",
+        description: parseApiError(error),
         variant: "destructive",
       });
     },
@@ -161,7 +162,7 @@ export default function ProfilePage() {
     onError: (error) => {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update profile",
+        description: parseApiError(error),
         variant: "destructive",
       });
     },
@@ -178,7 +179,7 @@ export default function ProfilePage() {
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update password",
+        description: parseApiError(error),
         variant: "destructive",
       });
     }

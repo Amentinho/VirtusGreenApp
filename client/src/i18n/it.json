@@ -7,7 +7,16 @@
     "close": "Chiudi",
     "search": "Cerca",
     "back": "Indietro",
-    "success": "Successo!"
+    "success": "Successo!",
+    "errors": {
+      "generic": "Qualcosa è andato storto. Per favore, riprova.",
+      "invalid_field": "Per favore, controlla il campo {{field}}",
+      "invalid_value": "Per favore, controlla i valori inseriti",
+      "unauthorized": "Per favore, accedi per continuare",
+      "forbidden": "Non hai il permesso per fare questo",
+      "not_found": "L'elemento richiesto non è stato trovato",
+      "server": "Errore del server. Per favore, riprova più tardi"
+    }
   },
   "nav": {
     "home": "Home",

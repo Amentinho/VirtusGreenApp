@@ -7,7 +7,16 @@
     "close": "Close",
     "search": "Search",
     "back": "Back",
-    "success": "Success!"
+    "success": "Success!",
+    "errors": {
+      "generic": "Something went wrong. Please try again.",
+      "invalid_field": "Please check the {{field}} field",
+      "invalid_value": "Please check your input values",
+      "unauthorized": "Please log in to continue",
+      "forbidden": "You do not have permission to do this",
+      "not_found": "The requested item was not found",
+      "server": "Server error. Please try again later"
+    }
   },
   "nav": {
     "home": "Home",

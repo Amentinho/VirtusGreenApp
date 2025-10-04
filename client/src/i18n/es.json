@@ -7,7 +7,16 @@
     "close": "Cerrar",
     "search": "Buscar",
     "back": "Volver",
-    "success": "¡Éxito!"
+    "success": "¡Éxito!",
+    "errors": {
+      "generic": "Algo salió mal. Por favor, inténtalo de nuevo.",
+      "invalid_field": "Por favor, revisa el campo {{field}}",
+      "invalid_value": "Por favor, revisa los valores ingresados",
+      "unauthorized": "Por favor, inicia sesión para continuar",
+      "forbidden": "No tienes permiso para hacer esto",
+      "not_found": "El elemento solicitado no fue encontrado",
+      "server": "Error del servidor. Por favor, inténtalo más tarde"
+    }
   },
   "nav": {
     "home": "Inicio",
