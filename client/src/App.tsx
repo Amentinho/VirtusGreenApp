@@ -17,6 +17,7 @@ import LeaderboardPage from "@/pages/leaderboard-page";
 import SupportPage from "@/pages/support-page";
 import WatchAdsPage from "@/pages/watch-ads-page";
 import { ProtectedRoute } from "./lib/protected-route";
+import GreenAgentPage from "@/pages/green-agent-page";
 
 function Router() {
   return (
@@ -33,6 +34,7 @@ function Router() {
       <ProtectedRoute path="/my-rewards" component={MyRewardsPage} />
       <ProtectedRoute path="/support" component={SupportPage} />
       <ProtectedRoute path="/watch-ads" component={WatchAdsPage} />
+      <Route path="/green-agent" component={GreenAgentPage} />
       <Route component={NotFound} />
     </Switch>
   );
