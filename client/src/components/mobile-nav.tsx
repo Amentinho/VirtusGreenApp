@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { Menu, Home, Gift, User, Coins, Trophy, Coffee, Play, LogOut } from "lucide-react";
+import { Menu, Home, Gift, User, Coins, Trophy, Coffee, Play, LogOut, Leaf } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -55,6 +55,13 @@ export default function MobileNav() {
               </Button>
             </Link>
             
+            <Link href="/green-agent" onClick={closeSheet}>
+              <Button variant="ghost" className="w-full justify-start gap-2 text-green-600 font-bold" data-testid="button-nav-green-agent">
+                <Leaf className="h-4 w-4" />
+                Green Agent ✦
+              </Button>
+            </Link>
+
             <Link href="/rewards" onClick={closeSheet}>
               <Button variant="ghost" className="w-full justify-start gap-2" data-testid="button-nav-rewards">
                 <Gift className="h-4 w-4" />
