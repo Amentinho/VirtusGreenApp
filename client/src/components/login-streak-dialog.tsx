@@ -37,7 +37,7 @@ export function LoginStreakDialog({ open, onOpenChange, streakData, todayReward 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] sm:max-w-2xl" data-testid="dialog-login-streak">
+      <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="dialog-login-streak">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-2xl">
             <Calendar className="h-6 w-6 text-emerald-600" />
@@ -67,11 +67,11 @@ export function LoginStreakDialog({ open, onOpenChange, streakData, todayReward 
           {/* Weekly Calendar */}
           <div>
             <h3 className="text-sm font-medium text-gray-500 mb-3">{t('loginStreak.subtitle')}</h3>
-            <div className="grid grid-cols-7 gap-2">
+            <div className="grid grid-cols-7 gap-1">
               {streakData.weekDays.map((day, index) => (
                 <div
                   key={index}
-                  className={`relative p-3 rounded-lg text-center transition-all ${
+                  className={`relative p-1.5 rounded-lg text-center transition-all ${
                     day.loggedIn
                       ? 'bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-md'
                       : 'bg-gray-100 dark:bg-gray-800 text-gray-400'
