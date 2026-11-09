@@ -1,5 +1,4 @@
-// SendGrid email service - referenced from blueprint integration
-import sgMail from '@sendgrid/mail';
+import { Resend } from 'resend';
 import { customAlphabet } from 'nanoid';
 
 const generateVerificationToken = customAlphabet(
@@ -7,10 +6,10 @@ const generateVerificationToken = customAlphabet(
   32
 );
 
-if (!process.env.SENDGRID_API_KEY) {
-  console.warn('SENDGRID_API_KEY not set - email functionality disabled');
-} else {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+
+if (!resend) {
+  console.warn('RESEND_API_KEY not set - email functionality disabled');
 }
 
 interface EmailParams {
@@ -23,26 +22,23 @@ interface EmailParams {
 
 export async function sendEmail(params: EmailParams): Promise<boolean> {
   try {
-    if (!process.env.SENDGRID_API_KEY) {
-      console.warn('Skipping email send - SENDGRID_API_KEY not configured');
+    if (!resend) {
+      console.warn('Skipping email send - RESEND_API_KEY not configured');
       return false;
     }
-    
-    await sgMail.send({
+
+    await resend.emails.send({
       to: params.to,
       from: params.from,
       subject: params.subject,
       text: params.text || '',
       html: params.html || '',
     });
-    
+
     console.log(`Email sent successfully to ${params.to}`);
     return true;
   } catch (error: any) {
-    console.error('SendGrid email error:', error);
-    if (error.response?.body?.errors) {
-      console.error('SendGrid error details:', JSON.stringify(error.response.body.errors, null, 2));
-    }
+    console.error('Resend email error:', error);
     
     // Fallback: Log password reset URL for development
     if (params.subject.includes('Reset your VirtusGreen password') && params.text) {
