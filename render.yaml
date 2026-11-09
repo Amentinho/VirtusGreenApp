@@ -15,3 +15,5 @@ services:
         generateValue: true
       - key: PORT
         value: 10000
+      - key: APP_URL
+        sync: false

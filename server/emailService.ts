@@ -219,10 +219,7 @@ The VirtusGreen Team
 }
 
 function getBaseUrl(): string {
-  // Get the current domain from environment or use localhost for development
-  if (process.env.REPLIT_DOMAINS) {
-    return `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`;
-  }
+  if (process.env.APP_URL) return process.env.APP_URL;
   return 'http://localhost:5000';
 }
 

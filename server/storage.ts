@@ -744,7 +744,7 @@ export class DatabaseStorage implements IStorage {
       throw new Error("User not found or no referral code");
     }
 
-    const shareUrl = `${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000'}/auth?ref=${user.referralCode}`;
+    const shareUrl = `${process.env.APP_URL || 'http://localhost:5000'}/auth?ref=${user.referralCode}`;
     
     await db
       .insert(appShares)
