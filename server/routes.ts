@@ -7,7 +7,15 @@ import { storage } from "./storage";
 import { insertProductSchema, insertRewardSchema, updatePasswordSchema, updateProfileSchema } from "@shared/schema";
 import { comparePasswords, hashPassword } from "./auth";
 import { sendEmail, generatePasswordResetEmail, generateEmailVerificationToken, generateVerificationEmail, generateProductRequestEmail } from "./emailService";
-import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./paypal";
+// PayPal loaded lazily so missing credentials don't crash startup
+const paypalEnabled = !!(process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET);
+let createPaypalOrder: Function, capturePaypalOrder: Function, loadPaypalDefault: Function;
+if (paypalEnabled) {
+  const pp = await import("./paypal");
+  createPaypalOrder = pp.createPaypalOrder;
+  capturePaypalOrder = pp.capturePaypalOrder;
+  loadPaypalDefault = pp.loadPaypalDefault;
+}
 
 // Helper function to sort products by data availability
 function sortProductsByDataAvailability(products: any[]): any[] {
@@ -1031,7 +1039,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // PayPal donation routes - referenced from javascript_paypal blueprint integration
+  // PayPal donation routes — only registered when credentials are present
+  if (paypalEnabled) {
   app.get("/setup", async (req, res) => {
     await loadPaypalDefault(req, res);
   });
@@ -1043,6 +1052,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/order/:orderID/capture", async (req, res) => {
     await capturePaypalOrder(req, res);
   });
+  } // end paypalEnabled
 
   const httpServer = createServer(app);
   return httpServer;
