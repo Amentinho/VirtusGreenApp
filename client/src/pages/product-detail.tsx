@@ -14,8 +14,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Leaf, Droplets, Factory, Recycle, Zap, Mountain, Mail, User, Info } from "lucide-react";
+import { ArrowLeft, Leaf, Droplets, Factory, Recycle, Zap, Mountain, Mail, User, Info, Sparkles } from "lucide-react";
 import { Link } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
 import EnvImpactChart from "@/components/env-impact-chart";
 import ShareButton from "@/components/share-button";
 import { Product } from "@shared/schema";
@@ -92,40 +93,30 @@ export default function ProductDetailPage() {
     );
   }
 
+  const BrandNav = () => (
+    <nav className="border-b border-white/8 bg-black/20 backdrop-blur-md">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          <div className="flex items-center gap-3">
+            <button onClick={() => { window.location.href = '/'; }} className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/8 transition-colors">
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+            <img src="/logo.png" alt="VirtusGreen" className="h-8 w-auto object-contain brightness-0 invert" />
+          </div>
+        </div>
+      </div>
+    </nav>
+  );
+
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <nav className="bg-white border-b">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-24">
-              <div className="flex items-center">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  data-testid="button-back"
-                  onClick={() => {
-                    sessionStorage.setItem('virtusgreen_from_product', 'true');
-                    window.location.href = '/';
-                  }}
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-                <img src="/logo.jpg" alt="VirtusGreen" className="ml-4 h-20 w-auto" />
-              </div>
-              <Link href="/profile">
-                <Button variant="ghost" size="icon" data-testid="button-profile-nav">
-                  <User className="h-5 w-5" />
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </nav>
-        
+      <div className="min-h-screen" style={{ background: "linear-gradient(145deg, #021c1b 0%, #043231 55%, #062e2c 100%)" }}>
+        <BrandNav />
         <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-gray-200 rounded w-1/2"></div>
-            <div className="h-64 bg-gray-200 rounded"></div>
-            <div className="h-32 bg-gray-200 rounded"></div>
+            <div className="h-8 bg-white/10 rounded w-1/2"></div>
+            <div className="h-64 bg-white/10 rounded"></div>
+            <div className="h-32 bg-white/10 rounded"></div>
           </div>
         </main>
       </div>
@@ -134,50 +125,23 @@ export default function ProductDetailPage() {
 
   if (isError || !product) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <nav className="bg-white border-b">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-24">
-              <div className="flex items-center">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  data-testid="button-back"
-                  onClick={() => {
-                    sessionStorage.setItem('virtusgreen_from_product', 'true');
-                    window.location.href = '/';
-                  }}
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-                <img src="/logo.jpg" alt="VirtusGreen" className="ml-4 h-20 w-auto" />
-              </div>
-              <Link href="/profile">
-                <Button variant="ghost" size="icon" data-testid="button-profile-nav">
-                  <User className="h-5 w-5" />
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </nav>
+      <div className="min-h-screen" style={{ background: "linear-gradient(145deg, #021c1b 0%, #043231 55%, #062e2c 100%)" }}>
+        <BrandNav />
         
-        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Card>
-            <CardContent className="p-8 text-center">
-              <h2 className="text-2xl font-bold mb-4">Product Not Found</h2>
-              <p className="text-gray-600 mb-6">
-                We couldn't find a product with barcode: <code className="bg-gray-100 px-2 py-1 rounded">{barcode}</code>
-              </p>
-              <Link href="/">
-                <Button>Back to Home</Button>
-              </Link>
-            </CardContent>
-          </Card>
+        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
+          <p className="text-white/40 text-lg mb-2">Product Not Found</p>
+          <p className="text-white/25 text-sm mb-6">No product found for barcode: <code className="font-mono">{barcode}</code></p>
+          <Link href="/">
+            <button className="rounded-xl px-5 py-2.5 text-sm font-bold" style={{ background: "#c0fa79", color: "#043231" }}>
+              Back to Search
+            </button>
+          </Link>
         </main>
       </div>
     );
   }
 
+  const { user } = useAuth();
   const { name, brand, environmentalImpact: impact } = product;
 
   const impactMetrics = [
@@ -235,34 +199,41 @@ export default function ProductDetailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b">
+    <div className="min-h-screen" style={{ background: "linear-gradient(145deg, #021c1b 0%, #043231 55%, #062e2c 100%)" }}>
+      <nav className="border-b border-white/8 bg-black/20 backdrop-blur-md">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <Button 
-                variant="ghost" 
-                size="icon" 
+            <div className="flex items-center gap-3">
+              <button
                 data-testid="button-back"
-                onClick={() => {
-                  sessionStorage.setItem('virtusgreen_from_product', 'true');
-                  window.location.href = '/';
-                }}
+                onClick={() => { window.location.href = '/'; }}
+                className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/8 transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <img src="/virtusgreen-logo.png" alt="VirtusGreen" className="ml-4 h-10 w-auto" />
+              </button>
+              <img src="/logo.png" alt="VirtusGreen" className="h-8 w-auto object-contain brightness-0 invert" />
             </div>
-            <Link href="/profile">
-              <Button variant="ghost" size="icon" data-testid="button-profile-nav">
-                <User className="h-5 w-5" />
-              </Button>
-            </Link>
+            {user ? (
+              <Link href="/profile">
+                <button className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/8 transition-colors" data-testid="button-profile-nav">
+                  <User className="h-5 w-5" />
+                </button>
+              </Link>
+            ) : (
+              <Link href="/auth">
+                <button
+                  className="text-[13px] font-semibold px-4 py-2 rounded-lg transition-all duration-150"
+                  style={{ background: "#c0fa79", color: "#043231" }}
+                >
+                  Sign in
+                </button>
+              </Link>
+            )}
           </div>
         </div>
       </nav>
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-20">
         <div className="space-y-6">
           {/* Product Hero Header */}
           <Card className="overflow-hidden bg-gradient-to-br from-emerald-50 via-lime-50 to-green-50 dark:from-emerald-900/30 dark:via-lime-900/20 dark:to-green-900/30 ring-1 ring-emerald-100/50">
@@ -300,6 +271,35 @@ export default function ProductDetailPage() {
               </div>
             </CardHeader>
           </Card>
+
+          {/* Guest register CTA */}
+          {!user && (
+            <div
+              className="rounded-2xl p-5 flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left"
+              style={{
+                background: "rgba(192,250,121,0.07)",
+                border: "1px solid rgba(192,250,121,0.18)",
+              }}
+            >
+              <Sparkles className="w-6 h-6 text-[#c0fa79] flex-none" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-white mb-0.5">
+                  Scan complete — earn Green Tokens for this!
+                </p>
+                <p className="text-xs text-white/50">
+                  Register free to earn tokens for every product you scan, track your sustainability history, and climb the leaderboard.
+                </p>
+              </div>
+              <Link href="/auth">
+                <button
+                  className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold flex-none transition-all duration-150"
+                  style={{ background: "#c0fa79", color: "#043231" }}
+                >
+                  Register free <ArrowLeft className="w-3 h-3 rotate-180" />
+                </button>
+              </Link>
+            </div>
+          )}
 
           {/* CO2 Impact Circle */}
           <Card>

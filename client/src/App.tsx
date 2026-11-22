@@ -24,8 +24,8 @@ function Router() {
     <Switch>
       <Route path="/auth" component={AuthPage} />
       <Route path="/reset-password" component={ResetPasswordPage} />
-      <ProtectedRoute path="/" component={HomePage} />
-      <ProtectedRoute path="/product/:barcode" component={ProductDetailPage} />
+      <Route path="/" component={HomePage} />
+      <Route path="/product/:barcode" component={ProductDetailPage} />
       <ProtectedRoute path="/rewards" component={RewardsPage} />
       <ProtectedRoute path="/profile" component={ProfilePage} />
       <ProtectedRoute path="/leaderboard" component={LeaderboardPage} />
