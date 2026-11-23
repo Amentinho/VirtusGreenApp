@@ -11,8 +11,9 @@ import {
 import { Product } from "@shared/schema";
 import { Link } from "wouter";
 import ShareButton from "./share-button";
-import { ChevronRight, Leaf, Factory, Info } from "lucide-react";
+import { ChevronRight, Leaf, Factory, Info, Sparkles } from "lucide-react";
 import { getCO2Comparison } from "@shared/co2-comparisons";
+import { useAuth } from "@/hooks/use-auth";
 
 type ProductCardProps = {
   product: Product;
@@ -21,6 +22,7 @@ type ProductCardProps = {
 
 export default function ProductCard({ product, searchState }: ProductCardProps) {
   const { name, brand, environmentalImpact: impact } = product;
+  const { user } = useAuth();
 
   const handleProductClick = () => {
     if (searchState) {
@@ -139,11 +141,20 @@ export default function ProductCard({ product, searchState }: ProductCardProps) 
       
       <CardContent className="pt-0 pb-4">
         <div className="flex items-center justify-between">
-          <ShareButton
-            productId={product.barcode}
-            productName={product.name}
-            variant="product"
-          />
+          {user ? (
+            <ShareButton
+              productId={product.barcode}
+              productName={product.name}
+              variant="product"
+            />
+          ) : (
+            <Link href="/auth">
+              <button className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-emerald-600 transition-colors">
+                <Sparkles className="h-3.5 w-3.5" />
+                Sign in to earn 5 pts
+              </button>
+            </Link>
+          )}
           <div className="flex items-center text-xs text-muted-foreground group-hover:text-emerald-600 transition-colors">
             <span className="mr-1">View details</span>
             <ChevronRight className="h-4 w-4" />

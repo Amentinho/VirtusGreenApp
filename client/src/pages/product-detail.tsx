@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useRoute } from "wouter";
+import { useRoute, useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -26,6 +26,8 @@ import { getCO2Comparison } from "@shared/co2-comparisons";
 export default function ProductDetailPage() {
   const [match, params] = useRoute("/product/:barcode");
   const barcode = params?.barcode;
+  const { user } = useAuth();
+  const [, setLocation] = useLocation();
   
   // Scroll to top when page loads or barcode changes
   useEffect(() => {
@@ -98,7 +100,7 @@ export default function ProductDetailPage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center gap-3">
-            <button onClick={() => { window.location.href = '/'; }} className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/8 transition-colors">
+            <button onClick={() => setLocation('/')} className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/8 transition-colors">
               <ArrowLeft className="h-4 w-4" />
             </button>
             <img src="/logo.png" alt="VirtusGreen" className="h-8 w-auto object-contain brightness-0 invert" />
@@ -141,7 +143,6 @@ export default function ProductDetailPage() {
     );
   }
 
-  const { user } = useAuth();
   const { name, brand, environmentalImpact: impact } = product;
 
   const impactMetrics = [
@@ -206,7 +207,7 @@ export default function ProductDetailPage() {
             <div className="flex items-center gap-3">
               <button
                 data-testid="button-back"
-                onClick={() => { window.location.href = '/'; }}
+                onClick={() => setLocation('/')}
                 className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/8 transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" />
@@ -263,11 +264,22 @@ export default function ProductDetailPage() {
                     {barcode}
                   </span>
                 </div>
-                <ShareButton
-                  productId={product.barcode}
-                  productName={product.name}
-                  variant="product"
-                />
+                {user ? (
+                  <ShareButton
+                    productId={product.barcode}
+                    productName={product.name}
+                    variant="product"
+                  />
+                ) : (
+                  <Link href="/auth">
+                    <button
+                      className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-lg border border-emerald-200 text-emerald-700 hover:bg-emerald-50 transition-colors"
+                    >
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Sign in to earn 5 pts
+                    </button>
+                  </Link>
+                )}
               </div>
             </CardHeader>
           </Card>

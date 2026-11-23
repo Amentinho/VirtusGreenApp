@@ -165,6 +165,9 @@ export default function SocialMediaVerification() {
           <ExternalLink className="h-5 w-5 text-blue-600" />
           Social Media Verification (10 points each)
         </CardTitle>
+        <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 mt-1">
+          Self-reported — we trust you to follow through. Points are awarded on your word.
+        </p>
       </CardHeader>
       <CardContent className="space-y-6">
         {platforms.map((platform) => {
@@ -217,7 +220,7 @@ export default function SocialMediaVerification() {
                     data-testid={`button-verify-${platform.id}`}
                   >
                     <Check className="h-4 w-4 mr-2" />
-                    {verifyFollowMutation.isPending ? "Verifying..." : "Verify & Claim 10 Tokens"}
+                    {verifyFollowMutation.isPending ? "Claiming..." : "I've done it — Claim 10 Tokens"}
                   </Button>
                 </div>
               )}
