@@ -1,17 +1,20 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowLeft, Copy, Users, Gift, Share2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowLeft, Copy, Users, Gift, Share2, ArrowRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import ShareButton from "@/components/share-button";
+import TokenDisplay from "@/components/token-display";
+import ProfileDropdown from "@/components/profile-dropdown";
 
 interface ReferralStats {
   referralCount: number;
   tokensEarned: number;
 }
+
+const bg = { background: "linear-gradient(145deg, #021c1b 0%, #043231 55%, #062e2c 100%)" };
+const cardStyle = { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)" };
 
 export default function ReferralPage() {
   const { user } = useAuth();
@@ -28,10 +31,7 @@ export default function ReferralPage() {
       navigator.clipboard.writeText(user.referralCode);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-      toast({
-        title: "Copied!",
-        description: "Referral code copied to clipboard",
-      });
+      toast({ title: "Copied!", description: "Referral code copied to clipboard" });
     }
   };
 
@@ -47,156 +47,124 @@ export default function ReferralPage() {
     }
   };
 
+  const nextMilestone = (Math.floor((referralStats?.referralCount || 0) / 5) + 1) * 5;
+  const toNextMilestone = nextMilestone - (referralStats?.referralCount || 0);
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-24">
-            <div className="flex items-center gap-4">
-              <Link href="/">
-                <Button variant="ghost" size="icon" data-testid="button-back-home">
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-              </Link>
-              <img src="/logo.jpg" alt="VirtusGreen" className="h-20 w-auto" />
+    <div className="min-h-screen flex flex-col" style={bg}>
+      {/* Nav */}
+      <header className="flex items-center justify-between px-6 sm:px-8 h-[72px] flex-none">
+        <div className="flex items-center gap-3">
+          <Link href="/">
+            <button className="w-9 h-9 rounded-xl flex items-center justify-center text-white/60 hover:text-white hover:bg-white/8 transition-all" data-testid="button-back-home">
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+          </Link>
+          <img src="/logo.png" alt="VirtusGreen" className="h-8 w-auto object-contain brightness-0 invert" />
+        </div>
+        <div className="flex items-center gap-3">
+          <TokenDisplay />
+          <ProfileDropdown />
+        </div>
+      </header>
+
+      <main className="flex-1 px-6 sm:px-8 pb-16 max-w-2xl mx-auto w-full pt-8">
+        {/* Title */}
+        <div className="mb-8 text-center">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4" style={{ background: "rgba(192,250,121,0.12)" }}>
+            <Share2 className="w-6 h-6 text-[#c0fa79]" />
+          </div>
+          <h1 className="text-3xl font-light text-white" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>
+            Refer Friends
+          </h1>
+          <p className="text-white/45 text-sm mt-1">Earn 10 tokens for every friend who signs up</p>
+        </div>
+
+        <div className="space-y-4">
+          {/* Referral code card */}
+          <div className="rounded-2xl p-5" style={cardStyle}>
+            <p className="text-xs font-bold uppercase tracking-wider text-white/40 mb-3">Your Referral Code</p>
+            {user?.referralCode ? (
+              <div className="space-y-3">
+                <div
+                  className="text-center rounded-xl py-4 font-mono text-2xl font-bold tracking-[0.15em] text-[#c0fa79]"
+                  style={{ background: "rgba(192,250,121,0.08)", border: "1px dashed rgba(192,250,121,0.3)" }}
+                >
+                  <span data-testid="text-referral-code">{user.referralCode}</span>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={copyReferralCode}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all duration-150"
+                    style={{ background: "#c0fa79", color: "#043231" }}
+                    data-testid="button-copy-referral-code"
+                  >
+                    <Copy className="w-4 h-4" />
+                    {copied ? "Copied!" : "Copy Code"}
+                  </button>
+                  <button
+                    onClick={shareReferralCode}
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white/80 hover:text-white border border-white/15 hover:border-white/25 transition-all"
+                    style={{ background: "rgba(255,255,255,0.05)" }}
+                    data-testid="button-share-referral-code"
+                  >
+                    <Share2 className="w-4 h-4" />
+                    Share
+                  </button>
+                </div>
+                <ShareButton variant="app" className="w-full" />
+              </div>
+            ) : (
+              <p className="text-center text-white/40 text-sm py-4">No referral code available</p>
+            )}
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-2xl p-5 text-center" style={cardStyle}>
+              <div className="text-3xl font-bold text-white mb-1" data-testid="text-total-referrals">
+                {isLoading ? "—" : (referralStats?.referralCount || 0)}
+              </div>
+              <div className="text-xs text-white/40 font-medium uppercase tracking-wider">Friends Referred</div>
+            </div>
+            <div className="rounded-2xl p-5 text-center" style={cardStyle}>
+              <div className="text-3xl font-bold text-[#c0fa79] mb-1" data-testid="text-total-tokens-earned">
+                {isLoading ? "—" : (referralStats?.tokensEarned || 0)}
+              </div>
+              <div className="text-xs text-white/40 font-medium uppercase tracking-wider">Tokens Earned</div>
             </div>
           </div>
-        </div>
-      </nav>
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Referral Code Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Gift className="h-5 w-5 text-green-600" />
-                Your Referral Code
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {user?.referralCode ? (
-                <>
-                  <div className="text-center">
-                    <div className="text-3xl font-mono font-bold bg-gray-100 dark:bg-gray-800 px-6 py-4 rounded-lg border-2 border-dashed border-green-300">
-                      <span data-testid="text-referral-code">{user.referralCode}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <Button 
-                      onClick={copyReferralCode} 
-                      className="flex-1"
-                      data-testid="button-copy-referral-code"
-                    >
-                      <Copy className="h-4 w-4 mr-2" />
-                      {copied ? "Copied!" : "Copy Code"}
-                    </Button>
-                    <Button 
-                      onClick={shareReferralCode} 
-                      variant="outline"
-                      data-testid="button-share-referral-code"
-                    >
-                      <Share2 className="h-4 w-4 mr-2" />
-                      Share
-                    </Button>
-                  </div>
+          {/* Next milestone */}
+          {!isLoading && (
+            <div className="rounded-2xl p-4" style={{ background: "rgba(192,250,121,0.07)", border: "1px solid rgba(192,250,121,0.18)" }}>
+              <p className="text-xs text-[#c0fa79]/80 text-center">
+                {toNextMilestone} more referral{toNextMilestone !== 1 ? "s" : ""} to reach <strong>{nextMilestone}</strong> total
+              </p>
+            </div>
+          )}
 
-                  <div className="mt-4">
-                    <ShareButton variant="app" className="w-full" />
+          {/* How it works */}
+          <div className="rounded-2xl p-5" style={cardStyle}>
+            <p className="text-xs font-bold uppercase tracking-wider text-white/40 mb-4">How it works</p>
+            <div className="space-y-4">
+              {[
+                { icon: <Share2 className="w-4 h-4 text-[#c0fa79]" />, title: "Share Your Code", desc: "Share your unique referral code with friends and family" },
+                { icon: <Users className="w-4 h-4 text-[#c0fa79]" />, title: "Friends Sign Up", desc: "When they register using your code, they join your network" },
+                { icon: <Gift className="w-4 h-4 text-[#c0fa79]" />, title: "Earn Tokens", desc: "Get 10 tokens for each successful referral to spend in rewards" },
+              ].map((step, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-none" style={{ background: "rgba(192,250,121,0.12)" }}>
+                    {step.icon}
                   </div>
-
-                  <div className="text-sm text-gray-600 text-center">
-                    Share this code with friends to earn 10 tokens when they sign up!
-                  </div>
-                </>
-              ) : (
-                <div className="text-center text-gray-500">
-                  No referral code available
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Statistics Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-blue-600" />
-                Referral Statistics
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="text-center py-8">Loading statistics...</div>
-              ) : (
-                <div className="space-y-6">
-                  <div className="text-center">
-                    <div className="text-4xl font-bold text-blue-600" data-testid="text-total-referrals">
-                      {referralStats?.referralCount || 0}
-                    </div>
-                    <div className="text-sm text-gray-600">People Referred</div>
-                  </div>
-
-                  <div className="text-center">
-                    <div className="text-4xl font-bold text-green-600" data-testid="text-total-tokens-earned">
-                      {referralStats?.tokensEarned || 0}
-                    </div>
-                    <div className="text-sm text-gray-600">Tokens Earned</div>
-                  </div>
-
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <div className="text-sm text-gray-600 text-center">
-                      <strong>Next milestone:</strong>
-                      <br />
-                      {((Math.floor((referralStats?.referralCount || 0) / 5) + 1) * 5) - (referralStats?.referralCount || 0)} more referrals 
-                      to reach {(Math.floor((referralStats?.referralCount || 0) / 5) + 1) * 5} total referrals!
-                    </div>
+                  <div>
+                    <p className="text-sm font-semibold text-white mb-0.5">{i + 1}. {step.title}</p>
+                    <p className="text-xs text-white/45 leading-relaxed">{step.desc}</p>
                   </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* How it Works Card */}
-          <Card className="md:col-span-2">
-            <CardHeader>
-              <CardTitle>How Referrals Work</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="text-center">
-                  <div className="bg-green-100 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
-                    <Share2 className="h-6 w-6 text-green-600" />
-                  </div>
-                  <h3 className="font-semibold mb-2">1. Share Your Code</h3>
-                  <p className="text-sm text-gray-600">
-                    Share your unique referral code with friends and family
-                  </p>
-                </div>
-                
-                <div className="text-center">
-                  <div className="bg-blue-100 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
-                    <Users className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <h3 className="font-semibold mb-2">2. Friends Sign Up</h3>
-                  <p className="text-sm text-gray-600">
-                    When they register using your code, they become part of your network
-                  </p>
-                </div>
-                
-                <div className="text-center">
-                  <div className="bg-yellow-100 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
-                    <Gift className="h-6 w-6 text-yellow-600" />
-                  </div>
-                  <h3 className="font-semibold mb-2">3. Earn Tokens</h3>
-                  <p className="text-sm text-gray-600">
-                    Get 10 tokens for each successful referral to spend in the rewards section
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              ))}
+            </div>
+          </div>
         </div>
       </main>
     </div>
