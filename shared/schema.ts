@@ -51,8 +51,12 @@ export const users = pgTable("users", {
   // Verification fields
   evmWalletAddress: text("evm_wallet_address"),
   evmWalletVerified: boolean("evm_wallet_verified").notNull().default(false),
+  evmWalletNonce: text("evm_wallet_nonce"),
+  evmWalletNonceExpiry: timestamp("evm_wallet_nonce_expiry"),
   telegramUsername: text("telegram_username"),
   telegramVerified: boolean("telegram_verified").notNull().default(false),
+  telegramPendingCode: text("telegram_pending_code"),
+  telegramPendingCodeExpiry: timestamp("telegram_pending_code_expiry"),
   
   // Character system
   currentCharacterId: integer("current_character_id"),

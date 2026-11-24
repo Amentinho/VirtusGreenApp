@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect, useRef } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Search, Camera, ArrowRight, QrCode, Sparkles } from "lucide-react";
 import ProductCard from "@/components/product-card";
 import BarcodeScanner from "@/components/barcode-scanner";
@@ -16,6 +16,7 @@ import { useAuth } from "@/hooks/use-auth";
 import TokenDisplay from "@/components/token-display";
 import ProfileDropdown from "@/components/profile-dropdown";
 import LanguageSelector from "@/components/language-selector";
+import { LoginStreakDialog } from "@/components/login-streak-dialog";
 
 export default function HomePage() {
   const { t } = useTranslation();
@@ -23,6 +24,35 @@ export default function HomePage() {
   const [search, setSearch] = useState("");
   const [activeSearch, setActiveSearch] = useState("");
   const [showScanner, setShowScanner] = useState(false);
+  const [showStreakDialog, setShowStreakDialog] = useState(false);
+  const [streakData, setStreakData] = useState<any>(null);
+  const [todayReward, setTodayReward] = useState<any>(null);
+  const streakFired = useRef(false);
+
+  // Fire login streak once per session when user is loaded
+  const recordStreakMutation = useMutation({
+    mutationFn: async () => {
+      const [streakRes, currentRes] = await Promise.all([
+        fetch("/api/login-streak", { method: "POST", credentials: "include" }),
+        fetch("/api/login-streak/current", { credentials: "include" }),
+      ]);
+      const reward = await streakRes.json();
+      const current = await currentRes.json();
+      return { reward, current };
+    },
+    onSuccess: ({ reward, current }) => {
+      setTodayReward(reward);
+      setStreakData(current);
+      if (reward.isNewLogin) setShowStreakDialog(true);
+    },
+  });
+
+  useEffect(() => {
+    if (user && !streakFired.current) {
+      streakFired.current = true;
+      recordStreakMutation.mutate();
+    }
+  }, [user]);
 
   const { data: products, isLoading } = useQuery<Product[]>({
     queryKey: activeSearch ? ["/api/products", "search", activeSearch] : ["/api/products"],
@@ -45,6 +75,13 @@ export default function HomePage() {
   };
 
   return (
+    <>
+    <LoginStreakDialog
+      open={showStreakDialog}
+      onOpenChange={setShowStreakDialog}
+      streakData={streakData}
+      todayReward={todayReward}
+    />
     <div
       className="min-h-screen flex flex-col"
       style={{ background: "linear-gradient(145deg, #021c1b 0%, #043231 55%, #062e2c 100%)" }}
@@ -220,5 +257,6 @@ export default function HomePage() {
         </DialogContent>
       </Dialog>
     </div>
+    </>
   );
 }

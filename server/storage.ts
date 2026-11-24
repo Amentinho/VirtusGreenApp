@@ -88,7 +88,10 @@ export interface IStorage {
   getTokenEarnings(userId: string): Promise<TokenEarning[]>;
   recordTokenEarning(userId: string, source: string, amount: number, description: string): Promise<void>;
   verifyEvmWallet(userId: string, walletAddress: string): Promise<{ verified: boolean; tokensAwarded: number }>;
+  setEvmWalletNonce(userId: string, nonce: string, expiresAt: Date): Promise<void>;
   verifyTelegram(userId: string, telegramUsername: string): Promise<{ verified: boolean; tokensAwarded: number }>;
+  setTelegramPendingCode(userId: string, code: string, expiresAt: Date): Promise<void>;
+  getUserByTelegramCode(code: string): Promise<User | undefined>;
   recordAdView(userId: string): Promise<{ success: boolean; tokensAwarded: number; adsWatchedToday: number; dailyLimit: number }>;
   getAdStats(userId: string): Promise<{ adsWatchedToday: number; dailyLimit: number; tokensEarnedToday: number }>;
   
@@ -1093,6 +1096,29 @@ export class DatabaseStorage implements IStorage {
     );
 
     return { verified: true, tokensAwarded: 10 };
+  }
+
+  async setTelegramPendingCode(userId: string, code: string, expiresAt: Date): Promise<void> {
+    await db.update(users).set({
+      telegramPendingCode: code,
+      telegramPendingCodeExpiry: expiresAt,
+      updatedAt: new Date(),
+    }).where(eq(users.id, userId));
+  }
+
+  async getUserByTelegramCode(code: string): Promise<User | undefined> {
+    const result = await db.select().from(users)
+      .where(eq(users.telegramPendingCode, code))
+      .limit(1);
+    return result[0];
+  }
+
+  async setEvmWalletNonce(userId: string, nonce: string, expiresAt: Date): Promise<void> {
+    await db.update(users).set({
+      evmWalletNonce: nonce,
+      evmWalletNonceExpiry: expiresAt,
+      updatedAt: new Date(),
+    }).where(eq(users.id, userId));
   }
 
   async recordAdView(userId: string): Promise<{ success: boolean; tokensAwarded: number; adsWatchedToday: number; dailyLimit: number }> {
@@ -2227,6 +2253,31 @@ export class MemStorage implements IStorage {
     );
 
     return { verified: true, tokensAwarded: 10 };
+  }
+
+  async setTelegramPendingCode(userId: string, code: string, expiresAt: Date): Promise<void> {
+    const user = await this.getUser(userId);
+    if (user) {
+      (user as any).telegramPendingCode = code;
+      (user as any).telegramPendingCodeExpiry = expiresAt;
+      this.users.set(userId, user);
+    }
+  }
+
+  async getUserByTelegramCode(code: string): Promise<User | undefined> {
+    for (const user of this.users.values()) {
+      if ((user as any).telegramPendingCode === code) return user;
+    }
+    return undefined;
+  }
+
+  async setEvmWalletNonce(userId: string, nonce: string, expiresAt: Date): Promise<void> {
+    const user = await this.getUser(userId);
+    if (user) {
+      (user as any).evmWalletNonce = nonce;
+      (user as any).evmWalletNonceExpiry = expiresAt;
+      this.users.set(userId, user);
+    }
   }
 
   async recordAdView(userId: string): Promise<{ success: boolean; tokensAwarded: number; adsWatchedToday: number; dailyLimit: number }> {

@@ -7,6 +7,7 @@ import { storage } from "./storage";
 import { insertProductSchema, insertRewardSchema, updatePasswordSchema, updateProfileSchema } from "@shared/schema";
 import { comparePasswords, hashPassword } from "./auth";
 import { sendEmail, generatePasswordResetEmail, generateEmailVerificationToken, generateVerificationEmail, generateProductRequestEmail } from "./emailService";
+import { ethers } from "ethers";
 // PayPal loaded lazily so missing credentials don't crash startup
 const paypalEnabled = !!(process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET);
 let createPaypalOrder: Function, capturePaypalOrder: Function, loadPaypalDefault: Function;
@@ -804,36 +805,142 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // EVM wallet verification endpoint
+  // EVM wallet: generate signing nonce
+  app.get("/api/verify-evm-wallet/nonce", async (req: any, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ error: "User not found" });
+      if (user.evmWalletVerified) return res.status(400).json({ error: "Wallet already verified" });
+
+      const nonce = crypto.randomUUID();
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+      await storage.setEvmWalletNonce(userId, nonce, expiresAt);
+
+      const message = `Sign this message to verify your wallet for VirtusGreen.\n\nNonce: ${nonce}`;
+      res.json({ message, nonce });
+    } catch (error) {
+      console.error("EVM nonce error:", error);
+      res.status(500).json({ error: "Failed to generate nonce" });
+    }
+  });
+
+  // EVM wallet: verify via MetaMask signature
   app.post("/api/verify-evm-wallet", async (req: any, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
     try {
-      const { walletAddress } = req.body;
+      const { address, signature } = req.body;
       const userId = req.user.claims?.sub || req.user.id;
-      
-      if (!walletAddress) {
-        return res.status(400).json({ error: "Wallet address is required" });
+
+      if (!address || !signature) {
+        return res.status(400).json({ error: "address and signature are required" });
       }
 
-      const result = await storage.verifyEvmWallet(userId, walletAddress);
-      
-      // Get updated user tokens
       const user = await storage.getUser(userId);
-      
-      res.json({
-        ...result,
-        tokens: user?.tokens || 0,
-      });
+      if (!user) return res.status(404).json({ error: "User not found" });
+      if (user.evmWalletVerified) return res.status(400).json({ error: "Wallet already verified" });
+
+      if (!user.evmWalletNonce || !user.evmWalletNonceExpiry) {
+        return res.status(400).json({ error: "No pending nonce. Request a nonce first." });
+      }
+      if (new Date() > new Date(user.evmWalletNonceExpiry)) {
+        return res.status(400).json({ error: "Nonce expired. Request a new one." });
+      }
+
+      const message = `Sign this message to verify your wallet for VirtusGreen.\n\nNonce: ${user.evmWalletNonce}`;
+      const recoveredAddress = ethers.verifyMessage(message, signature);
+
+      if (recoveredAddress.toLowerCase() !== address.toLowerCase()) {
+        return res.status(400).json({ error: "Signature does not match the provided address" });
+      }
+
+      const result = await storage.verifyEvmWallet(userId, address);
+      const updatedUser = await storage.getUser(userId);
+
+      res.json({ ...result, tokens: updatedUser?.tokens || 0 });
     } catch (error) {
       console.error("Error verifying EVM wallet:", error);
       res.status(500).json({ error: error instanceof Error ? error.message : "Failed to verify EVM wallet" });
     }
   });
 
-  // Telegram verification endpoint
+  // Telegram: initiate verification (generate code)
+  app.post("/api/telegram/initiate", async (req: any, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ error: "User not found" });
+      if (user.telegramVerified) return res.status(400).json({ error: "Telegram already verified" });
+
+      const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 min
+      await storage.setTelegramPendingCode(userId, code, expiresAt);
+
+      const botUsername = process.env.TELEGRAM_BOT_USERNAME || "VirtusGreenBot";
+      res.json({
+        code,
+        botUsername,
+        message: `Open Telegram and send /verify ${code} to @${botUsername}`,
+      });
+    } catch (error) {
+      console.error("Telegram initiate error:", error);
+      res.status(500).json({ error: "Failed to initiate Telegram verification" });
+    }
+  });
+
+  // Telegram: webhook (called by Telegram Bot API)
+  app.post("/api/telegram/webhook", async (req, res) => {
+    res.sendStatus(200); // Always reply 200 immediately
+    try {
+      const update = req.body;
+      const message = update?.message;
+      if (!message?.text) return;
+
+      const match = message.text.trim().match(/^\/verify\s+([A-Z0-9]{6})/i);
+      if (!match) return;
+
+      const code = match[1].toUpperCase();
+      const telegramUsername = message.from?.username;
+      const chatId = message.chat?.id;
+      const botToken = process.env.TELEGRAM_BOT_TOKEN;
+
+      const sendReply = async (text: string) => {
+        if (!botToken || !chatId) return;
+        await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chat_id: chatId, text }),
+        }).catch(() => {});
+      };
+
+      const user = await storage.getUserByTelegramCode(code);
+      if (!user) {
+        await sendReply("❌ Invalid or expired code. Please request a new one from the VirtusGreen app.");
+        return;
+      }
+      if (user.telegramPendingCodeExpiry && new Date() > new Date(user.telegramPendingCodeExpiry)) {
+        await sendReply("⏰ Your code has expired. Please request a new one from the app.");
+        return;
+      }
+      if (user.telegramVerified) {
+        await sendReply("✅ Your Telegram account is already verified!");
+        return;
+      }
+
+      const tgHandle = telegramUsername || `tg_${message.from?.id}`;
+      await storage.verifyTelegram(user.id, tgHandle);
+      await sendReply("✅ Telegram verified! You've earned 10 tokens on VirtusGreen. 🌱");
+    } catch (error) {
+      console.error("Telegram webhook error:", error);
+    }
+  });
+
+  // Legacy Telegram verification endpoint (kept for backward compat — now unused by UI)
   app.post("/api/verify-telegram", async (req: any, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });
@@ -842,16 +949,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { telegramUsername } = req.body;
       const userId = req.user.claims?.sub || req.user.id;
-      
+
       if (!telegramUsername) {
         return res.status(400).json({ error: "Telegram username is required" });
       }
 
       const result = await storage.verifyTelegram(userId, telegramUsername);
-      
+
       // Get updated user tokens
       const user = await storage.getUser(userId);
-      
+
       res.json({
         ...result,
         tokens: user?.tokens || 0,
