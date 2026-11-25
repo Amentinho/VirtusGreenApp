@@ -156,8 +156,8 @@ export default function SocialMediaVerification() {
       icon: <SiX className="h-5 w-5" />,
       color: "text-blue-400",
       url: "https://twitter.com/virtusgreen",
-      instructions: "Follow our Twitter account to earn 10 tokens",
-      oauthUrl: null,
+      instructions: "Connect your X account to prove ownership and earn 10 tokens",
+      oauthUrl: "/api/oauth/twitter/login",
     },
   ];
 

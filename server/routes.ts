@@ -4,6 +4,7 @@ import { setupAuth } from "./auth";
 import { setupReplitAuth } from "./replitAuth";
 import { setupGoogleAuth } from "./googleAuth";
 import { setupLinkedInAuth } from "./linkedinAuth";
+import { setupTwitterAuth } from "./twitterAuth";
 import { storage } from "./storage";
 import { insertProductSchema, insertRewardSchema, updatePasswordSchema, updateProfileSchema } from "@shared/schema";
 import { comparePasswords, hashPassword } from "./auth";
@@ -95,6 +96,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await setupReplitAuth(app);
   await setupGoogleAuth(app);
   setupLinkedInAuth(app);
+  setupTwitterAuth(app);
   
   // Add unified user endpoint that works with both auth systems
   app.get("/api/auth/user", async (req: any, res) => {

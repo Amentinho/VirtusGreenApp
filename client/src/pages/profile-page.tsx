@@ -51,6 +51,7 @@ export default function ProfilePage() {
     const params = new URLSearchParams(window.location.search);
     const linkedin = params.get("linkedin");
     const error = params.get("error");
+    const twitter = params.get("twitter");
     if (linkedin === "verified") {
       toast({ title: "LinkedIn Connected! 🎉", description: `You earned ${params.get("tokens") || 10} tokens for verifying your LinkedIn account.` });
       window.history.replaceState({}, "", window.location.pathname);
@@ -59,6 +60,15 @@ export default function ProfilePage() {
       window.history.replaceState({}, "", window.location.pathname);
     } else if (error?.startsWith("linkedin")) {
       toast({ title: "LinkedIn connection failed", description: "Please try again.", variant: "destructive" });
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (twitter === "verified") {
+      toast({ title: "X / Twitter Connected! 🎉", description: `You earned ${params.get("tokens") || 10} tokens for verifying your X account.` });
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (twitter === "already_verified") {
+      toast({ title: "Already verified", description: "Your X account was already connected." });
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (error?.startsWith("twitter")) {
+      toast({ title: "X connection failed", description: "Please try again.", variant: "destructive" });
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, []);
