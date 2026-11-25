@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -45,6 +45,23 @@ const inputClass = "w-full px-3 py-2.5 rounded-xl text-sm bg-white/8 border bord
 export default function ProfilePage() {
   const { user, logoutMutation } = useAuth();
   const { toast } = useToast();
+
+  // Handle LinkedIn OAuth callback params
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const linkedin = params.get("linkedin");
+    const error = params.get("error");
+    if (linkedin === "verified") {
+      toast({ title: "LinkedIn Connected! 🎉", description: `You earned ${params.get("tokens") || 10} tokens for verifying your LinkedIn account.` });
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (linkedin === "already_verified") {
+      toast({ title: "Already verified", description: "Your LinkedIn account was already connected." });
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (error?.startsWith("linkedin")) {
+      toast({ title: "LinkedIn connection failed", description: "Please try again.", variant: "destructive" });
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
   const [copied, setCopied] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState(user?.avatar || "🐶");
   const [displayPreference, setDisplayPreference] = useState<"avatar" | "character" | "custom">((user?.displayPreference as any) || "avatar");

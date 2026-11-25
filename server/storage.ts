@@ -84,6 +84,7 @@ export interface IStorage {
   markOneTimeAction(userId: string, action: string, awardedTokens: number): Promise<boolean>;
   initiateSocialFollowVerification(userId: string, platform: string, handle?: string): Promise<{ verificationCode: string; message: string }>;
   verifySocialFollow(userId: string, platform: string, verificationCode: string): Promise<{ verified: boolean; tokensAwarded: number }>;
+  verifySocialOAuth(userId: string, platform: string, platformHandle: string): Promise<{ verified: boolean; tokensAwarded: number; alreadyVerified: boolean }>;
   isProfileComplete(userId: string): Promise<{ complete: boolean; missingFields: string[] }>;
   getTokenEarnings(userId: string): Promise<TokenEarning[]>;
   recordTokenEarning(userId: string, source: string, amount: number, description: string): Promise<void>;
@@ -943,6 +944,45 @@ export class DatabaseStorage implements IStorage {
     );
 
     return { verified: true, tokensAwarded: SOCIAL_FOLLOW_BONUS };
+  }
+
+  async verifySocialOAuth(userId: string, platform: string, platformHandle: string): Promise<{ verified: boolean; tokensAwarded: number; alreadyVerified: boolean }> {
+    const existing = await db
+      .select()
+      .from(socialFollowVerifications)
+      .where(and(
+        eq(socialFollowVerifications.userId, userId),
+        eq(socialFollowVerifications.platform, platform),
+        eq(socialFollowVerifications.status, "verified")
+      ))
+      .limit(1);
+
+    if (existing.length > 0) {
+      return { verified: true, tokensAwarded: 0, alreadyVerified: true };
+    }
+
+    await db
+      .insert(socialFollowVerifications)
+      .values({
+        userId,
+        platform,
+        verificationCode: `oauth_${platform}_${Date.now()}`,
+        status: "verified",
+        verifiedAt: new Date(),
+        tokensAwarded: SOCIAL_FOLLOW_BONUS,
+      })
+      .onConflictDoUpdate({
+        target: [socialFollowVerifications.userId, socialFollowVerifications.platform],
+        set: { status: "verified", verifiedAt: new Date(), tokensAwarded: SOCIAL_FOLLOW_BONUS },
+      });
+
+    await db.update(users)
+      .set({ tokens: sql`${users.tokens} + ${SOCIAL_FOLLOW_BONUS}`, updatedAt: new Date() })
+      .where(eq(users.id, userId));
+
+    await this.recordTokenEarning(userId, "social_follow", SOCIAL_FOLLOW_BONUS, `${platform} OAuth verification (${platformHandle})`);
+
+    return { verified: true, tokensAwarded: SOCIAL_FOLLOW_BONUS, alreadyVerified: false };
   }
 
   async isProfileComplete(userId: string): Promise<{ complete: boolean; missingFields: string[] }> {
@@ -2113,6 +2153,14 @@ export class MemStorage implements IStorage {
     }
 
     return { verified: true, tokensAwarded: SOCIAL_FOLLOW_BONUS };
+  }
+
+  async verifySocialOAuth(userId: string, platform: string, platformHandle: string): Promise<{ verified: boolean; tokensAwarded: number; alreadyVerified: boolean }> {
+    const user = await this.getUser(userId);
+    if (!user) throw new Error("User not found");
+    user.tokens += SOCIAL_FOLLOW_BONUS;
+    this.users.set(userId, user);
+    return { verified: true, tokensAwarded: SOCIAL_FOLLOW_BONUS, alreadyVerified: false };
   }
 
   async isProfileComplete(userId: string): Promise<{ complete: boolean; missingFields: string[] }> {

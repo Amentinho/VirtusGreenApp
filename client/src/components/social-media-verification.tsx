@@ -133,29 +133,32 @@ export default function SocialMediaVerification() {
 
   const platforms = [
     {
-      id: "instagram",
-      name: "Instagram",
-      icon: <SiInstagram className="h-5 w-5" />,
-      color: "text-pink-600",
-      url: "https://instagram.com/virtusgreen",
-      instructions: "Follow our Instagram account to earn 10 tokens"
-    },
-    {
       id: "linkedin",
       name: "LinkedIn",
       icon: <SiLinkedin className="h-5 w-5" />,
       color: "text-blue-600",
       url: "https://linkedin.com/company/virtusgreen",
-      instructions: "Follow our LinkedIn company page to earn 10 tokens"
+      instructions: "Connect your LinkedIn account to prove ownership and earn 10 tokens",
+      oauthUrl: "/api/oauth/linkedin/login",
+    },
+    {
+      id: "instagram",
+      name: "Instagram",
+      icon: <SiInstagram className="h-5 w-5" />,
+      color: "text-pink-600",
+      url: "https://instagram.com/virtusgreen",
+      instructions: "Follow our Instagram account to earn 10 tokens",
+      oauthUrl: null,
     },
     {
       id: "twitter",
-      name: "Twitter",
+      name: "Twitter / X",
       icon: <SiX className="h-5 w-5" />,
       color: "text-blue-400",
       url: "https://twitter.com/virtusgreen",
-      instructions: "Follow our Twitter account to earn 10 tokens"
-    }
+      instructions: "Follow our Twitter account to earn 10 tokens",
+      oauthUrl: null,
+    },
   ];
 
   return (
@@ -165,14 +168,38 @@ export default function SocialMediaVerification() {
           <ExternalLink className="h-5 w-5 text-blue-600" />
           Social Media Verification (10 points each)
         </CardTitle>
-        <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 mt-1">
-          Self-reported — we trust you to follow through. Points are awarded on your word.
-        </p>
       </CardHeader>
       <CardContent className="space-y-6">
         {platforms.map((platform) => {
           const hasCode = verificationCodes[platform.id];
-          
+
+          // LinkedIn (and future OAuth platforms): real OAuth flow
+          if (platform.oauthUrl) {
+            return (
+              <div key={platform.id} className="border rounded-lg p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className={platform.color}>{platform.icon}</span>
+                    <span className="font-medium">{platform.name}</span>
+                  </div>
+                  <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                    Real OAuth
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600">{platform.instructions}</p>
+                <Button
+                  onClick={() => { window.location.href = platform.oauthUrl!; }}
+                  className="w-full"
+                  data-testid={`button-oauth-${platform.id}`}
+                >
+                  <Check className="h-4 w-4 mr-2" />
+                  Connect {platform.name} Account
+                </Button>
+              </div>
+            );
+          }
+
+          // Honor-system platforms (Instagram, Twitter)
           return (
             <div key={platform.id} className="border rounded-lg p-4 space-y-3">
               <div className="flex items-center justify-between">
@@ -192,6 +219,9 @@ export default function SocialMediaVerification() {
               </div>
 
               <p className="text-sm text-gray-600">{platform.instructions}</p>
+              <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                Self-reported — points awarded on your word.
+              </p>
 
               {!hasCode ? (
                 <Button
@@ -200,19 +230,13 @@ export default function SocialMediaVerification() {
                   className="w-full"
                   data-testid={`button-start-verification-${platform.id}`}
                 >
-                  {initiateVerificationMutation.isPending 
-                    ? "Starting..." 
-                    : "Start Verification"
-                  }
+                  {initiateVerificationMutation.isPending ? "Starting..." : "Start Verification"}
                 </Button>
               ) : (
                 <div className="space-y-3">
                   <div className="p-3 bg-green-50 rounded border border-green-200">
-                    <p className="text-sm text-green-800">
-                      ✓ Verification ready! Click the button below after following us.
-                    </p>
+                    <p className="text-sm text-green-800">✓ Verification ready! Click below after following us.</p>
                   </div>
-                  
                   <Button
                     onClick={() => handleVerifyFollow(platform.id)}
                     disabled={verifyFollowMutation.isPending}
